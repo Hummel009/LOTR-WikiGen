@@ -42,7 +42,6 @@ public class LFGDatabaseGenerator extends LOTRWorldGenStructureBase2 {
 	}
 
 	@Override
-
 	public boolean generateWithSetRotation(World world, Random random, int y, int j, int k, int rotation) {
 		String riderLoc = StatCollector.translateToLocal("db.riderLoc.name");
 		String categoryTemplates = StatCollector.translateToLocal("db.categoryTemplates.name");

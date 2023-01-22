@@ -1101,6 +1101,16 @@ public class LFGConfig {
 		genStructureInfo(1701, LOTRWorldGenHalfTrollWarlordHouse.class, "HalfTrollWarlordHouse", 10058344, 5325111);
 	}
 
+	public void genEntityInfo(Class clazz, int id) {
+		String name = clazz.getSimpleName().substring(10);
+		genEntityInfo(clazz, name, id, 80, 3, true);
+	}
+
+	public void genEntityInfo(Class clazz, int id, int egg1, int egg2) {
+		String name = clazz.getSimpleName().substring(10);
+		genEntityInfo(clazz, name, id, 80, 3, true);
+	}
+
 	public void genEntityInfo(Class clazz, String name, int id) {
 		genEntityInfo(clazz, name, id, 80, 3, true);
 	}
@@ -1114,11 +1124,34 @@ public class LFGConfig {
 		LFGDatabaseGenerator.entityClassToObject.put(entityClass, LFGReflectionHelper.newEntity(entityClass, world));
 	}
 
-	public void genStructureInfo(int i, Class clazz, String name, int egg1, int egg2) {
+	public void genStructureInfo(Class clazz, String name) {
 		LFGDatabaseGenerator.classToStructureName.put(clazz, name);
 	}
 
+	public void genStructureInfo(int i, Class clazz, int egg1, int egg2) {
+		String name = clazz.getSimpleName().substring(12);
+		genStructureInfo(clazz, name);
+	}
+
+	public void genStructureInfo(int i, Class clazz, String name, int egg1, int egg2) {
+		genStructureInfo(clazz, name);
+	}
+
+	public void genStructureInfo(int i, LOTRVillageGen clazz, int j, int k) {
+		String name = clazz.getClass().getSimpleName().substring(12);
+		genStructureInfo(clazz.getClass(), name);
+	}
+
+	public void genStructureInfo(int i, LOTRVillageGen clazz, int j, int k, IVillageProperties iVillageProperties) {
+		String name = clazz.getClass().getSimpleName().substring(12);
+		genStructureInfo(clazz.getClass(), name);
+	}
+
+	public void genStructureInfo(int i, LOTRVillageGen clazz, String name, int j, int k) {
+		genStructureInfo(clazz.getClass(), name);
+	}
+
 	public void genStructureInfo(int i, LOTRVillageGen clazz, String name, int j, int k, IVillageProperties iVillageProperties) {
-		LFGDatabaseGenerator.classToStructureName.put(clazz.getClass(), name);
+		genStructureInfo(clazz.getClass(), name);
 	}
 }

@@ -21,6 +21,18 @@ db.noPledge.name=без присяги
 db.rep.name=репутации
 db.yesPledge.name=с присягой
 
+//LOTR+ v37.4 RV SUPPORT
+lotr.biome.farHaradKanuka.name=Кунцовые леса
+tile.lotr:oreMorgulIron.name=Моргульская руда железа
+tile.lotr:oreGulduril.name=Руда гулдурила
+tile.dirt.0.name=Грунт
+lotr.achievement.doMiniquestRedMountains.title=Восточный опыт
+lotr.achievement.tradeRedTrader.title=Красная цена
+item.lotr:bootsDark.name=Ботинки Арбалетчика Утумно
+tile.lotr:mud.name=Грязь Джунглей
+tile.dirt.1.name=Песчаная грязь
+
+//LOTR v36.15 SUPPORT
 lotr.structure.DatabaseGenerator.name=Генератор баз данных
 lotr.dimension.Utumno.utumno=Утумно
 lotr.faction.DARK_HUORN.name=Тёмные гворны

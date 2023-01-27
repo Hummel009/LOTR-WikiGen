@@ -6,7 +6,6 @@ import lotr.common.world.biome.LOTRBiome;
 import lotr.common.world.structure.*;
 import lotr.common.world.structure2.*;
 import lotr.common.world.village.*;
-import lotrfgen.LFGDatabaseGenerator.IVillageProperties;
 import net.minecraft.world.World;
 
 public class LFGConfig {
@@ -1120,12 +1119,12 @@ public class LFGConfig {
 	}
 
 	public void genEntityInfo(Class entityClass, String name, int id, int updateRange, int updateFreq, boolean sendVelocityUpdates) {
-		LFGDatabaseGenerator.classToEntityName.put(entityClass, name);
-		LFGDatabaseGenerator.entityClassToObject.put(entityClass, LFGReflectionHelper.newEntity(entityClass, world));
+		LFGDatabaseGenerator.getClassToEntityNameMapping().put(entityClass, name);
+		LFGDatabaseGenerator.getClassToEntityObjectMapping().put(entityClass, LFGReflectionHelper.newEntity(entityClass, world));
 	}
 
 	public void genStructureInfo(Class clazz, String name) {
-		LFGDatabaseGenerator.classToStructureName.put(clazz, name);
+		LFGDatabaseGenerator.getClassToStructureNameMapping().put(clazz, name);
 	}
 
 	public void genStructureInfo(int i, Class clazz, int egg1, int egg2) {
@@ -1153,5 +1152,9 @@ public class LFGConfig {
 
 	public void genStructureInfo(int i, LOTRVillageGen clazz, String name, int j, int k, IVillageProperties iVillageProperties) {
 		genStructureInfo(clazz.getClass(), name);
+	}
+
+	public interface IVillageProperties<V> {
+		void apply(V var1);
 	}
 }

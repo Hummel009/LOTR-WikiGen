@@ -1119,12 +1119,13 @@ public class LFGConfig {
 	}
 
 	public void genEntityInfo(Class entityClass, String name, int id, int updateRange, int updateFreq, boolean sendVelocityUpdates) {
-		LFGDatabaseGenerator.getClassToEntityNameMapping().put(entityClass, name);
-		LFGDatabaseGenerator.getClassToEntityObjectMapping().put(entityClass, LFGReflectionHelper.newEntity(entityClass, world));
+		LFGDatabaseGenerator.CLASS_TO_ENTITY_NAME.put(entityClass, name);
+		LFGDatabaseGenerator.CLASS_TO_ENTITY_OBJ.put(entityClass, LFGReflectionHelper.newEntity(entityClass, world));
+		LFGDatabaseGenerator.ENTITY_SET.add(entityClass);
 	}
 
 	public void genStructureInfo(Class clazz, String name) {
-		LFGDatabaseGenerator.getClassToStructureNameMapping().put(clazz, name);
+		LFGDatabaseGenerator.CLASS_TO_STRUCTURE_NAME.put(clazz, name);
 	}
 
 	public void genStructureInfo(int i, Class clazz, int egg1, int egg2) {

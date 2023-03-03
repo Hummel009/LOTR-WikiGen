@@ -145,7 +145,7 @@ public class LFGReflectionHelper {
 		return minMaxHeight;
 	}
 
-	public static <E, T> HashSet<T> getObjectFieldsOfType(Class<? extends E> clazz, Class<? extends T> type) {
+	public static <E, T> Set<T> getObjectFieldsOfType(Class<? extends E> clazz, Class<? extends T> type) {
 		HashSet<Object> list = new HashSet<>();
 		for (Field field : clazz.getDeclaredFields()) {
 			if (field == null) {

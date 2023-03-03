@@ -1,6 +1,6 @@
 package lotrfgen;
 
-import java.util.List;
+import java.util.*;
 
 import lotrfgen.LFGDatabaseGenerator.Database;
 import net.minecraft.command.*;
@@ -16,7 +16,7 @@ public class LFGCommandDatabase extends CommandBase {
 		default:
 			break;
 		}
-		return null;
+		return Collections.emptyList();
 	}
 
 	@Override
@@ -35,7 +35,7 @@ public class LFGCommandDatabase extends CommandBase {
 		if (db == null) {
 			CommandBase.func_152373_a(sender, this, "Database \"" + args[0] + "\" does not exist.");
 		} else {
-			LFGDatabaseGenerator.display = args[0];
+			LFGDatabaseGenerator.setDisplay(args[0]);
 			CommandBase.func_152373_a(sender, this, "Database \"" + args[0] + "\" is prepared.");
 		}
 	}

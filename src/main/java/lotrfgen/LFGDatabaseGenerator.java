@@ -439,6 +439,7 @@ public class LFGDatabaseGenerator {
 				for (LOTRBiome biome : BIOMES) {
 					sb.append("\n| ").append(getBiomePagename(biome)).append(" = ").append(biome.temperature);
 				}
+				sb.append(END);
 
 				sb.append(TITLE).append("Template:DB Biome-Variants");
 				sb.append(BEGIN);

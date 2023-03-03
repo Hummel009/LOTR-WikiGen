@@ -101,9 +101,10 @@ public class LFGReflectionHelper {
 		try {
 			Method method = LOTREntityNPC.class.getDeclaredMethod("getKillAchievement");
 			method.setAccessible(true);
-			killAchievement = (LOTRAchievement) method.invoke(entity.getClass());
-		} catch (NoSuchMethodException | SecurityException | IllegalAccessException | IllegalArgumentException | InvocationTargetException e1) {
-			e1.printStackTrace();
+			killAchievement = (LOTRAchievement) method.invoke(entity);
+
+		} catch (NoSuchMethodException | IllegalAccessException | InvocationTargetException e) {
+			e.printStackTrace();
 		}
 		return killAchievement;
 	}

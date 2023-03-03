@@ -16,13 +16,12 @@ import lotr.common.world.map.LOTRWaypoint;
 import lotr.common.world.map.LOTRWaypoint.Region;
 import lotr.common.world.spawning.*;
 import lotr.common.world.spawning.LOTRBiomeSpawnList.*;
-import lotr.common.world.structure.LOTRStructures;
 import net.minecraft.block.Block;
 import net.minecraft.entity.Entity;
 import net.minecraft.item.*;
 import net.minecraft.item.Item.ToolMaterial;
 import net.minecraft.world.World;
-import net.minecraft.world.gen.feature.*;
+import net.minecraft.world.gen.feature.WorldGenMinable;
 
 public class LFGReflectionHelper {
 	public static LOTRFaction getAlignmentFaction(LOTRShields shield) {
@@ -367,15 +366,5 @@ public class LFGReflectionHelper {
 			e.printStackTrace();
 		}
 		return entity;
-	}
-
-	public static void registerStructure(int a, Class<? extends WorldGenerator> b, String c, int d, int e) {
-		try {
-			Method method = LOTRStructures.class.getDeclaredMethod("registerStructure", int.class, Class.class, String.class, int.class, int.class);
-			method.setAccessible(true);
-			method.invoke(LOTRStructures.class, a, b, c, d, e);
-		} catch (NoSuchMethodException | SecurityException | IllegalAccessException | IllegalArgumentException | InvocationTargetException e1) {
-			e1.printStackTrace();
-		}
 	}
 }

@@ -10,9 +10,9 @@
 * Статья Дерево (пример: https://gotminecraftmod.fandom.com/wiki/Template:Статья_Дерево)
 * Статья Ископаемое (пример: https://gotminecraftmod.fandom.com/wiki/Template:Статья_Ископаемое)
 * Статья Структура (пример: https://gotminecraftmod.fandom.com/wiki/Template:Статья_Структура)
-* Статья Биом/Инфобокс (пример: gotminecraftmod.fandom.com/wiki/Template:Статья_Биом/Инфобокс)
-* Статья Фракция/Инфобокс (пример: gotminecraftmod.fandom.com/wiki/Template:Статья_Фракция/Инфобокс)
-* Статья Моб/Инфобокс (пример: gotminecraftmod.fandom.com/wiki/Template:Статья_Моб/Инфобокс)
+* Статья Биом/Инфобокс (пример: https://gotminecraftmod.fandom.com/wiki/Template:Статья_Биом/Инфобокс)
+* Статья Фракция/Инфобокс (пример: https://gotminecraftmod.fandom.com/wiki/Template:Статья_Фракция/Инфобокс)
+* Статья Моб/Инфобокс (пример: https://gotminecraftmod.fandom.com/wiki/Template:Статья_Моб/Инфобокс)
 
 Как это сделано на gotminecraftmod.fandom.com.
 

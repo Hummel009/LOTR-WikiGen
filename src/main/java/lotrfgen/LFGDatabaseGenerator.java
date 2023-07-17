@@ -1,44 +1,62 @@
 package lotrfgen;
 
-import java.io.*;
-import java.nio.file.*;
-import java.text.DecimalFormat;
-import java.util.*;
-import java.util.Map.Entry;
-import java.util.stream.*;
-
-import lotr.common.*;
-import lotr.common.block.*;
+import lotr.common.LOTRAchievement;
+import lotr.common.LOTRMod;
+import lotr.common.LOTRShields;
+import lotr.common.block.LOTRBlockOreGem;
+import lotr.common.block.LOTRBlockRock;
 import lotr.common.entity.npc.*;
 import lotr.common.entity.npc.LOTRUnitTradeEntry.PledgeType;
-import lotr.common.fac.*;
+import lotr.common.fac.LOTRFaction;
+import lotr.common.fac.LOTRFactionRank;
 import lotr.common.item.LOTRItemBanner.BannerType;
-import lotr.common.world.biome.*;
+import lotr.common.world.biome.LOTRBiome;
+import lotr.common.world.biome.LOTRBiomeGenNearHarad;
 import lotr.common.world.biome.variant.LOTRBiomeVariant;
 import lotr.common.world.feature.LOTRTreeType;
 import lotr.common.world.feature.LOTRTreeType.WeightedTreeType;
 import lotr.common.world.map.LOTRWaypoint;
 import lotr.common.world.map.LOTRWaypoint.Region;
-import lotr.common.world.spawning.*;
-import lotr.common.world.spawning.LOTRBiomeSpawnList.*;
+import lotr.common.world.spawning.LOTRBiomeSpawnList.FactionContainer;
+import lotr.common.world.spawning.LOTRBiomeSpawnList.SpawnListContainer;
+import lotr.common.world.spawning.LOTRInvasions;
 import lotr.common.world.spawning.LOTRInvasions.InvasionSpawnEntry;
-import net.minecraft.block.*;
-import net.minecraft.entity.*;
+import lotr.common.world.spawning.LOTRSpawnEntry;
+import net.minecraft.block.Block;
+import net.minecraft.block.BlockDirt;
+import net.minecraft.entity.Entity;
+import net.minecraft.entity.EntityList;
+import net.minecraft.entity.EntityLivingBase;
+import net.minecraft.entity.EnumCreatureType;
 import net.minecraft.entity.player.EntityPlayer;
-import net.minecraft.item.*;
+import net.minecraft.item.Item;
 import net.minecraft.item.Item.ToolMaterial;
+import net.minecraft.item.ItemArmor;
 import net.minecraft.item.ItemArmor.ArmorMaterial;
-import net.minecraft.util.*;
+import net.minecraft.item.ItemFood;
+import net.minecraft.item.ItemSword;
+import net.minecraft.util.ChatComponentText;
+import net.minecraft.util.StatCollector;
 import net.minecraft.world.World;
 import net.minecraft.world.biome.BiomeGenBase.SpawnListEntry;
 import net.minecraft.world.gen.feature.WorldGenerator;
 
+import java.io.File;
+import java.io.IOException;
+import java.io.PrintWriter;
+import java.nio.file.Files;
+import java.nio.file.Paths;
+import java.text.DecimalFormat;
+import java.util.*;
+import java.util.Map.Entry;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
+
 public class LFGDatabaseGenerator {
-	public static String display = "null";
 	public static final Map<Class<? extends Entity>, Entity> CLASS_TO_ENTITY_OBJ = new HashMap<>();
 	public static final Map<Class<? extends Entity>, String> CLASS_TO_ENTITY_NAME = new HashMap<>();
 	public static final Set<Class<? extends Entity>> ENTITY_SET = new HashSet<>();
-	public static final Map<Class<? extends WorldGenerator>, String> CLASS_TO_STRUCTURE_NAME = new HashMap<>();
+	public static final Map<Class<?>, String> CLASS_TO_STRUCTURE_NAME = new HashMap<>();
 	public static final Map<String, String> FAC_TO_PAGE = new HashMap<>();
 	public static final Map<String, String> ENTITY_TO_PAGE = new HashMap<>();
 	public static final Map<String, String> BIOME_TO_PAGE = new HashMap<>();
@@ -56,6 +74,7 @@ public class LFGDatabaseGenerator {
 	public static final String BEGIN = "\n</title><ns>10</ns><revision><text>&lt;includeonly&gt;{{#switch: {{{1}}}";
 	public static final String END = "\n}}&lt;/includeonly&gt;&lt;noinclude&gt;[[" + Lang.CATEGORY + "]]&lt;/noinclude&gt;</text></revision></page>";
 	public static final String TITLE = "<page><title>";
+	public static String display = "null";
 
 	static {
 		BIOMES.removeAll(Collections.singleton(null));
@@ -63,7 +82,203 @@ public class LFGDatabaseGenerator {
 		UNITS.removeAll(Collections.singleton(null));
 	}
 
-	public boolean generate(World world, EntityPlayer player, Random random) {
+	public static String getAchievementDesc(LOTRAchievement ach) {
+		return StatCollector.translateToLocal("lotr.achievement." + ach.getCodeName() + ".desc");
+	}
+
+	public static String getAchievementTitle(LOTRAchievement ach) {
+		return StatCollector.translateToLocal("lotr.achievement." + ach.getCodeName() + ".title");
+	}
+
+	public static String getBannerName(BannerType banner) {
+		return StatCollector.translateToLocal("item.lotr:banner." + banner.bannerName + ".name");
+	}
+
+	public static String getBiomeLink(LOTRBiome biome) {
+		String biomeName = getBiomeName(biome);
+		String biomePagename = getBiomePagename(biome);
+		if (biomeName.equals(biomePagename)) {
+			return "[[" + biomeName + "]]";
+		}
+		return "[[" + biomePagename + "|" + biomeName + "]]";
+	}
+
+	public static String getBiomeName(LOTRBiome biome) {
+		return StatCollector.translateToLocal("lotr.biome." + biome.biomeName + ".name");
+	}
+
+	public static String getBiomePagename(LOTRBiome biome) {
+		return BIOME_TO_PAGE.get(getBiomeName(biome));
+	}
+
+	public static String getBiomeVariantName(LOTRBiomeVariant variant) {
+		return StatCollector.translateToLocal("lotr.variant." + variant.variantName + ".name");
+	}
+
+	public static String getBlockMetaName(Block block, int meta) {
+		return StatCollector.translateToLocal(block.getUnlocalizedName() + "." + meta + ".name");
+	}
+
+	public static String getBlockName(Block block) {
+		return StatCollector.translateToLocal(block.getUnlocalizedName() + ".name");
+	}
+
+	public static String getEntityLink(Class<? extends Entity> entityClass) {
+		String entityName = getEntityName(entityClass);
+		String entityPagename = getEntityPagename(entityClass);
+		if (entityName.equals(entityPagename)) {
+			return "[[" + entityPagename + "]]";
+		}
+		return "[[" + entityPagename + "|" + entityName + "]]";
+	}
+
+	public static String getEntityName(Class<? extends Entity> entityClass) {
+		return StatCollector.translateToLocal("entity.lotr." + CLASS_TO_ENTITY_NAME.get(entityClass) + ".name");
+	}
+
+	public static String getEntityPagename(Class<? extends Entity> entityClass) {
+		return ENTITY_TO_PAGE.get(getEntityName(entityClass));
+	}
+
+	public static String getEntityVanillaName(Class<? extends Entity> entityClass) {
+		return StatCollector.translateToLocal("entity." + EntityList.classToStringMapping.get(entityClass) + ".name");
+	}
+
+	public static String getFactionLink(LOTRFaction fac) {
+		String facName = getFactionName(fac);
+		String facPagename = getFactionPagename(fac);
+		if (facName.equals(facPagename)) {
+			return "[[" + facPagename + "]]";
+		}
+		return "[[" + facPagename + "|" + facName + "]]";
+	}
+
+	public static String getFactionName(LOTRFaction fac) {
+		return StatCollector.translateToLocal("lotr.faction." + fac.codeName() + ".name");
+	}
+
+	public static String getFactionPagename(LOTRFaction fac) {
+		return FAC_TO_PAGE.get(getFactionName(fac));
+	}
+
+	public static String getItemFilename(Item item) {
+		return "[[File:" + item.getUnlocalizedName().substring("item.lotr:".length()) + ".png|32px|link=]]";
+	}
+
+	public static String getItemName(Item item) {
+		return StatCollector.translateToLocal(item.getUnlocalizedName() + ".name");
+	}
+
+	public static String getShieldFilename(LOTRShields shield) {
+		return "[[File:Shield " + shield.name().toLowerCase() + ".png]]";
+	}
+
+	public static String getStructureName(Class<? extends WorldGenerator> structureClass) {
+		return StatCollector.translateToLocal("lotr.structure." + CLASS_TO_STRUCTURE_NAME.get(structureClass) + ".name");
+	}
+
+	public static String getTreeName(LOTRTreeType tree) {
+		return StatCollector.translateToLocal("lotr.tree." + tree.name().toLowerCase() + ".name");
+	}
+
+	public static void searchForHireable(Collection<Class<? extends Entity>> hireable, Iterable<LOTRUnitTradeEntries> units) {
+		for (LOTRUnitTradeEntries entries : units) {
+			for (LOTRUnitTradeEntry entry : entries.tradeEntries) {
+				hireable.add(entry.entityClass);
+			}
+		}
+	}
+
+	public static void searchForMinerals(Iterable<LOTRBiome> biomes, Collection<String> minerals) {
+		for (LOTRBiome biome : biomes) {
+			List<Object> oreGenerants = new ArrayList<>(LFGReflectionHelper.getBiomeMinerals(biome.decorator, "biomeSoils"));
+			oreGenerants.addAll(LFGReflectionHelper.getBiomeMinerals(biome.decorator, "biomeOres"));
+			oreGenerants.addAll(LFGReflectionHelper.getBiomeMinerals(biome.decorator, "biomeGems"));
+			for (Object oreGenerant : oreGenerants) {
+				Block block = LFGReflectionHelper.getMineableBlock(LFGReflectionHelper.getOreGen(oreGenerant));
+				int meta = LFGReflectionHelper.getMineableBlockMeta(LFGReflectionHelper.getOreGen(oreGenerant));
+				if (block instanceof LOTRBlockOreGem || block instanceof BlockDirt || block instanceof LOTRBlockRock) {
+					minerals.add(getBlockMetaName(block, meta));
+				} else {
+					minerals.add(getBlockName(block));
+				}
+			}
+		}
+	}
+
+	public static void searchForPagenamesBiome(Iterable<LOTRBiome> biomes, Iterable<LOTRFaction> factions) {
+		next:
+		for (LOTRBiome biome : biomes) {
+			String preName = getBiomeName(biome);
+			for (LOTRFaction fac : factions) {
+				if (preName.equals(getFactionName(fac))) {
+					BIOME_TO_PAGE.put(preName, preName + " (" + Lang.PAGE_BIOME + ")");
+					continue next;
+				}
+			}
+			for (Class<? extends Entity> entityClass : ENTITY_SET) {
+				if (preName.equals(getEntityName(entityClass))) {
+					BIOME_TO_PAGE.put(preName, preName + " (" + Lang.PAGE_BIOME + ")");
+					continue next;
+				}
+			}
+			BIOME_TO_PAGE.put(preName, preName);
+		}
+	}
+
+	public static void searchForPagenamesEntity(Iterable<LOTRBiome> biomes, Iterable<LOTRFaction> factions) {
+		next:
+		for (Class<? extends Entity> entityClass : ENTITY_SET) {
+			String preName = getEntityName(entityClass);
+			for (LOTRBiome biome : biomes) {
+				if (preName.equals(getBiomeName(biome))) {
+					ENTITY_TO_PAGE.put(preName, preName + " (" + Lang.PAGE_ENTITY + ")");
+					continue next;
+				}
+			}
+			for (LOTRFaction fac : factions) {
+				if (preName.equals(getFactionName(fac))) {
+					ENTITY_TO_PAGE.put(preName, preName + " (" + Lang.PAGE_ENTITY + ")");
+					continue next;
+				}
+			}
+			ENTITY_TO_PAGE.put(preName, preName);
+		}
+	}
+
+	public static void searchForPagenamesFaction(Iterable<LOTRBiome> biomes, Iterable<LOTRFaction> factions) {
+		next:
+		for (LOTRFaction fac : factions) {
+			String preName = getFactionName(fac);
+			for (LOTRBiome biome : biomes) {
+				if (preName.equals(getBiomeName(biome))) {
+					FAC_TO_PAGE.put(preName, preName + " (" + Lang.PAGE_FACTION + ")");
+					continue next;
+				}
+			}
+			for (Class<? extends Entity> entityClass : ENTITY_SET) {
+				if (preName.equals(getEntityName(entityClass))) {
+					FAC_TO_PAGE.put(preName, preName + " (" + Lang.PAGE_FACTION + ")");
+					continue next;
+				}
+			}
+			FAC_TO_PAGE.put(preName, preName);
+		}
+	}
+
+	public static void searchForStructures(Iterable<LOTRBiome> biomes, Collection<Class<? extends WorldGenerator>> structures) {
+		for (LOTRBiome biome : biomes) {
+			for (Object structure : LFGReflectionHelper.getRandomStructures(biome.decorator)) {
+				structures.add((Class<? extends WorldGenerator>) LFGReflectionHelper.getStructureGen(structure).getClass());
+			}
+		}
+	}
+
+	public static void setDisplay(String display) {
+		LFGDatabaseGenerator.display = display;
+	}
+
+	public void generate(World world, EntityPlayer player, Random random) {
 		long time = System.nanoTime();
 		try {
 			LFGConfig cfg = new LFGConfig(world);
@@ -193,10 +408,14 @@ public class LFGDatabaseGenerator {
 				/* ALL PAGES */
 
 				File file = new File("hummel/sitemap.txt");
+				boolean b = false;
 				if (!file.exists()) {
-					file.createNewFile();
+					b = file.createNewFile();
 				}
-				Set<String> sitemap = new HashSet<>();
+				if (b) {
+					System.out.println("The sitemap file was created");
+				}
+				Set<String> sitemap;
 				Set<String> neededPages = new HashSet<>();
 				try (Stream<String> lines = Files.lines(Paths.get("hummel/sitemap.txt"))) {
 					sitemap = lines.collect(Collectors.toSet());
@@ -271,7 +490,8 @@ public class LFGDatabaseGenerator {
 				sb.append(BEGIN);
 				for (Class<? extends WorldGenerator> strClass : STRUCTURES) {
 					sb.append("\n| ").append(getStructureName(strClass)).append(" = ").append(Lang.STRUCTURE_BIOMES);
-					next: for (LOTRBiome biome : BIOMES) {
+					next:
+					for (LOTRBiome biome : BIOMES) {
 						for (Object structure : LFGReflectionHelper.getRandomStructures(biome.decorator)) {
 							if (LFGReflectionHelper.getStructureGen(structure).getClass() == strClass) {
 								sb.append("\n* ").append(getBiomeLink(biome)).append(";");
@@ -288,8 +508,9 @@ public class LFGDatabaseGenerator {
 				sb.append(BEGIN);
 				for (String mineral : MINERALS) {
 					sb.append("\n| ").append(mineral).append(" = ").append(Lang.MINERAL_BIOMES);
-					next: for (LOTRBiome biome : BIOMES) {
-						List oreGenerants = new ArrayList<>(LFGReflectionHelper.getBiomeMinerals(biome.decorator, "biomeSoils"));
+					next:
+					for (LOTRBiome biome : BIOMES) {
+						List<Object> oreGenerants = new ArrayList<>(LFGReflectionHelper.getBiomeMinerals(biome.decorator, "biomeSoils"));
 						oreGenerants.addAll(LFGReflectionHelper.getBiomeMinerals(biome.decorator, "biomeOres"));
 						oreGenerants.addAll(LFGReflectionHelper.getBiomeMinerals(biome.decorator, "biomeGems"));
 						for (Object oreGenerant : oreGenerants) {
@@ -311,7 +532,8 @@ public class LFGDatabaseGenerator {
 				for (LOTRTreeType tree : TREES) {
 					HashSet<LOTRBiome> biomesTree = new HashSet<>();
 					HashSet<LOTRBiome> biomesVariantTree = new HashSet<>();
-					next: for (LOTRBiome biome : BIOMES) {
+					next:
+					for (LOTRBiome biome : BIOMES) {
 						for (WeightedTreeType weightedTreeType : LFGReflectionHelper.getTreeTypes(biome.decorator)) {
 							if (weightedTreeType.treeType == tree) {
 								biomesTree.add(biome);
@@ -394,7 +616,8 @@ public class LFGDatabaseGenerator {
 							sb.append(Lang.BIOME_HAS_CONQUEST);
 							EnumSet<LOTRFaction> conquestFactions = EnumSet.noneOf(LOTRFaction.class);
 							for (FactionContainer facContainer : conqestContainers) {
-								next: for (SpawnListContainer container : LFGReflectionHelper.getSpawnLists(facContainer)) {
+								next:
+								for (SpawnListContainer container : LFGReflectionHelper.getSpawnLists(facContainer)) {
 									for (LOTRSpawnEntry entry : LFGReflectionHelper.getSpawnListEntries(LFGReflectionHelper.getSpawnList(container))) {
 										Entity entity = CLASS_TO_ENTITY_OBJ.get(entry.entityClass);
 										if (entity instanceof LOTREntityNPC) {
@@ -464,7 +687,8 @@ public class LFGDatabaseGenerator {
 					} else {
 						sb.append(Lang.BIOME_HAS_INVASIONS);
 						EnumSet<LOTRFaction> invasionFactions = EnumSet.noneOf(LOTRFaction.class);
-						next: for (LOTRInvasions invasion : LFGReflectionHelper.getRegisteredInvasions(biome.invasionSpawns)) {
+						next:
+						for (LOTRInvasions invasion : LFGReflectionHelper.getRegisteredInvasions(biome.invasionSpawns)) {
 							for (InvasionSpawnEntry entry : invasion.invasionMobs) {
 								Entity entity = CLASS_TO_ENTITY_OBJ.get(entry.getEntityClass());
 								if (entity instanceof LOTREntityNPC) {
@@ -549,7 +773,7 @@ public class LFGDatabaseGenerator {
 				sb.append(TITLE).append("Template:DB Biome-Mobs");
 				sb.append(BEGIN);
 				for (LOTRBiome biome : BIOMES) {
-					List<SpawnListEntry> entries = new ArrayList<>(biome.getSpawnableList(EnumCreatureType.ambient));
+					List<SpawnListEntry> entries = new ArrayList<SpawnListEntry>(biome.getSpawnableList(EnumCreatureType.ambient));
 					entries.addAll(biome.getSpawnableList(EnumCreatureType.waterCreature));
 					entries.addAll(biome.getSpawnableList(EnumCreatureType.creature));
 					entries.addAll(biome.getSpawnableList(EnumCreatureType.monster));
@@ -574,7 +798,7 @@ public class LFGDatabaseGenerator {
 				sb.append(BEGIN);
 				for (LOTRBiome biome : BIOMES) {
 					sb.append("\n| ").append(getBiomePagename(biome)).append(" = ").append(Lang.BIOME_HAS_MINERALS);
-					List oreGenerants = new ArrayList<>(LFGReflectionHelper.getBiomeMinerals(biome.decorator, "biomeSoils"));
+					List<Object> oreGenerants = new ArrayList<>(LFGReflectionHelper.getBiomeMinerals(biome.decorator, "biomeSoils"));
 					oreGenerants.addAll(LFGReflectionHelper.getBiomeMinerals(biome.decorator, "biomeOres"));
 					oreGenerants.addAll(LFGReflectionHelper.getBiomeMinerals(biome.decorator, "biomeGems"));
 					for (Object oreGenerant : oreGenerants) {
@@ -635,7 +859,8 @@ public class LFGDatabaseGenerator {
 				sb.append(BEGIN);
 				for (LOTRFaction fac : FACTIONS) {
 					HashSet<LOTRBiome> invasionBiomes = new HashSet<>();
-					next: for (LOTRBiome biome : BIOMES) {
+					next:
+					for (LOTRBiome biome : BIOMES) {
 						for (LOTRInvasions invasion : LFGReflectionHelper.getRegisteredInvasions(biome.invasionSpawns)) {
 							for (InvasionSpawnEntry entry : invasion.invasionMobs) {
 								Entity entity = CLASS_TO_ENTITY_OBJ.get(entry.getEntityClass());
@@ -662,7 +887,8 @@ public class LFGDatabaseGenerator {
 				sb.append(BEGIN);
 				for (LOTRFaction fac : FACTIONS) {
 					HashSet<LOTRBiome> spawnBiomes = new HashSet<>();
-					next: for (LOTRBiome biome : BIOMES) {
+					next:
+					for (LOTRBiome biome : BIOMES) {
 						List<FactionContainer> facContainers = LFGReflectionHelper.getFactionContainers(biome.npcSpawnList);
 						if (!facContainers.isEmpty()) {
 							ArrayList<FactionContainer> spawnContainers = new ArrayList<>();
@@ -703,7 +929,8 @@ public class LFGDatabaseGenerator {
 				sb.append(BEGIN);
 				for (LOTRFaction fac : FACTIONS) {
 					HashSet<LOTRBiome> conquestBiomes = new HashSet<>();
-					next: for (LOTRBiome biome : BIOMES) {
+					next:
+					for (LOTRBiome biome : BIOMES) {
 						List<FactionContainer> facContainers = LFGReflectionHelper.getFactionContainers(biome.npcSpawnList);
 						if (!facContainers.isEmpty()) {
 							ArrayList<FactionContainer> conquestContainers = new ArrayList<>();
@@ -920,7 +1147,8 @@ public class LFGDatabaseGenerator {
 					HashSet<LOTRBiome> conquestBiomes = new HashSet<>();
 					HashSet<LOTRBiome> invasionBiomes = new HashSet<>();
 					HashSet<LOTRBiome> unnaturalBiomes = new HashSet<>();
-					next: for (LOTRBiome biome : BIOMES) {
+					next:
+					for (LOTRBiome biome : BIOMES) {
 						List<SpawnListEntry> spawnEntries = new ArrayList<>();
 						List<SpawnListEntry> conquestEntries = new ArrayList<>();
 						List<InvasionSpawnEntry> invasionEntries = new ArrayList<>();
@@ -995,7 +1223,8 @@ public class LFGDatabaseGenerator {
 				sb.append(BEGIN);
 				for (Class<? extends Entity> entityClass : HIREABLE) {
 					HashMap<Class<? extends Entity>, Class<? extends Entity>> owners = new HashMap<>();
-					loop: for (Entry<Class<? extends Entity>, Entity> ownerEntry : CLASS_TO_ENTITY_OBJ.entrySet()) {
+					loop:
+					for (Entry<Class<? extends Entity>, Entity> ownerEntry : CLASS_TO_ENTITY_OBJ.entrySet()) {
 						if (ownerEntry.getValue() instanceof LOTRUnitTradeable) {
 							LOTRUnitTradeEntries entries = ((LOTRUnitTradeable) ownerEntry.getValue()).getUnits();
 							for (LOTRUnitTradeEntry entry : entries.tradeEntries) {
@@ -1156,7 +1385,8 @@ public class LFGDatabaseGenerator {
 
 				sb.append(TITLE).append("Template:DB Mob-Alignment");
 				sb.append(BEGIN);
-				next: for (Class<? extends Entity> entityClass : HIREABLE) {
+				next:
+				for (Class<? extends Entity> entityClass : HIREABLE) {
 					for (LOTRUnitTradeEntries entries : UNITS) {
 						for (LOTRUnitTradeEntry entry : entries.tradeEntries) {
 							if (entry.entityClass == entityClass) {
@@ -1264,200 +1494,6 @@ public class LFGDatabaseGenerator {
 		long newTime = System.nanoTime();
 		ChatComponentText chatComponentTranslation = new ChatComponentText("Generated databases in " + (newTime - time) / 1.0E9 + "s");
 		player.addChatMessage(chatComponentTranslation);
-		return true;
-	}
-
-	public static String getAchievementDesc(LOTRAchievement ach) {
-		return StatCollector.translateToLocal("lotr.achievement." + ach.getCodeName() + ".desc");
-	}
-
-	public static String getAchievementTitle(LOTRAchievement ach) {
-		return StatCollector.translateToLocal("lotr.achievement." + ach.getCodeName() + ".title");
-	}
-
-	public static String getBannerName(BannerType banner) {
-		return StatCollector.translateToLocal("item.lotr:banner." + banner.bannerName + ".name");
-	}
-
-	public static String getBiomeLink(LOTRBiome biome) {
-		String biomeName = getBiomeName(biome);
-		String biomePagename = getBiomePagename(biome);
-		if (biomeName.equals(biomePagename)) {
-			return "[[" + biomeName + "]]";
-		}
-		return "[[" + biomePagename + "|" + biomeName + "]]";
-	}
-
-	public static String getBiomeName(LOTRBiome biome) {
-		return StatCollector.translateToLocal("lotr.biome." + biome.biomeName + ".name");
-	}
-
-	public static String getBiomePagename(LOTRBiome biome) {
-		return BIOME_TO_PAGE.get(getBiomeName(biome));
-	}
-
-	public static String getBiomeVariantName(LOTRBiomeVariant variant) {
-		return StatCollector.translateToLocal("lotr.variant." + variant.variantName + ".name");
-	}
-
-	public static String getBlockMetaName(Block block, int meta) {
-		return StatCollector.translateToLocal(block.getUnlocalizedName() + "." + meta + ".name");
-	}
-
-	public static String getBlockName(Block block) {
-		return StatCollector.translateToLocal(block.getUnlocalizedName() + ".name");
-	}
-
-	public static String getEntityLink(Class<? extends Entity> entityClass) {
-		String entityName = getEntityName(entityClass);
-		String entityPagename = getEntityPagename(entityClass);
-		if (entityName.equals(entityPagename)) {
-			return "[[" + entityPagename + "]]";
-		}
-		return "[[" + entityPagename + "|" + entityName + "]]";
-	}
-
-	public static String getEntityName(Class<? extends Entity> entityClass) {
-		return StatCollector.translateToLocal("entity.lotr." + CLASS_TO_ENTITY_NAME.get(entityClass) + ".name");
-	}
-
-	public static String getEntityPagename(Class<? extends Entity> entityClass) {
-		return ENTITY_TO_PAGE.get(getEntityName(entityClass));
-	}
-
-	public static String getEntityVanillaName(Class<? extends Entity> entityClass) {
-		return StatCollector.translateToLocal("entity." + EntityList.classToStringMapping.get(entityClass) + ".name");
-	}
-
-	public static String getFactionLink(LOTRFaction fac) {
-		String facName = getFactionName(fac);
-		String facPagename = getFactionPagename(fac);
-		if (facName.equals(facPagename)) {
-			return "[[" + facPagename + "]]";
-		}
-		return "[[" + facPagename + "|" + facName + "]]";
-	}
-
-	public static String getFactionName(LOTRFaction fac) {
-		return StatCollector.translateToLocal("lotr.faction." + fac.codeName() + ".name");
-	}
-
-	public static String getFactionPagename(LOTRFaction fac) {
-		return FAC_TO_PAGE.get(getFactionName(fac));
-	}
-
-	public static String getItemFilename(Item item) {
-		return "[[File:" + item.getUnlocalizedName().substring("item.lotr:".length()) + ".png|32px|link=]]";
-	}
-
-	public static String getItemName(Item item) {
-		return StatCollector.translateToLocal(item.getUnlocalizedName() + ".name");
-	}
-
-	public static String getShieldFilename(LOTRShields shield) {
-		return "[[File:Shield " + shield.name().toLowerCase() + ".png]]";
-	}
-
-	public static String getStructureName(Class<? extends WorldGenerator> structureClass) {
-		return StatCollector.translateToLocal("lotr.structure." + CLASS_TO_STRUCTURE_NAME.get(structureClass) + ".name");
-	}
-
-	public static String getTreeName(LOTRTreeType tree) {
-		return StatCollector.translateToLocal("lotr.tree." + tree.name().toLowerCase() + ".name");
-	}
-
-	public static void searchForHireable(Collection<Class<? extends Entity>> hireable, Iterable<LOTRUnitTradeEntries> units) {
-		for (LOTRUnitTradeEntries entries : units) {
-			for (LOTRUnitTradeEntry entry : entries.tradeEntries) {
-				hireable.add(entry.entityClass);
-			}
-		}
-	}
-
-	public static void searchForMinerals(Iterable<LOTRBiome> biomes, Collection<String> minerals) {
-		for (LOTRBiome biome : biomes) {
-			List oreGenerants = new ArrayList<>(LFGReflectionHelper.getBiomeMinerals(biome.decorator, "biomeSoils"));
-			oreGenerants.addAll(LFGReflectionHelper.getBiomeMinerals(biome.decorator, "biomeOres"));
-			oreGenerants.addAll(LFGReflectionHelper.getBiomeMinerals(biome.decorator, "biomeGems"));
-			for (Object oreGenerant : oreGenerants) {
-				Block block = LFGReflectionHelper.getMineableBlock(LFGReflectionHelper.getOreGen(oreGenerant));
-				int meta = LFGReflectionHelper.getMineableBlockMeta(LFGReflectionHelper.getOreGen(oreGenerant));
-				if (block instanceof LOTRBlockOreGem || block instanceof BlockDirt || block instanceof LOTRBlockRock) {
-					minerals.add(getBlockMetaName(block, meta));
-				} else {
-					minerals.add(getBlockName(block));
-				}
-			}
-		}
-	}
-
-	public static void searchForPagenamesBiome(Iterable<LOTRBiome> biomes, Iterable<LOTRFaction> factions) {
-		next: for (LOTRBiome biome : biomes) {
-			String preName = getBiomeName(biome);
-			for (LOTRFaction fac : factions) {
-				if (preName.equals(getFactionName(fac))) {
-					BIOME_TO_PAGE.put(preName, preName + " (" + Lang.PAGE_BIOME + ")");
-					continue next;
-				}
-			}
-			for (Class<? extends Entity> entityClass : ENTITY_SET) {
-				if (preName.equals(getEntityName(entityClass))) {
-					BIOME_TO_PAGE.put(preName, preName + " (" + Lang.PAGE_BIOME + ")");
-					continue next;
-				}
-			}
-			BIOME_TO_PAGE.put(preName, preName);
-		}
-	}
-
-	public static void searchForPagenamesEntity(Iterable<LOTRBiome> biomes, Iterable<LOTRFaction> factions) {
-		next: for (Class<? extends Entity> entityClass : ENTITY_SET) {
-			String preName = getEntityName(entityClass);
-			for (LOTRBiome biome : biomes) {
-				if (preName.equals(getBiomeName(biome))) {
-					ENTITY_TO_PAGE.put(preName, preName + " (" + Lang.PAGE_ENTITY + ")");
-					continue next;
-				}
-			}
-			for (LOTRFaction fac : factions) {
-				if (preName.equals(getFactionName(fac))) {
-					ENTITY_TO_PAGE.put(preName, preName + " (" + Lang.PAGE_ENTITY + ")");
-					continue next;
-				}
-			}
-			ENTITY_TO_PAGE.put(preName, preName);
-		}
-	}
-
-	public static void searchForPagenamesFaction(Iterable<LOTRBiome> biomes, Iterable<LOTRFaction> factions) {
-		next: for (LOTRFaction fac : factions) {
-			String preName = getFactionName(fac);
-			for (LOTRBiome biome : biomes) {
-				if (preName.equals(getBiomeName(biome))) {
-					FAC_TO_PAGE.put(preName, preName + " (" + Lang.PAGE_FACTION + ")");
-					continue next;
-				}
-			}
-			for (Class<? extends Entity> entityClass : ENTITY_SET) {
-				if (preName.equals(getEntityName(entityClass))) {
-					FAC_TO_PAGE.put(preName, preName + " (" + Lang.PAGE_FACTION + ")");
-					continue next;
-				}
-			}
-			FAC_TO_PAGE.put(preName, preName);
-		}
-	}
-
-	public static void searchForStructures(Iterable<LOTRBiome> biomes, Collection<Class<? extends WorldGenerator>> structures) {
-		for (LOTRBiome biome : biomes) {
-			for (Object structure : LFGReflectionHelper.getRandomStructures(biome.decorator)) {
-				structures.add((Class<? extends WorldGenerator>) LFGReflectionHelper.getStructureGen(structure).getClass());
-			}
-		}
-	}
-
-	public static void setDisplay(String display) {
-		LFGDatabaseGenerator.display = display;
 	}
 
 	public enum Database {
@@ -1470,7 +1506,7 @@ public class LFGDatabaseGenerator {
 		}
 
 		public static Database forName(String name) {
-			for (Database db : Database.values()) {
+			for (Database db : values()) {
 				if (db.codeName.equals(name)) {
 					return db;
 				}
@@ -1480,7 +1516,7 @@ public class LFGDatabaseGenerator {
 
 		public static List<String> getNames() {
 			ArrayList<String> names = new ArrayList<>();
-			for (Database db : Database.values()) {
+			for (Database db : values()) {
 				names.add(db.codeName);
 			}
 			return names;

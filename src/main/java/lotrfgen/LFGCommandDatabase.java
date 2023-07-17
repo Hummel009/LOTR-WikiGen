@@ -1,17 +1,20 @@
 package lotrfgen;
 
-import java.util.*;
-
 import lotrfgen.LFGDatabaseGenerator.Database;
-import net.minecraft.command.*;
+import net.minecraft.command.CommandBase;
+import net.minecraft.command.ICommandSender;
 import net.minecraft.entity.player.EntityPlayer;
 import net.minecraft.world.World;
+
+import java.util.Collections;
+import java.util.List;
+import java.util.Random;
 
 public class LFGCommandDatabase extends CommandBase {
 	public Random rand = new Random();
 
 	@Override
-	public List addTabCompletionOptions(ICommandSender sender, String[] args) {
+	public List<String> addTabCompletionOptions(ICommandSender sender, String[] args) {
 		if (args.length == 1) {
 			List<String> list = Database.getNames();
 			return CommandBase.getListOfStringsMatchingLastWord(args, list.toArray(new String[0]));

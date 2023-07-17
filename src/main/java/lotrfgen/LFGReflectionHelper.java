@@ -1,27 +1,39 @@
 package lotrfgen;
 
-import java.lang.reflect.*;
-import java.util.*;
-
 import cpw.mods.fml.common.ObfuscationReflectionHelper;
 import cpw.mods.fml.relauncher.ReflectionHelper;
-import cpw.mods.fml.relauncher.ReflectionHelper.*;
-import lotr.common.*;
-import lotr.common.entity.npc.*;
-import lotr.common.fac.*;
+import cpw.mods.fml.relauncher.ReflectionHelper.UnableToAccessFieldException;
+import cpw.mods.fml.relauncher.ReflectionHelper.UnableToFindFieldException;
+import lotr.common.LOTRAchievement;
+import lotr.common.LOTRShields;
+import lotr.common.entity.npc.LOTREntityNPC;
+import lotr.common.entity.npc.LOTRUnitTradeEntry;
+import lotr.common.fac.LOTRFaction;
+import lotr.common.fac.LOTRFactionRank;
 import lotr.common.world.biome.LOTRBiomeDecorator;
-import lotr.common.world.biome.variant.*;
+import lotr.common.world.biome.variant.LOTRBiomeVariant;
+import lotr.common.world.biome.variant.LOTRBiomeVariantList;
 import lotr.common.world.feature.LOTRTreeType.WeightedTreeType;
 import lotr.common.world.map.LOTRWaypoint;
 import lotr.common.world.map.LOTRWaypoint.Region;
 import lotr.common.world.spawning.*;
-import lotr.common.world.spawning.LOTRBiomeSpawnList.*;
+import lotr.common.world.spawning.LOTRBiomeSpawnList.FactionContainer;
+import lotr.common.world.spawning.LOTRBiomeSpawnList.SpawnListContainer;
 import net.minecraft.block.Block;
 import net.minecraft.entity.Entity;
-import net.minecraft.item.*;
+import net.minecraft.item.Item;
 import net.minecraft.item.Item.ToolMaterial;
+import net.minecraft.item.ItemSword;
 import net.minecraft.world.World;
 import net.minecraft.world.gen.feature.WorldGenMinable;
+
+import java.lang.reflect.Field;
+import java.lang.reflect.InvocationTargetException;
+import java.lang.reflect.Method;
+import java.util.ArrayList;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Set;
 
 public class LFGReflectionHelper {
 	public static LOTRFaction getAlignmentFaction(LOTRShields shield) {
@@ -357,13 +369,13 @@ public class LFGReflectionHelper {
 		return variantList;
 	}
 
-	public static Entity newEntity(Class entityClass, World world) {
+	public static Entity newEntity(Class<? extends Entity> entityClass, World world) {
 		Entity entity = null;
 		try {
-			Class[] param = new Class[1];
-			param[0] = World.class;
-			entity = (Entity) entityClass.getDeclaredConstructor(param).newInstance(world);
-		} catch (InstantiationException | IllegalAccessException | IllegalArgumentException | InvocationTargetException | NoSuchMethodException | SecurityException e) {
+			Class<?>[] param = {World.class};
+			entity = entityClass.getDeclaredConstructor(param).newInstance(world);
+		} catch (InstantiationException | IllegalAccessException | IllegalArgumentException |
+		         InvocationTargetException | NoSuchMethodException | SecurityException e) {
 			e.printStackTrace();
 		}
 		return entity;

@@ -6,6 +6,7 @@ import lotr.common.world.biome.LOTRBiome;
 import lotr.common.world.structure.*;
 import lotr.common.world.structure2.*;
 import lotr.common.world.village.*;
+import net.minecraft.entity.Entity;
 import net.minecraft.world.World;
 
 public class LFGConfig {
@@ -1100,40 +1101,40 @@ public class LFGConfig {
 		genStructureInfo(1701, LOTRWorldGenHalfTrollWarlordHouse.class, "HalfTrollWarlordHouse", 10058344, 5325111);
 	}
 
-	public void genEntityInfo(Class clazz, int id) {
+	public void genEntityInfo(Class<? extends Entity> clazz, int id) {
 		String name = clazz.getSimpleName().substring(10);
 		genEntityInfo(clazz, name, id, 80, 3, true);
 	}
 
-	public void genEntityInfo(Class clazz, int id, int egg1, int egg2) {
+	public void genEntityInfo(Class<? extends Entity> clazz, int id, int egg1, int egg2) {
 		String name = clazz.getSimpleName().substring(10);
 		genEntityInfo(clazz, name, id, 80, 3, true);
 	}
 
-	public void genEntityInfo(Class clazz, String name, int id) {
+	public void genEntityInfo(Class<? extends Entity> clazz, String name, int id) {
 		genEntityInfo(clazz, name, id, 80, 3, true);
 	}
 
-	public void genEntityInfo(Class clazz, String name, int id, int egg1, int egg2) {
+	public void genEntityInfo(Class<? extends Entity> clazz, String name, int id, int egg1, int egg2) {
 		genEntityInfo(clazz, name, id, 80, 3, true);
 	}
 
-	public void genEntityInfo(Class entityClass, String name, int id, int updateRange, int updateFreq, boolean sendVelocityUpdates) {
+	public void genEntityInfo(Class<? extends Entity> entityClass, String name, int id, int updateRange, int updateFreq, boolean sendVelocityUpdates) {
 		LFGDatabaseGenerator.CLASS_TO_ENTITY_NAME.put(entityClass, name);
 		LFGDatabaseGenerator.CLASS_TO_ENTITY_OBJ.put(entityClass, LFGReflectionHelper.newEntity(entityClass, world));
 		LFGDatabaseGenerator.ENTITY_SET.add(entityClass);
 	}
 
-	public void genStructureInfo(Class clazz, String name) {
+	public void genStructureInfo(Class<?> clazz, String name) {
 		LFGDatabaseGenerator.CLASS_TO_STRUCTURE_NAME.put(clazz, name);
 	}
 
-	public void genStructureInfo(int i, Class clazz, int egg1, int egg2) {
+	public void genStructureInfo(int i, Class<?> clazz, int egg1, int egg2) {
 		String name = clazz.getSimpleName().substring(12);
 		genStructureInfo(clazz, name);
 	}
 
-	public void genStructureInfo(int i, Class clazz, String name, int egg1, int egg2) {
+	public void genStructureInfo(int i, Class<?> clazz, String name, int egg1, int egg2) {
 		genStructureInfo(clazz, name);
 	}
 
@@ -1142,7 +1143,7 @@ public class LFGConfig {
 		genStructureInfo(clazz.getClass(), name);
 	}
 
-	public void genStructureInfo(int i, LOTRVillageGen clazz, int j, int k, IVillageProperties iVillageProperties) {
+	public void genStructureInfo(int i, LOTRVillageGen clazz, int j, int k, IVillageProperties<?> iVillageProperties) {
 		String name = clazz.getClass().getSimpleName().substring(12);
 		genStructureInfo(clazz.getClass(), name);
 	}
@@ -1151,7 +1152,7 @@ public class LFGConfig {
 		genStructureInfo(clazz.getClass(), name);
 	}
 
-	public void genStructureInfo(int i, LOTRVillageGen clazz, String name, int j, int k, IVillageProperties iVillageProperties) {
+	public void genStructureInfo(int i, LOTRVillageGen clazz, String name, int j, int k, IVillageProperties<?> iVillageProperties) {
 		genStructureInfo(clazz.getClass(), name);
 	}
 

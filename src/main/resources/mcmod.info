@@ -1,15 +1,17 @@
 [
   {
-	"modid" : "lotrfgen",
-	"name" : "LOTR Fandom Generator",
-	"version" : "2.0",
-	"credits" : "Hummel009",
-	"authorList": ["Hummel009"],
+	"modid": "lotrfgen",
+	"name": "LOTR Fandom Generator",
+	"version": "2.0",
+	"credits": "Hummel009",
+	"authorList": [
+	  "Hummel009"
+	],
 	"description": "File that allows to create MediaWiki import file with data templates. Creating a huge accurate site in 5 minutes isn't a myth now.",
-	"logoFile" : "",
-	"url" : "https://github.com/Hummel009",
-	"updateUrl" : "",
-	"parent" : "",
+	"logoFile": "",
+	"url": "https://github.com/Hummel009",
+	"updateUrl": "",
+	"parent": "",
 	"dependencies": [],
 	"screenshots": []
   }

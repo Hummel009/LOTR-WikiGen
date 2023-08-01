@@ -279,7 +279,7 @@ public class LFGDatabaseGenerator {
 		LFGDatabaseGenerator.display = display;
 	}
 
-	public void generate(World world, EntityPlayer player, Random random) {
+	public static void generate(World world, EntityPlayer player, Random random) {
 		long time = System.nanoTime();
 		try {
 			LFGConfig cfg = new LFGConfig(world);

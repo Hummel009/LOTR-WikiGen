@@ -41,8 +41,7 @@ public class LFGCommandDatabase extends CommandBase {
 		} else {
 			LFGDatabaseGenerator.setDisplay(args[0]);
 			CommandBase.func_152373_a(sender, this, "Database \"" + args[0] + "\" is prepared.");
-			LFGDatabaseGenerator gen = new LFGDatabaseGenerator();
-			gen.generate(world, (EntityPlayer) sender, rand);
+			LFGDatabaseGenerator.generate(world, (EntityPlayer) sender, rand);
 		}
 	}
 }

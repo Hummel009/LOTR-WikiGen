@@ -36,6 +36,7 @@ import net.minecraft.item.ItemArmor.ArmorMaterial;
 import net.minecraft.item.ItemFood;
 import net.minecraft.item.ItemSword;
 import net.minecraft.util.ChatComponentText;
+import net.minecraft.util.IChatComponent;
 import net.minecraft.util.StatCollector;
 import net.minecraft.world.World;
 import net.minecraft.world.biome.BiomeGenBase.SpawnListEntry;
@@ -55,22 +56,22 @@ import java.util.stream.Stream;
 public class LFGDatabaseGenerator {
 	public static final Map<Class<? extends Entity>, Entity> CLASS_TO_ENTITY_OBJ = new HashMap<>();
 	public static final Map<Class<? extends Entity>, String> CLASS_TO_ENTITY_NAME = new HashMap<>();
-	public static final Set<Class<? extends Entity>> ENTITY_SET = new HashSet<>();
+	public static final Collection<Class<? extends Entity>> ENTITY_SET = new HashSet<>();
 	public static final Map<Class<?>, String> CLASS_TO_STRUCTURE_NAME = new HashMap<>();
 	public static final Map<String, String> FAC_TO_PAGE = new HashMap<>();
 	public static final Map<String, String> ENTITY_TO_PAGE = new HashMap<>();
 	public static final Map<String, String> BIOME_TO_PAGE = new HashMap<>();
-	public static final Set<Item> ITEMS = new HashSet<>(LFGReflectionHelper.getObjectFieldsOfType(LOTRMod.class, Item.class));
-	public static final Set<LOTRUnitTradeEntries> UNITS = new HashSet<>(LFGReflectionHelper.getObjectFieldsOfType(LOTRUnitTradeEntries.class, LOTRUnitTradeEntries.class));
-	public static final Set<LOTRAchievement> ACHIEVEMENTS = new HashSet<>(LFGReflectionHelper.getObjectFieldsOfType(LOTRAchievement.class, LOTRAchievement.class));
-	public static final Set<LOTRBiome> BIOMES = new HashSet<>(LFGReflectionHelper.getObjectFieldsOfType(LOTRBiome.class, LOTRBiome.class));
+	public static final Iterable<Item> ITEMS = new HashSet<>(LFGReflectionHelper.getObjectFieldsOfType(LOTRMod.class, Item.class));
+	public static final Collection<LOTRUnitTradeEntries> UNITS = new HashSet<>(LFGReflectionHelper.getObjectFieldsOfType(LOTRUnitTradeEntries.class, LOTRUnitTradeEntries.class));
+	public static final Collection<LOTRAchievement> ACHIEVEMENTS = new HashSet<>(LFGReflectionHelper.getObjectFieldsOfType(LOTRAchievement.class, LOTRAchievement.class));
+	public static final Collection<LOTRBiome> BIOMES = new HashSet<>(LFGReflectionHelper.getObjectFieldsOfType(LOTRBiome.class, LOTRBiome.class));
 	public static final Set<LOTRFaction> FACTIONS = EnumSet.allOf(LOTRFaction.class);
 	public static final Set<LOTRTreeType> TREES = EnumSet.allOf(LOTRTreeType.class);
 	public static final Set<LOTRWaypoint> WAYPOINTS = EnumSet.allOf(LOTRWaypoint.class);
 	public static final Set<LOTRShields> SHIELDS = EnumSet.allOf(LOTRShields.class);
-	public static final Set<String> MINERALS = new HashSet<>();
-	public static final Set<Class<? extends WorldGenerator>> STRUCTURES = new HashSet<>();
-	public static final Set<Class<? extends Entity>> HIREABLE = new HashSet<>();
+	public static final Collection<String> MINERALS = new HashSet<>();
+	public static final Collection<Class<? extends WorldGenerator>> STRUCTURES = new HashSet<>();
+	public static final Collection<Class<? extends Entity>> HIREABLE = new HashSet<>();
 	public static final String BEGIN = "\n</title><ns>10</ns><revision><text>&lt;includeonly&gt;{{#switch: {{{1}}}";
 	public static final String END = "\n}}&lt;/includeonly&gt;&lt;noinclude&gt;[[" + Lang.CATEGORY + "]]&lt;/noinclude&gt;</text></revision></page>";
 	public static final String TITLE = "<page><title>";
@@ -170,7 +171,7 @@ public class LFGDatabaseGenerator {
 	}
 
 	public static String getShieldFilename(LOTRShields shield) {
-		return "[[File:Shield " + shield.name().toLowerCase() + ".png]]";
+		return "[[File:Shield " + shield.name().toLowerCase(Locale.ROOT) + ".png]]";
 	}
 
 	public static String getStructureName(Class<? extends WorldGenerator> structureClass) {
@@ -178,7 +179,7 @@ public class LFGDatabaseGenerator {
 	}
 
 	public static String getTreeName(LOTRTreeType tree) {
-		return StatCollector.translateToLocal("lotr.tree." + tree.name().toLowerCase() + ".name");
+		return StatCollector.translateToLocal("lotr.tree." + tree.name().toLowerCase(Locale.ROOT) + ".name");
 	}
 
 	public static void searchForHireable(Collection<Class<? extends Entity>> hireable, Iterable<LOTRUnitTradeEntries> units) {
@@ -191,7 +192,7 @@ public class LFGDatabaseGenerator {
 
 	public static void searchForMinerals(Iterable<LOTRBiome> biomes, Collection<String> minerals) {
 		for (LOTRBiome biome : biomes) {
-			List<Object> oreGenerants = new ArrayList<>(LFGReflectionHelper.getBiomeMinerals(biome.decorator, "biomeSoils"));
+			Collection<Object> oreGenerants = new ArrayList<>(LFGReflectionHelper.getBiomeMinerals(biome.decorator, "biomeSoils"));
 			oreGenerants.addAll(LFGReflectionHelper.getBiomeMinerals(biome.decorator, "biomeOres"));
 			oreGenerants.addAll(LFGReflectionHelper.getBiomeMinerals(biome.decorator, "biomeGems"));
 			for (Object oreGenerant : oreGenerants) {
@@ -416,7 +417,7 @@ public class LFGDatabaseGenerator {
 					System.out.println("The sitemap file was created");
 				}
 				Set<String> sitemap;
-				Set<String> neededPages = new HashSet<>();
+				Collection<String> neededPages = new HashSet<>();
 				try (Stream<String> lines = Files.lines(Paths.get("hummel/sitemap.txt"))) {
 					sitemap = lines.collect(Collectors.toSet());
 				}
@@ -510,7 +511,7 @@ public class LFGDatabaseGenerator {
 					sb.append("\n| ").append(mineral).append(" = ").append(Lang.MINERAL_BIOMES);
 					next:
 					for (LOTRBiome biome : BIOMES) {
-						List<Object> oreGenerants = new ArrayList<>(LFGReflectionHelper.getBiomeMinerals(biome.decorator, "biomeSoils"));
+						Collection<Object> oreGenerants = new ArrayList<>(LFGReflectionHelper.getBiomeMinerals(biome.decorator, "biomeSoils"));
 						oreGenerants.addAll(LFGReflectionHelper.getBiomeMinerals(biome.decorator, "biomeOres"));
 						oreGenerants.addAll(LFGReflectionHelper.getBiomeMinerals(biome.decorator, "biomeGems"));
 						for (Object oreGenerant : oreGenerants) {
@@ -530,8 +531,8 @@ public class LFGDatabaseGenerator {
 				sb.append(TITLE).append("Template:DB Tree-Biomes");
 				sb.append(BEGIN);
 				for (LOTRTreeType tree : TREES) {
-					HashSet<LOTRBiome> biomesTree = new HashSet<>();
-					HashSet<LOTRBiome> biomesVariantTree = new HashSet<>();
+					Collection<LOTRBiome> biomesTree = new HashSet<>();
+					Collection<LOTRBiome> biomesVariantTree = new HashSet<>();
 					next:
 					for (LOTRBiome biome : BIOMES) {
 						for (WeightedTreeType weightedTreeType : LFGReflectionHelper.getTreeTypes(biome.decorator)) {
@@ -573,7 +574,7 @@ public class LFGDatabaseGenerator {
 					if (facContainers.isEmpty()) {
 						sb.append("\n| ").append(getBiomePagename(biome)).append(" = ").append(Lang.BIOME_NO_SPAWN);
 					} else {
-						ArrayList<FactionContainer> spawnContainers = new ArrayList<>();
+						Collection<FactionContainer> spawnContainers = new ArrayList<>();
 						for (FactionContainer facContainer : facContainers) {
 							if (LFGReflectionHelper.getBaseWeight(facContainer) > 0) {
 								spawnContainers.add(facContainer);
@@ -603,7 +604,7 @@ public class LFGDatabaseGenerator {
 					if (facContainers.isEmpty()) {
 						sb.append("\n| ").append(getBiomePagename(biome)).append(" = ").append(Lang.BIOME_NO_CONQUEST);
 					} else {
-						ArrayList<FactionContainer> conqestContainers = new ArrayList<>();
+						Collection<FactionContainer> conqestContainers = new ArrayList<>();
 						for (FactionContainer facContainer : facContainers) {
 							if (LFGReflectionHelper.getBaseWeight(facContainer) <= 0) {
 								conqestContainers.add(facContainer);
@@ -740,7 +741,7 @@ public class LFGDatabaseGenerator {
 				sb.append(BEGIN);
 				for (LOTRBiome biome : BIOMES) {
 					EnumSet<LOTRTreeType> trees = EnumSet.noneOf(LOTRTreeType.class);
-					EnumMap<LOTRTreeType, LOTRBiomeVariant> additionalTrees = new EnumMap<>(LOTRTreeType.class);
+					Map<LOTRTreeType, LOTRBiomeVariant> additionalTrees = new EnumMap<>(LOTRTreeType.class);
 					for (WeightedTreeType weightedTreeType : LFGReflectionHelper.getTreeTypes(biome.decorator)) {
 						trees.add(weightedTreeType.treeType);
 					}
@@ -764,7 +765,7 @@ public class LFGDatabaseGenerator {
 							sb.append("\n* [[").append(getTreeName(tree)).append("]];");
 						}
 						for (Entry<LOTRTreeType, LOTRBiomeVariant> tree : additionalTrees.entrySet()) {
-							sb.append("\n* [[").append(getTreeName(tree.getKey())).append("]] (").append(getBiomeVariantName(tree.getValue()).toLowerCase()).append(")").append(";");
+							sb.append("\n* [[").append(getTreeName(tree.getKey())).append("]] (").append(getBiomeVariantName(tree.getValue()).toLowerCase(Locale.ROOT)).append(")").append(";");
 						}
 					}
 				}
@@ -773,7 +774,7 @@ public class LFGDatabaseGenerator {
 				sb.append(TITLE).append("Template:DB Biome-Mobs");
 				sb.append(BEGIN);
 				for (LOTRBiome biome : BIOMES) {
-					List<SpawnListEntry> entries = new ArrayList<SpawnListEntry>(biome.getSpawnableList(EnumCreatureType.ambient));
+					Collection<SpawnListEntry> entries = new ArrayList<SpawnListEntry>(biome.getSpawnableList(EnumCreatureType.ambient));
 					entries.addAll(biome.getSpawnableList(EnumCreatureType.waterCreature));
 					entries.addAll(biome.getSpawnableList(EnumCreatureType.creature));
 					entries.addAll(biome.getSpawnableList(EnumCreatureType.monster));
@@ -798,7 +799,7 @@ public class LFGDatabaseGenerator {
 				sb.append(BEGIN);
 				for (LOTRBiome biome : BIOMES) {
 					sb.append("\n| ").append(getBiomePagename(biome)).append(" = ").append(Lang.BIOME_HAS_MINERALS);
-					List<Object> oreGenerants = new ArrayList<>(LFGReflectionHelper.getBiomeMinerals(biome.decorator, "biomeSoils"));
+					Collection<Object> oreGenerants = new ArrayList<>(LFGReflectionHelper.getBiomeMinerals(biome.decorator, "biomeSoils"));
 					oreGenerants.addAll(LFGReflectionHelper.getBiomeMinerals(biome.decorator, "biomeOres"));
 					oreGenerants.addAll(LFGReflectionHelper.getBiomeMinerals(biome.decorator, "biomeGems"));
 					for (Object oreGenerant : oreGenerants) {
@@ -858,7 +859,7 @@ public class LFGDatabaseGenerator {
 				sb.append(TITLE).append("Template:DB Faction-Invasions");
 				sb.append(BEGIN);
 				for (LOTRFaction fac : FACTIONS) {
-					HashSet<LOTRBiome> invasionBiomes = new HashSet<>();
+					Collection<LOTRBiome> invasionBiomes = new HashSet<>();
 					next:
 					for (LOTRBiome biome : BIOMES) {
 						for (LOTRInvasions invasion : LFGReflectionHelper.getRegisteredInvasions(biome.invasionSpawns)) {
@@ -886,12 +887,12 @@ public class LFGDatabaseGenerator {
 				sb.append(TITLE).append("Template:DB Faction-Spawn");
 				sb.append(BEGIN);
 				for (LOTRFaction fac : FACTIONS) {
-					HashSet<LOTRBiome> spawnBiomes = new HashSet<>();
+					Collection<LOTRBiome> spawnBiomes = new HashSet<>();
 					next:
 					for (LOTRBiome biome : BIOMES) {
 						List<FactionContainer> facContainers = LFGReflectionHelper.getFactionContainers(biome.npcSpawnList);
 						if (!facContainers.isEmpty()) {
-							ArrayList<FactionContainer> spawnContainers = new ArrayList<>();
+							Collection<FactionContainer> spawnContainers = new ArrayList<>();
 							for (FactionContainer facContainer : facContainers) {
 								if (LFGReflectionHelper.getBaseWeight(facContainer) > 0) {
 									spawnContainers.add(facContainer);
@@ -928,12 +929,12 @@ public class LFGDatabaseGenerator {
 				sb.append(TITLE).append("Template:DB Faction-Conquest");
 				sb.append(BEGIN);
 				for (LOTRFaction fac : FACTIONS) {
-					HashSet<LOTRBiome> conquestBiomes = new HashSet<>();
+					Collection<LOTRBiome> conquestBiomes = new HashSet<>();
 					next:
 					for (LOTRBiome biome : BIOMES) {
 						List<FactionContainer> facContainers = LFGReflectionHelper.getFactionContainers(biome.npcSpawnList);
 						if (!facContainers.isEmpty()) {
-							ArrayList<FactionContainer> conquestContainers = new ArrayList<>();
+							Collection<FactionContainer> conquestContainers = new ArrayList<>();
 							for (FactionContainer facContainer : facContainers) {
 								if (LFGReflectionHelper.getBaseWeight(facContainer) <= 0) {
 									conquestContainers.add(facContainer);
@@ -1000,7 +1001,7 @@ public class LFGDatabaseGenerator {
 				sb.append(TITLE).append("Template:DB Faction-Waypoints");
 				sb.append(BEGIN);
 				for (LOTRFaction fac : FACTIONS) {
-					ArrayList<LOTRWaypoint> facWaypoints = new ArrayList<>();
+					Collection<LOTRWaypoint> facWaypoints = new ArrayList<>();
 					for (LOTRWaypoint wp : WAYPOINTS) {
 						if (wp.faction == fac) {
 							facWaypoints.add(wp);
@@ -1021,7 +1022,7 @@ public class LFGDatabaseGenerator {
 				sb.append(TITLE).append("Template:DB Faction-Attr");
 				sb.append(BEGIN);
 				for (LOTRFaction fac : FACTIONS) {
-					ArrayList<LOTRShields> facShields = new ArrayList<>();
+					Collection<LOTRShields> facShields = new ArrayList<>();
 					for (LOTRShields shield : SHIELDS) {
 						if (LFGReflectionHelper.getAlignmentFaction(shield) == fac) {
 							facShields.add(shield);
@@ -1053,7 +1054,7 @@ public class LFGDatabaseGenerator {
 				sb.append(TITLE).append("Template:DB Faction-Enemies");
 				sb.append(BEGIN);
 				for (LOTRFaction fac1 : FACTIONS) {
-					ArrayList<LOTRFaction> facEnemies = new ArrayList<>();
+					Collection<LOTRFaction> facEnemies = new ArrayList<>();
 					for (LOTRFaction fac2 : FACTIONS) {
 						if (fac1.isBadRelation(fac2) && fac1 != fac2) {
 							facEnemies.add(fac2);
@@ -1079,7 +1080,7 @@ public class LFGDatabaseGenerator {
 				sb.append(TITLE).append("Template:DB Faction-Friends");
 				sb.append(BEGIN);
 				for (LOTRFaction fac1 : FACTIONS) {
-					ArrayList<LOTRFaction> facFriends = new ArrayList<>();
+					Collection<LOTRFaction> facFriends = new ArrayList<>();
 					for (LOTRFaction fac2 : FACTIONS) {
 						if (fac1.isGoodRelation(fac2) && fac1 != fac2) {
 							facFriends.add(fac2);
@@ -1143,15 +1144,15 @@ public class LFGDatabaseGenerator {
 				sb.append(TITLE).append("Template:DB Mob-Spawn");
 				sb.append(BEGIN);
 				for (Class<? extends Entity> entityClass : CLASS_TO_ENTITY_OBJ.keySet()) {
-					HashSet<LOTRBiome> spawnBiomes = new HashSet<>();
-					HashSet<LOTRBiome> conquestBiomes = new HashSet<>();
-					HashSet<LOTRBiome> invasionBiomes = new HashSet<>();
-					HashSet<LOTRBiome> unnaturalBiomes = new HashSet<>();
+					Collection<LOTRBiome> spawnBiomes = new HashSet<>();
+					Collection<LOTRBiome> conquestBiomes = new HashSet<>();
+					Collection<LOTRBiome> invasionBiomes = new HashSet<>();
+					Collection<LOTRBiome> unnaturalBiomes = new HashSet<>();
 					next:
 					for (LOTRBiome biome : BIOMES) {
-						List<SpawnListEntry> spawnEntries = new ArrayList<>();
-						List<SpawnListEntry> conquestEntries = new ArrayList<>();
-						List<InvasionSpawnEntry> invasionEntries = new ArrayList<>();
+						Collection<SpawnListEntry> spawnEntries = new ArrayList<>();
+						Collection<SpawnListEntry> conquestEntries = new ArrayList<>();
+						Collection<InvasionSpawnEntry> invasionEntries = new ArrayList<>();
 						spawnEntries.addAll(biome.getSpawnableList(EnumCreatureType.ambient));
 						spawnEntries.addAll(biome.getSpawnableList(EnumCreatureType.waterCreature));
 						spawnEntries.addAll(biome.getSpawnableList(EnumCreatureType.creature));
@@ -1492,7 +1493,7 @@ public class LFGDatabaseGenerator {
 			e.printStackTrace();
 		}
 		long newTime = System.nanoTime();
-		ChatComponentText chatComponentTranslation = new ChatComponentText("Generated databases in " + (newTime - time) / 1.0E9 + "s");
+		IChatComponent chatComponentTranslation = new ChatComponentText("Generated databases in " + (newTime - time) / 1.0E9 + "s");
 		player.addChatMessage(chatComponentTranslation);
 	}
 
@@ -1515,7 +1516,7 @@ public class LFGDatabaseGenerator {
 		}
 
 		public static List<String> getNames() {
-			ArrayList<String> names = new ArrayList<>();
+			List<String> names = new ArrayList<>();
 			for (Database db : values()) {
 				names.add(db.codeName);
 			}

@@ -30,10 +30,7 @@ import net.minecraft.world.gen.feature.WorldGenMinable;
 import java.lang.reflect.Field;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
-import java.util.ArrayList;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Set;
+import java.util.*;
 
 public class LFGReflectionHelper {
 	public static LOTRFaction getAlignmentFaction(LOTRShields shield) {
@@ -158,7 +155,7 @@ public class LFGReflectionHelper {
 	}
 
 	public static <E, T> Set<T> getObjectFieldsOfType(Class<? extends E> clazz, Class<? extends T> type) {
-		HashSet<Object> list = new HashSet<>();
+		Collection<Object> list = new HashSet<>();
 		for (Field field : clazz.getDeclaredFields()) {
 			if (field == null) {
 				continue;
@@ -173,7 +170,7 @@ public class LFGReflectionHelper {
 				list.add(fieldObj);
 			}
 		}
-		return (HashSet<T>) list;
+		return (Set<T>) list;
 	}
 
 	public static float getOreChance(Object oreGenerant) {

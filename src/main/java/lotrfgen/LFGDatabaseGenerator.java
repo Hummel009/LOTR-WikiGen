@@ -101,7 +101,7 @@ public class LFGDatabaseGenerator {
 		if (biomeName.equals(biomePagename)) {
 			return "[[" + biomeName + "]]";
 		}
-		return "[[" + biomePagename + "|" + biomeName + "]]";
+		return "[[" + biomePagename + '|' + biomeName + "]]";
 	}
 
 	public static String getBiomeName(LOTRBiome biome) {
@@ -117,7 +117,7 @@ public class LFGDatabaseGenerator {
 	}
 
 	public static String getBlockMetaName(Block block, int meta) {
-		return StatCollector.translateToLocal(block.getUnlocalizedName() + "." + meta + ".name");
+		return StatCollector.translateToLocal(block.getUnlocalizedName() + '.' + meta + ".name");
 	}
 
 	public static String getBlockName(Block block) {
@@ -130,7 +130,7 @@ public class LFGDatabaseGenerator {
 		if (entityName.equals(entityPagename)) {
 			return "[[" + entityPagename + "]]";
 		}
-		return "[[" + entityPagename + "|" + entityName + "]]";
+		return "[[" + entityPagename + '|' + entityName + "]]";
 	}
 
 	public static String getEntityName(Class<? extends Entity> entityClass) {
@@ -151,7 +151,7 @@ public class LFGDatabaseGenerator {
 		if (facName.equals(facPagename)) {
 			return "[[" + facPagename + "]]";
 		}
-		return "[[" + facPagename + "|" + facName + "]]";
+		return "[[" + facPagename + '|' + facName + "]]";
 	}
 
 	public static String getFactionName(LOTRFaction fac) {
@@ -213,13 +213,13 @@ public class LFGDatabaseGenerator {
 			String preName = getBiomeName(biome);
 			for (LOTRFaction fac : factions) {
 				if (preName.equals(getFactionName(fac))) {
-					BIOME_TO_PAGE.put(preName, preName + " (" + Lang.PAGE_BIOME + ")");
+					BIOME_TO_PAGE.put(preName, preName + " (" + Lang.PAGE_BIOME + ')');
 					continue next;
 				}
 			}
 			for (Class<? extends Entity> entityClass : ENTITY_SET) {
 				if (preName.equals(getEntityName(entityClass))) {
-					BIOME_TO_PAGE.put(preName, preName + " (" + Lang.PAGE_BIOME + ")");
+					BIOME_TO_PAGE.put(preName, preName + " (" + Lang.PAGE_BIOME + ')');
 					continue next;
 				}
 			}
@@ -233,13 +233,13 @@ public class LFGDatabaseGenerator {
 			String preName = getEntityName(entityClass);
 			for (LOTRBiome biome : biomes) {
 				if (preName.equals(getBiomeName(biome))) {
-					ENTITY_TO_PAGE.put(preName, preName + " (" + Lang.PAGE_ENTITY + ")");
+					ENTITY_TO_PAGE.put(preName, preName + " (" + Lang.PAGE_ENTITY + ')');
 					continue next;
 				}
 			}
 			for (LOTRFaction fac : factions) {
 				if (preName.equals(getFactionName(fac))) {
-					ENTITY_TO_PAGE.put(preName, preName + " (" + Lang.PAGE_ENTITY + ")");
+					ENTITY_TO_PAGE.put(preName, preName + " (" + Lang.PAGE_ENTITY + ')');
 					continue next;
 				}
 			}
@@ -253,13 +253,13 @@ public class LFGDatabaseGenerator {
 			String preName = getFactionName(fac);
 			for (LOTRBiome biome : biomes) {
 				if (preName.equals(getBiomeName(biome))) {
-					FAC_TO_PAGE.put(preName, preName + " (" + Lang.PAGE_FACTION + ")");
+					FAC_TO_PAGE.put(preName, preName + " (" + Lang.PAGE_FACTION + ')');
 					continue next;
 				}
 			}
 			for (Class<? extends Entity> entityClass : ENTITY_SET) {
 				if (preName.equals(getEntityName(entityClass))) {
-					FAC_TO_PAGE.put(preName, preName + " (" + Lang.PAGE_FACTION + ")");
+					FAC_TO_PAGE.put(preName, preName + " (" + Lang.PAGE_FACTION + ')');
 					continue next;
 				}
 			}
@@ -279,6 +279,7 @@ public class LFGDatabaseGenerator {
 		LFGDatabaseGenerator.display = display;
 	}
 
+	@SuppressWarnings("deprecation")
 	public static void generate(World world, EntityPlayer player, Random random) {
 		long time = System.nanoTime();
 		try {
@@ -297,9 +298,8 @@ public class LFGDatabaseGenerator {
 
 			Files.createDirectories(Paths.get("hummel"));
 			if ("tables".equals(display)) {
-				StringBuilder sb;
 
-				sb = new StringBuilder();
+				StringBuilder sb = new StringBuilder();
 				for (LOTRAchievement ach : ACHIEVEMENTS) {
 					sb.append("\n| ").append(getAchievementTitle(ach)).append(" || ").append(getAchievementDesc(ach)).append("\n|-");
 				}
@@ -409,23 +409,20 @@ public class LFGDatabaseGenerator {
 				/* ALL PAGES */
 
 				File file = new File("hummel/sitemap.txt");
-				boolean b = false;
-				if (!file.exists()) {
-					b = file.createNewFile();
-				}
+				boolean b = !file.exists() && file.createNewFile();
 				if (b) {
 					System.out.println("The sitemap file was created");
 				}
 				Set<String> sitemap;
-				Collection<String> neededPages = new HashSet<>();
 				try (Stream<String> lines = Files.lines(Paths.get("hummel/sitemap.txt"))) {
 					sitemap = lines.collect(Collectors.toSet());
 				}
 
+				Collection<String> neededPages = new HashSet<>();
 				for (String pageName : MINERALS) {
 					neededPages.add(pageName);
 					if (!sitemap.contains(pageName)) {
-						String s2 = "</title><revision><text>{{\u0421\u0442\u0430\u0442\u044C\u044F \u0418\u0441\u043A\u043E\u043F\u0430\u0435\u043C\u043E\u0435}}</text></revision></page>\n";
+						String s2 = "</title><revision><text>{{Статья Ископаемое}}</text></revision></page>\n";
 						sb.append(TITLE).append(pageName).append(s2);
 					}
 				}
@@ -434,7 +431,7 @@ public class LFGDatabaseGenerator {
 					String pageName = getEntityPagename(entityClass);
 					neededPages.add(pageName);
 					if (!sitemap.contains(pageName)) {
-						String s2 = "</title><revision><text>{{\u0421\u0442\u0430\u0442\u044C\u044F \u041C\u043E\u0431}}</text></revision></page>\n";
+						String s2 = "</title><revision><text>{{Статья Моб}}</text></revision></page>\n";
 						sb.append(TITLE).append(pageName).append(s2);
 					}
 				}
@@ -443,7 +440,7 @@ public class LFGDatabaseGenerator {
 					String pageName = getBiomePagename(biome);
 					neededPages.add(pageName);
 					if (!sitemap.contains(pageName)) {
-						String s2 = "</title><revision><text>{{\u0421\u0442\u0430\u0442\u044C\u044F \u0411\u0438\u043E\u043C}}</text></revision></page>\n";
+						String s2 = "</title><revision><text>{{Статья Биом}}</text></revision></page>\n";
 						sb.append(TITLE).append(pageName).append(s2);
 					}
 				}
@@ -452,7 +449,7 @@ public class LFGDatabaseGenerator {
 					String pageName = getFactionPagename(fac);
 					neededPages.add(pageName);
 					if (!sitemap.contains(pageName)) {
-						String s2 = "</title><revision><text>{{\u0421\u0442\u0430\u0442\u044C\u044F \u0424\u0440\u0430\u043A\u0446\u0438\u044F}}</text></revision></page>\n";
+						String s2 = "</title><revision><text>{{Статья Фракция}}</text></revision></page>\n";
 						sb.append(TITLE).append(pageName).append(s2);
 					}
 				}
@@ -461,7 +458,7 @@ public class LFGDatabaseGenerator {
 					String pageName = getTreeName(tree);
 					neededPages.add(pageName);
 					if (!sitemap.contains(pageName)) {
-						String s2 = "</title><revision><text>{{\u0421\u0442\u0430\u0442\u044C\u044F \u0414\u0435\u0440\u0435\u0432\u043E}}</text></revision></page>\n";
+						String s2 = "</title><revision><text>{{Статья Дерево}}</text></revision></page>\n";
 						sb.append(TITLE).append(pageName).append(s2);
 					}
 				}
@@ -470,7 +467,7 @@ public class LFGDatabaseGenerator {
 					String pageName = getStructureName(strClass);
 					neededPages.add(pageName);
 					if (!sitemap.contains(pageName)) {
-						String s2 = "</title><revision><text>{{\u0421\u0442\u0430\u0442\u044C\u044F \u0421\u0442\u0440\u0443\u043A\u0442\u0443\u0440\u0430}}</text></revision></page>\n";
+						String s2 = "</title><revision><text>{{Статья Структура}}</text></revision></page>\n";
 						sb.append(TITLE).append(pageName).append(s2);
 					}
 				}
@@ -478,7 +475,7 @@ public class LFGDatabaseGenerator {
 				StringBuilder del = new StringBuilder();
 				for (String existing : sitemap) {
 					if (!neededPages.contains(existing)) {
-						del.append(existing).append("\n");
+						del.append(existing).append('\n');
 					}
 				}
 				PrintWriter removal = new PrintWriter("hummel/removal.txt", "UTF-8");
@@ -495,7 +492,7 @@ public class LFGDatabaseGenerator {
 					for (LOTRBiome biome : BIOMES) {
 						for (Object structure : LFGReflectionHelper.getRandomStructures(biome.decorator)) {
 							if (LFGReflectionHelper.getStructureGen(structure).getClass() == strClass) {
-								sb.append("\n* ").append(getBiomeLink(biome)).append(";");
+								sb.append("\n* ").append(getBiomeLink(biome)).append(';');
 								continue next;
 							}
 						}
@@ -518,7 +515,7 @@ public class LFGDatabaseGenerator {
 							Block block = LFGReflectionHelper.getMineableBlock(LFGReflectionHelper.getOreGen(oreGenerant));
 							int meta = LFGReflectionHelper.getMineableBlockMeta(LFGReflectionHelper.getOreGen(oreGenerant));
 							if (getBlockMetaName(block, meta).equals(mineral) || getBlockName(block).equals(mineral)) {
-								sb.append("\n* ").append(getBiomeLink(biome)).append(" (").append(LFGReflectionHelper.getOreChance(oreGenerant)).append("%; Y: ").append(LFGReflectionHelper.getMinMaxHeight(oreGenerant, "minHeight")).append("-").append(LFGReflectionHelper.getMinMaxHeight(oreGenerant, "maxHeight")).append(");");
+								sb.append("\n* ").append(getBiomeLink(biome)).append(" (").append(LFGReflectionHelper.getOreChance(oreGenerant)).append("%; Y: ").append(LFGReflectionHelper.getMinMaxHeight(oreGenerant, "minHeight")).append('-').append(LFGReflectionHelper.getMinMaxHeight(oreGenerant, "maxHeight")).append(");");
 								continue next;
 							}
 						}
@@ -557,7 +554,7 @@ public class LFGDatabaseGenerator {
 						sb.append(Lang.TREE_HAS_BIOMES);
 					}
 					for (LOTRBiome biome : biomesTree) {
-						sb.append("\n* ").append(getBiomeLink(biome)).append(";");
+						sb.append("\n* ").append(getBiomeLink(biome)).append(';');
 					}
 					for (LOTRBiome biome : biomesVariantTree) {
 						sb.append("\n* ").append(getBiomeLink(biome)).append(" (").append(Lang.TREE_VARIANT_ONLY).append(");");
@@ -673,7 +670,7 @@ public class LFGDatabaseGenerator {
 						sb.append(Lang.BIOME_NO_VARIANTS);
 					} else {
 						for (Object variantBucket : LFGReflectionHelper.getVariantList(biome.getBiomeVariantsSmall())) {
-							sb.append("\n* ").append(getBiomeVariantName(LFGReflectionHelper.getVariant(variantBucket))).append(";");
+							sb.append("\n* ").append(getBiomeVariantName(LFGReflectionHelper.getVariant(variantBucket))).append(';');
 						}
 					}
 				}
@@ -700,7 +697,7 @@ public class LFGDatabaseGenerator {
 							}
 						}
 						for (LOTRFaction fac : invasionFactions) {
-							sb.append("\n* ").append(getFactionLink(fac)).append(";");
+							sb.append("\n* ").append(getFactionLink(fac)).append(';');
 						}
 					}
 				}
@@ -732,7 +729,7 @@ public class LFGDatabaseGenerator {
 					if (ach == null) {
 						sb.append(Lang.BIOME_NO_ACHIEVEMENT);
 					} else {
-						sb.append("\"").append(getAchievementTitle(ach)).append("\"");
+						sb.append('"').append(getAchievementTitle(ach)).append('"');
 					}
 				}
 				sb.append(END);
@@ -741,10 +738,10 @@ public class LFGDatabaseGenerator {
 				sb.append(BEGIN);
 				for (LOTRBiome biome : BIOMES) {
 					EnumSet<LOTRTreeType> trees = EnumSet.noneOf(LOTRTreeType.class);
-					Map<LOTRTreeType, LOTRBiomeVariant> additionalTrees = new EnumMap<>(LOTRTreeType.class);
 					for (WeightedTreeType weightedTreeType : LFGReflectionHelper.getTreeTypes(biome.decorator)) {
 						trees.add(weightedTreeType.treeType);
 					}
+					Map<LOTRTreeType, LOTRBiomeVariant> additionalTrees = new EnumMap<>(LOTRTreeType.class);
 					for (Object variantBucket : LFGReflectionHelper.getVariantList(biome.getBiomeVariantsSmall())) {
 						for (WeightedTreeType weightedTreeType : LFGReflectionHelper.getVariant(variantBucket).treeTypes) {
 							if (!trees.contains(weightedTreeType.treeType)) {
@@ -765,7 +762,7 @@ public class LFGDatabaseGenerator {
 							sb.append("\n* [[").append(getTreeName(tree)).append("]];");
 						}
 						for (Entry<LOTRTreeType, LOTRBiomeVariant> tree : additionalTrees.entrySet()) {
-							sb.append("\n* [[").append(getTreeName(tree.getKey())).append("]] (").append(getBiomeVariantName(tree.getValue()).toLowerCase(Locale.ROOT)).append(")").append(";");
+							sb.append("\n* [[").append(getTreeName(tree.getKey())).append("]] (").append(getBiomeVariantName(tree.getValue()).toLowerCase(Locale.ROOT)).append(')').append(';');
 						}
 					}
 				}
@@ -786,9 +783,9 @@ public class LFGDatabaseGenerator {
 						sb.append(Lang.BIOME_HAS_ANIMALS);
 						for (SpawnListEntry entry : entries) {
 							if (CLASS_TO_ENTITY_NAME.containsKey(entry.entityClass)) {
-								sb.append("\n* ").append(getEntityLink(entry.entityClass)).append(";");
+								sb.append("\n* ").append(getEntityLink(entry.entityClass)).append(';');
 							} else {
-								sb.append("\n* ").append(getEntityVanillaName(entry.entityClass)).append(";");
+								sb.append("\n* ").append(getEntityVanillaName(entry.entityClass)).append(';');
 							}
 						}
 					}
@@ -806,9 +803,9 @@ public class LFGDatabaseGenerator {
 						Block block = LFGReflectionHelper.getMineableBlock(LFGReflectionHelper.getOreGen(oreGenerant));
 						int meta = LFGReflectionHelper.getMineableBlockMeta(LFGReflectionHelper.getOreGen(oreGenerant));
 						if (block instanceof LOTRBlockOreGem || block instanceof BlockDirt || block instanceof LOTRBlockRock) {
-							sb.append("\n* [[").append(getBlockMetaName(block, meta)).append("]] (").append(LFGReflectionHelper.getOreChance(oreGenerant)).append("%; Y: ").append(LFGReflectionHelper.getMinMaxHeight(oreGenerant, "minHeight")).append("-").append(LFGReflectionHelper.getMinMaxHeight(oreGenerant, "maxHeight")).append(");");
+							sb.append("\n* [[").append(getBlockMetaName(block, meta)).append("]] (").append(LFGReflectionHelper.getOreChance(oreGenerant)).append("%; Y: ").append(LFGReflectionHelper.getMinMaxHeight(oreGenerant, "minHeight")).append('-').append(LFGReflectionHelper.getMinMaxHeight(oreGenerant, "maxHeight")).append(");");
 						} else {
-							sb.append("\n* [[").append(getBlockName(block)).append("]] (").append(LFGReflectionHelper.getOreChance(oreGenerant)).append("%; Y: ").append(LFGReflectionHelper.getMinMaxHeight(oreGenerant, "minHeight")).append("-").append(LFGReflectionHelper.getMinMaxHeight(oreGenerant, "maxHeight")).append(");");
+							sb.append("\n* [[").append(getBlockName(block)).append("]] (").append(LFGReflectionHelper.getOreChance(oreGenerant)).append("%; Y: ").append(LFGReflectionHelper.getMinMaxHeight(oreGenerant, "minHeight")).append('-').append(LFGReflectionHelper.getMinMaxHeight(oreGenerant, "maxHeight")).append(");");
 						}
 					}
 				}
@@ -850,7 +847,7 @@ public class LFGDatabaseGenerator {
 					for (Entry<Class<? extends Entity>, Entity> entityEntry : CLASS_TO_ENTITY_OBJ.entrySet()) {
 						Entity entity = entityEntry.getValue();
 						if (entity instanceof LOTREntityNPC && ((LOTREntityNPC) entity).getFaction() == fac) {
-							sb.append("\n* ").append(getEntityLink(entityEntry.getKey())).append(";");
+							sb.append("\n* ").append(getEntityLink(entityEntry.getKey())).append(';');
 						}
 					}
 				}
@@ -878,7 +875,7 @@ public class LFGDatabaseGenerator {
 					} else {
 						sb.append(Lang.FACTION_HAS_INVASION);
 						for (LOTRBiome biome : invasionBiomes) {
-							sb.append("\n* ").append(getBiomeLink(biome)).append(";");
+							sb.append("\n* ").append(getBiomeLink(biome)).append(';');
 						}
 					}
 				}
@@ -919,7 +916,7 @@ public class LFGDatabaseGenerator {
 					} else {
 						sb.append(Lang.FACTION_HAS_SPAWN);
 						for (LOTRBiome biome : spawnBiomes) {
-							sb.append("\n* ").append(getBiomeLink(biome)).append(";");
+							sb.append("\n* ").append(getBiomeLink(biome)).append(';');
 						}
 					}
 
@@ -961,7 +958,7 @@ public class LFGDatabaseGenerator {
 					} else {
 						sb.append(Lang.FACTION_HAS_CONQUEST);
 						for (LOTRBiome biome : conquestBiomes) {
-							sb.append("\n* ").append(getBiomeLink(biome)).append(";");
+							sb.append("\n* ").append(getBiomeLink(biome)).append(';');
 						}
 					}
 
@@ -977,7 +974,7 @@ public class LFGDatabaseGenerator {
 					} else {
 						sb.append(Lang.FACTION_HAS_RANKS);
 						for (LOTRFactionRank rank : LFGReflectionHelper.getRanksSortedDescending(fac)) {
-							sb.append("\n* ").append(rank.getDisplayFullName()).append("/").append(rank.getDisplayFullNameFem()).append(" (+").append(rank.alignment).append(");");
+							sb.append("\n* ").append(rank.getDisplayFullName()).append('/').append(rank.getDisplayFullNameFem()).append(" (+").append(rank.alignment).append(");");
 						}
 					}
 				}
@@ -992,7 +989,7 @@ public class LFGDatabaseGenerator {
 					} else {
 						sb.append(Lang.FACTION_HAS_BANNERS);
 						for (BannerType banner : fac.factionBanners) {
-							sb.append("\n* ").append(getBannerName(banner)).append(";");
+							sb.append("\n* ").append(getBannerName(banner)).append(';');
 						}
 					}
 				}
@@ -1013,7 +1010,7 @@ public class LFGDatabaseGenerator {
 					} else {
 						sb.append(Lang.FACTION_HAS_WAYPOINTS);
 						for (LOTRWaypoint wp : facWaypoints) {
-							sb.append("\n* ").append(wp.getDisplayName()).append(";");
+							sb.append("\n* ").append(wp.getDisplayName()).append(';');
 						}
 					}
 				}
@@ -1046,7 +1043,7 @@ public class LFGDatabaseGenerator {
 				sb.append(BEGIN);
 				for (LOTRFaction fac : FACTIONS) {
 					if (fac.getPledgeRank() != null) {
-						sb.append("\n| ").append(getFactionPagename(fac)).append(" = ").append(fac.getPledgeRank().getDisplayName()).append("/").append(fac.getPledgeRank().getDisplayNameFem()).append(" (+").append(fac.getPledgeAlignment()).append(")");
+						sb.append("\n| ").append(getFactionPagename(fac)).append(" = ").append(fac.getPledgeRank().getDisplayName()).append('/').append(fac.getPledgeRank().getDisplayNameFem()).append(" (+").append(fac.getPledgeAlignment()).append(')');
 					}
 				}
 				sb.append(END);
@@ -1069,7 +1066,7 @@ public class LFGDatabaseGenerator {
 							if (first) {
 								first = false;
 							} else {
-								sb.append(" \u2022 ");
+								sb.append(" • ");
 							}
 							sb.append(getFactionLink(fac));
 						}
@@ -1095,7 +1092,7 @@ public class LFGDatabaseGenerator {
 							if (first) {
 								first = false;
 							} else {
-								sb.append(" \u2022 ");
+								sb.append(" • ");
 							}
 							sb.append(getFactionLink(fac));
 						}
@@ -1151,13 +1148,12 @@ public class LFGDatabaseGenerator {
 					next:
 					for (LOTRBiome biome : BIOMES) {
 						Collection<SpawnListEntry> spawnEntries = new ArrayList<>();
-						Collection<SpawnListEntry> conquestEntries = new ArrayList<>();
-						Collection<InvasionSpawnEntry> invasionEntries = new ArrayList<>();
 						spawnEntries.addAll(biome.getSpawnableList(EnumCreatureType.ambient));
 						spawnEntries.addAll(biome.getSpawnableList(EnumCreatureType.waterCreature));
 						spawnEntries.addAll(biome.getSpawnableList(EnumCreatureType.creature));
 						spawnEntries.addAll(biome.getSpawnableList(EnumCreatureType.monster));
 						spawnEntries.addAll(biome.getSpawnableList(LOTRBiome.creatureType_LOTRAmbient));
+						Collection<SpawnListEntry> conquestEntries = new ArrayList<>();
 						for (FactionContainer facContainer : LFGReflectionHelper.getFactionContainers(biome.npcSpawnList)) {
 							if (LFGReflectionHelper.getBaseWeight(facContainer) > 0) {
 								for (SpawnListContainer container : LFGReflectionHelper.getSpawnLists(facContainer)) {
@@ -1169,6 +1165,7 @@ public class LFGDatabaseGenerator {
 								}
 							}
 						}
+						Collection<InvasionSpawnEntry> invasionEntries = new ArrayList<>();
 						for (LOTRInvasions invasion : LFGReflectionHelper.getRegisteredInvasions(biome.invasionSpawns)) {
 							invasionEntries.addAll(invasion.invasionMobs);
 						}
@@ -1199,21 +1196,21 @@ public class LFGDatabaseGenerator {
 					} else {
 						sb.append(Lang.ENTITY_HAS_BIOMES);
 						for (LOTRBiome biome : spawnBiomes) {
-							sb.append("\n* ").append(getBiomeLink(biome)).append(";");
+							sb.append("\n* ").append(getBiomeLink(biome)).append(';');
 						}
 						for (LOTRBiome biome : conquestBiomes) {
 							if (!invasionBiomes.contains(biome)) {
-								sb.append("\n* ").append(getBiomeLink(biome)).append(" ").append(Lang.ENTITY_CONQUEST).append(";");
+								sb.append("\n* ").append(getBiomeLink(biome)).append(' ').append(Lang.ENTITY_CONQUEST).append(';');
 							}
 						}
 						for (LOTRBiome biome : invasionBiomes) {
 							if (!conquestBiomes.contains(biome)) {
-								sb.append("\n* ").append(getBiomeLink(biome)).append(" ").append(Lang.ENTITY_INVASION).append(";");
+								sb.append("\n* ").append(getBiomeLink(biome)).append(' ').append(Lang.ENTITY_INVASION).append(';');
 							}
 						}
 						for (LOTRBiome biome : unnaturalBiomes) {
 							if (conquestBiomes.contains(biome) && invasionBiomes.contains(biome)) {
-								sb.append("\n* ").append(getBiomeLink(biome)).append(" ").append(Lang.ENTITY_CONQUEST_INVASION).append(";");
+								sb.append("\n* ").append(getBiomeLink(biome)).append(' ').append(Lang.ENTITY_CONQUEST_INVASION).append(';');
 							}
 						}
 					}
@@ -1395,7 +1392,7 @@ public class LFGDatabaseGenerator {
 								if (entry.getPledgeType() == PledgeType.NONE || entry.alignmentRequired >= 101.0f) {
 									sb.append(entry.alignmentRequired);
 								} else {
-									sb.append("+").append(100.0);
+									sb.append('+').append(100.0);
 								}
 								continue next;
 							}
@@ -1423,7 +1420,7 @@ public class LFGDatabaseGenerator {
 						if (ach == null) {
 							sb.append("N/A");
 						} else {
-							sb.append("\"").append(getAchievementTitle(ach)).append("\"");
+							sb.append('"').append(getAchievementTitle(ach)).append('"');
 						}
 					}
 				}
@@ -1472,11 +1469,11 @@ public class LFGDatabaseGenerator {
 							if (entry.mountClass == null) {
 								sb.append("\n* ").append(getEntityLink(entry.entityClass));
 								if (entry.getPledgeType() == PledgeType.NONE) {
-									sb.append(": {{Coins|").append(LFGReflectionHelper.getInitialCost(entry) * 2).append("}} ").append(Lang.NO_PLEDGE).append(", {{Coins|").append(LFGReflectionHelper.getInitialCost(entry)).append("}} ").append(Lang.NEED_PLEDGE).append("; ").append(entry.alignmentRequired).append("+ ").append(Lang.REPUTATION).append(";");
+									sb.append(": {{Coins|").append(LFGReflectionHelper.getInitialCost(entry) * 2).append("}} ").append(Lang.NO_PLEDGE).append(", {{Coins|").append(LFGReflectionHelper.getInitialCost(entry)).append("}} ").append(Lang.NEED_PLEDGE).append("; ").append(entry.alignmentRequired).append("+ ").append(Lang.REPUTATION).append(';');
 								} else if (entry.alignmentRequired < 101.0f) {
-									sb.append(": N/A ").append(Lang.NO_PLEDGE).append(", {{Coins|").append(LFGReflectionHelper.getInitialCost(entry)).append("}} ").append(Lang.NEED_PLEDGE).append("; +").append(100.0).append("+ ").append(Lang.REPUTATION).append(";");
+									sb.append(": N/A ").append(Lang.NO_PLEDGE).append(", {{Coins|").append(LFGReflectionHelper.getInitialCost(entry)).append("}} ").append(Lang.NEED_PLEDGE).append("; +").append(100.0).append("+ ").append(Lang.REPUTATION).append(';');
 								} else {
-									sb.append(": N/A ").append(Lang.NO_PLEDGE).append(", {{Coins|").append(LFGReflectionHelper.getInitialCost(entry)).append("}} ").append(Lang.NEED_PLEDGE).append("; +").append(entry.alignmentRequired).append("+ ").append(Lang.REPUTATION).append(";");
+									sb.append(": N/A ").append(Lang.NO_PLEDGE).append(", {{Coins|").append(LFGReflectionHelper.getInitialCost(entry)).append("}} ").append(Lang.NEED_PLEDGE).append("; +").append(entry.alignmentRequired).append("+ ").append(Lang.REPUTATION).append(';');
 								}
 							}
 						}
@@ -1493,7 +1490,7 @@ public class LFGDatabaseGenerator {
 			e.printStackTrace();
 		}
 		long newTime = System.nanoTime();
-		IChatComponent chatComponentTranslation = new ChatComponentText("Generated databases in " + (newTime - time) / 1.0E9 + "s");
+		IChatComponent chatComponentTranslation = new ChatComponentText("Generated databases in " + (newTime - time) / 1.0E9 + 's');
 		player.addChatMessage(chatComponentTranslation);
 	}
 

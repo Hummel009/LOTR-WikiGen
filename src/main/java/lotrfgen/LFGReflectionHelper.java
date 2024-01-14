@@ -34,124 +34,114 @@ import java.util.*;
 
 public class LFGReflectionHelper {
 	public static LOTRFaction getAlignmentFaction(LOTRShields shield) {
-		LOTRFaction alignmentFaction = null;
 		try {
 			Field privateField = LOTRShields.class.getDeclaredField("alignmentFaction");
 			privateField.setAccessible(true);
-			alignmentFaction = (LOTRFaction) privateField.get(shield);
+			return (LOTRFaction) privateField.get(shield);
 		} catch (NoSuchFieldException | SecurityException | IllegalArgumentException | IllegalAccessException e2) {
 			e2.printStackTrace();
 		}
-		return alignmentFaction;
+		return null;
 	}
 
 	public static int getBaseWeight(FactionContainer container) {
-		int baseWeight = 0;
 		try {
 			Field privateField = FactionContainer.class.getDeclaredField("baseWeight");
 			privateField.setAccessible(true);
-			baseWeight = (int) privateField.get(container);
+			return (int) privateField.get(container);
 		} catch (SecurityException | IllegalArgumentException | IllegalAccessException | NoSuchFieldException e2) {
 			e2.printStackTrace();
 		}
-		return baseWeight;
+		return 0;
 	}
 
 	public static List<Object> getBiomeMinerals(LOTRBiomeDecorator decorator, String fieldName) {
-		List<Object> biomeMinerals = new ArrayList<>();
 		try {
 			Field privateField = LOTRBiomeDecorator.class.getDeclaredField(fieldName);
 			privateField.setAccessible(true);
-			biomeMinerals = (List<Object>) privateField.get(decorator);
+			return (List<Object>) privateField.get(decorator);
 		} catch (NoSuchFieldException | SecurityException | IllegalArgumentException | IllegalAccessException e2) {
 			e2.printStackTrace();
 		}
-		return biomeMinerals;
+		return new ArrayList<>();
 	}
 
 	public static float getDamageAmount(Item item) {
-		float damageAmount = 0.0f;
 		try {
 			Field privateField = getPotentiallyObfuscatedPrivateValue(ItemSword.class, "field_150934_a");
 			privateField.setAccessible(true);
-			damageAmount = (float) privateField.get(item);
+			return (float) privateField.get(item);
 		} catch (SecurityException | IllegalArgumentException | IllegalAccessException e2) {
 			e2.printStackTrace();
 		}
-		return damageAmount;
+		return 0.0f;
 	}
 
 	public static List<FactionContainer> getFactionContainers(LOTRBiomeSpawnList spawnlist) {
-		List<FactionContainer> factionContainers = new ArrayList<>();
 		try {
 			Field privateField = LOTRBiomeSpawnList.class.getDeclaredField("factionContainers");
 			privateField.setAccessible(true);
-			factionContainers = (List<FactionContainer>) privateField.get(spawnlist);
+			return (List<FactionContainer>) privateField.get(spawnlist);
 		} catch (NoSuchFieldException | SecurityException | IllegalArgumentException | IllegalAccessException e2) {
 			e2.printStackTrace();
 		}
-		return factionContainers;
+		return new ArrayList<>();
 	}
 
 	public static int getInitialCost(LOTRUnitTradeEntry entry) {
-		int initialCost = -1;
 		try {
 			Field privateField = LOTRUnitTradeEntry.class.getDeclaredField("initialCost");
 			privateField.setAccessible(true);
-			initialCost = (int) privateField.get(entry);
+			return (int) privateField.get(entry);
 		} catch (NoSuchFieldException | SecurityException | IllegalArgumentException | IllegalAccessException e2) {
 			e2.printStackTrace();
 		}
-		return initialCost;
+		return -1;
 	}
 
 	public static LOTRAchievement getKillAchievement(LOTREntityNPC entity) {
-		LOTRAchievement killAchievement = null;
 		try {
 			Method method = LOTREntityNPC.class.getDeclaredMethod("getKillAchievement");
 			method.setAccessible(true);
-			killAchievement = (LOTRAchievement) method.invoke(entity);
+			return (LOTRAchievement) method.invoke(entity);
 
 		} catch (NoSuchMethodException | IllegalAccessException | InvocationTargetException e) {
 			e.printStackTrace();
 		}
-		return killAchievement;
+		return null;
 	}
 
 	public static Block getMineableBlock(WorldGenMinable worldGenMinable) {
-		Block mineableBlock = null;
 		try {
 			Field privateField = getPotentiallyObfuscatedPrivateValue(WorldGenMinable.class, "field_150519_a");
 			privateField.setAccessible(true);
-			mineableBlock = (Block) privateField.get(worldGenMinable);
+			return (Block) privateField.get(worldGenMinable);
 		} catch (SecurityException | IllegalArgumentException | IllegalAccessException e2) {
 			e2.printStackTrace();
 		}
-		return mineableBlock;
+		return null;
 	}
 
 	public static int getMineableBlockMeta(WorldGenMinable worldGenMinable) {
-		int mineableBlockMeta = 0;
 		try {
 			Field privateField = getPotentiallyObfuscatedPrivateValue(WorldGenMinable.class, "mineableBlockMeta");
 			privateField.setAccessible(true);
-			mineableBlockMeta = (int) privateField.get(worldGenMinable);
+			return (int) privateField.get(worldGenMinable);
 		} catch (SecurityException | IllegalArgumentException | IllegalAccessException e2) {
 			e2.printStackTrace();
 		}
-		return mineableBlockMeta;
+		return 0;
 	}
 
 	public static int getMinMaxHeight(Object oreGenerant, String fieldName) {
-		int minMaxHeight = 0;
 		try {
 			Field privateField = oreGenerant.getClass().getDeclaredField(fieldName);
 			privateField.setAccessible(true);
-			minMaxHeight = (int) privateField.get(oreGenerant);
+			return (int) privateField.get(oreGenerant);
 		} catch (SecurityException | IllegalArgumentException | IllegalAccessException | NoSuchFieldException e2) {
 			e2.printStackTrace();
 		}
-		return minMaxHeight;
+		return 0;
 	}
 
 	public static <E, T> Set<T> getObjectFieldsOfType(Class<? extends E> clazz, Class<? extends T> type) {
@@ -160,8 +150,8 @@ public class LFGReflectionHelper {
 			if (field == null) {
 				continue;
 			}
-			Object fieldObj = null;
-			if (field.getType().equals(type)) {
+			if (field.getType() == type) {
+				Object fieldObj = null;
 				try {
 					fieldObj = field.get(null);
 				} catch (IllegalArgumentException | IllegalAccessException e) {
@@ -174,27 +164,25 @@ public class LFGReflectionHelper {
 	}
 
 	public static float getOreChance(Object oreGenerant) {
-		float oreChance = 0.0f;
 		try {
 			Field privateField = oreGenerant.getClass().getDeclaredField("oreChance");
 			privateField.setAccessible(true);
-			oreChance = (float) privateField.get(oreGenerant);
+			return (float) privateField.get(oreGenerant);
 		} catch (SecurityException | IllegalArgumentException | IllegalAccessException | NoSuchFieldException e2) {
 			e2.printStackTrace();
 		}
-		return oreChance;
+		return 0.0f;
 	}
 
 	public static WorldGenMinable getOreGen(Object oreGenerant) {
-		WorldGenMinable oreGen = null;
 		try {
 			Field privateField = oreGenerant.getClass().getDeclaredField("oreGen");
 			privateField.setAccessible(true);
-			oreGen = (WorldGenMinable) privateField.get(oreGenerant);
+			return (WorldGenMinable) privateField.get(oreGenerant);
 		} catch (SecurityException | IllegalArgumentException | IllegalAccessException | NoSuchFieldException e2) {
 			e2.printStackTrace();
 		}
-		return oreGen;
+		return null;
 	}
 
 	public static <T, E> T getPotentiallyObfuscatedPrivateValue(Class<? super E> classToAccess, String fieldName) {
@@ -211,170 +199,156 @@ public class LFGReflectionHelper {
 	}
 
 	public static List<Object> getRandomStructures(LOTRBiomeDecorator decorator) {
-		List<Object> randomStructures = new ArrayList<>();
 		try {
 			Field privateField = LOTRBiomeDecorator.class.getDeclaredField("randomStructures");
 			privateField.setAccessible(true);
-			randomStructures = (List<Object>) privateField.get(decorator);
+			return (List<Object>) privateField.get(decorator);
 		} catch (NoSuchFieldException | SecurityException | IllegalArgumentException | IllegalAccessException e2) {
 			e2.printStackTrace();
 		}
-		return randomStructures;
+		return new ArrayList<>();
 	}
 
 	public static List<LOTRFactionRank> getRanksSortedDescending(LOTRFaction fac) {
-		List<LOTRFactionRank> ranksSortedDescending = new ArrayList<>();
 		try {
 			Field privateField = LOTRFaction.class.getDeclaredField("ranksSortedDescending");
 			privateField.setAccessible(true);
-			ranksSortedDescending = (List<LOTRFactionRank>) privateField.get(fac);
+			return (List<LOTRFactionRank>) privateField.get(fac);
 		} catch (NoSuchFieldException | SecurityException | IllegalArgumentException | IllegalAccessException e2) {
 			e2.printStackTrace();
 		}
-		return ranksSortedDescending;
+		return new ArrayList<>();
 	}
 
 	public static Region getRegion(LOTRWaypoint wp) {
-		Region region = null;
 		try {
 			Field privateField = LOTRWaypoint.class.getDeclaredField("region");
 			privateField.setAccessible(true);
-			region = (Region) privateField.get(wp);
+			return (Region) privateField.get(wp);
 		} catch (NoSuchFieldException | SecurityException | IllegalArgumentException | IllegalAccessException e2) {
 			e2.printStackTrace();
 		}
-		return region;
+		return null;
 	}
 
 	public static List<LOTRInvasions> getRegisteredInvasions(LOTRBiomeInvasionSpawns invasionSpawns) {
-		List<LOTRInvasions> registeredInvasions = new ArrayList<>();
 		try {
 			Field privateField = LOTRBiomeInvasionSpawns.class.getDeclaredField("registeredInvasions");
 			privateField.setAccessible(true);
-			registeredInvasions = (List<LOTRInvasions>) privateField.get(invasionSpawns);
+			return (List<LOTRInvasions>) privateField.get(invasionSpawns);
 		} catch (NoSuchFieldException | SecurityException | IllegalArgumentException | IllegalAccessException e2) {
 			e2.printStackTrace();
 		}
-		return registeredInvasions;
+		return new ArrayList<>();
 	}
 
 	public static LOTRSpawnList getSpawnList(SpawnListContainer container) {
-		LOTRSpawnList spawnList = null;
 		try {
 			Field privateField = SpawnListContainer.class.getDeclaredField("spawnList");
 			privateField.setAccessible(true);
-			spawnList = (LOTRSpawnList) privateField.get(container);
+			return (LOTRSpawnList) privateField.get(container);
 		} catch (NoSuchFieldException | SecurityException | IllegalArgumentException | IllegalAccessException e2) {
 			e2.printStackTrace();
 		}
-		return spawnList;
+		return null;
 	}
 
 	public static List<LOTRSpawnEntry> getSpawnListEntries(LOTRSpawnList spawnList) {
-		List<LOTRSpawnEntry> spawnListEntries = new ArrayList<>();
 		try {
 			Field privateField = LOTRSpawnList.class.getDeclaredField("spawnList");
 			privateField.setAccessible(true);
-			spawnListEntries = (List<LOTRSpawnEntry>) privateField.get(spawnList);
+			return (List<LOTRSpawnEntry>) privateField.get(spawnList);
 		} catch (NoSuchFieldException | SecurityException | IllegalArgumentException | IllegalAccessException e2) {
 			e2.printStackTrace();
 		}
-		return spawnListEntries;
+		return new ArrayList<>();
 	}
 
 	public static List<SpawnListContainer> getSpawnLists(FactionContainer container) {
-		List<SpawnListContainer> spawnLists = new ArrayList<>();
 		try {
 			Field privateField = FactionContainer.class.getDeclaredField("spawnLists");
 			privateField.setAccessible(true);
-			spawnLists = (List<SpawnListContainer>) privateField.get(container);
+			return (List<SpawnListContainer>) privateField.get(container);
 		} catch (NoSuchFieldException | SecurityException | IllegalArgumentException | IllegalAccessException e2) {
 			e2.printStackTrace();
 		}
-		return spawnLists;
+		return new ArrayList<>();
 	}
 
 	public static boolean getSpawnsInDarkness(LOTREntityNPC entity) {
-		boolean spawnsInDarkness = false;
 		try {
 			Field privateField = LOTREntityNPC.class.getDeclaredField("spawnsInDarkness");
 			privateField.setAccessible(true);
-			spawnsInDarkness = (boolean) privateField.get(entity);
+			return (boolean) privateField.get(entity);
 		} catch (NoSuchFieldException | SecurityException | IllegalArgumentException | IllegalAccessException e2) {
 			e2.printStackTrace();
 		}
-		return spawnsInDarkness;
+		return false;
 	}
 
 	public static Object getStructureGen(Object randomStructure) {
-		Object structureGen = null;
 		try {
 			Field privateField = randomStructure.getClass().getDeclaredField("structureGen");
 			privateField.setAccessible(true);
-			structureGen = privateField.get(randomStructure);
+			return privateField.get(randomStructure);
 		} catch (SecurityException | IllegalArgumentException | IllegalAccessException | NoSuchFieldException e2) {
 			e2.printStackTrace();
 		}
-		return structureGen;
+		return null;
 	}
 
 	public static ToolMaterial getToolMaterial(Item item) {
-		ToolMaterial toolMaterial = null;
 		try {
 			Field privateField = getPotentiallyObfuscatedPrivateValue(ItemSword.class, "field_150933_b");
 			privateField.setAccessible(true);
-			toolMaterial = (ToolMaterial) privateField.get(item);
+			return (ToolMaterial) privateField.get(item);
 		} catch (SecurityException | IllegalArgumentException | IllegalAccessException e2) {
 			e2.printStackTrace();
 		}
-		return toolMaterial;
+		return null;
 	}
 
 	public static List<WeightedTreeType> getTreeTypes(LOTRBiomeDecorator decorator) {
-		List<WeightedTreeType> treeTypes = new ArrayList<>();
 		try {
 			Field privateField = LOTRBiomeDecorator.class.getDeclaredField("treeTypes");
 			privateField.setAccessible(true);
-			treeTypes = (List<WeightedTreeType>) privateField.get(decorator);
+			return (List<WeightedTreeType>) privateField.get(decorator);
 		} catch (NoSuchFieldException | SecurityException | IllegalArgumentException | IllegalAccessException e2) {
 			e2.printStackTrace();
 		}
-		return treeTypes;
+		return new ArrayList<>();
 	}
 
 	public static LOTRBiomeVariant getVariant(Object variantBucket) {
-		LOTRBiomeVariant variant = null;
 		try {
 			Field privateField = variantBucket.getClass().getDeclaredField("variant");
 			privateField.setAccessible(true);
-			variant = (LOTRBiomeVariant) privateField.get(variantBucket);
+			return (LOTRBiomeVariant) privateField.get(variantBucket);
 		} catch (SecurityException | IllegalArgumentException | IllegalAccessException | NoSuchFieldException e2) {
 			e2.printStackTrace();
 		}
-		return variant;
+		return null;
 	}
 
 	public static List<Object> getVariantList(LOTRBiomeVariantList biomeVariantList) {
-		List<Object> variantList = new ArrayList<>();
 		try {
 			Field privateField = LOTRBiomeVariantList.class.getDeclaredField("variantList");
 			privateField.setAccessible(true);
-			variantList = (List<Object>) privateField.get(biomeVariantList);
+			return (List<Object>) privateField.get(biomeVariantList);
 		} catch (NoSuchFieldException | SecurityException | IllegalArgumentException | IllegalAccessException e2) {
 			e2.printStackTrace();
 		}
-		return variantList;
+		return new ArrayList<>();
 	}
 
 	public static Entity newEntity(Class<? extends Entity> entityClass, World world) {
-		Entity entity = null;
 		try {
 			Class<?>[] param = {World.class};
-			entity = entityClass.getDeclaredConstructor(param).newInstance(world);
+			return entityClass.getDeclaredConstructor(param).newInstance(world);
 		} catch (InstantiationException | IllegalAccessException | IllegalArgumentException |
 		         InvocationTargetException | NoSuchMethodException | SecurityException e) {
 			e.printStackTrace();
 		}
-		return entity;
+		return null;
 	}
 }

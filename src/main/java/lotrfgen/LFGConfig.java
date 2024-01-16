@@ -10,7 +10,7 @@ import net.minecraft.entity.Entity;
 import net.minecraft.world.World;
 
 public class LFGConfig {
-	public World world;
+	private final World world;
 
 	public LFGConfig(World world) {
 		this.world = world;
@@ -821,31 +821,31 @@ public class LFGConfig {
 		genStructureInfo(1701, LOTRWorldGenHalfTrollWarlordHouse.class, "HalfTrollWarlordHouse", 10058344, 5325111);
 	}
 
-	public void genEntityInfo(Class<? extends Entity> clazz, int id) {
-		String name = clazz.getSimpleName().substring(10);
-		genEntityInfo(clazz, name, id, 80, 3, true);
+	public void genEntityInfo(Class<? extends Entity> entityClass, int id) {
+		String name = entityClass.getSimpleName().substring(10);
+		genEntityInfo(entityClass, name, id, 80, 3, true);
 	}
 
-	public void genEntityInfo(Class<? extends Entity> clazz, int id, int egg1, int egg2) {
-		String name = clazz.getSimpleName().substring(10);
-		genEntityInfo(clazz, name, id, 80, 3, true);
+	public void genEntityInfo(Class<? extends Entity> entityClass, int id, int egg1, int egg2) {
+		String name = entityClass.getSimpleName().substring(10);
+		genEntityInfo(entityClass, name, id, 80, 3, true);
 	}
 
-	public void genEntityInfo(Class<? extends Entity> clazz, String name, int id) {
-		genEntityInfo(clazz, name, id, 80, 3, true);
+	private void genEntityInfo(Class<? extends Entity> entityClass, String name, int id) {
+		genEntityInfo(entityClass, name, id, 80, 3, true);
 	}
 
-	public void genEntityInfo(Class<? extends Entity> clazz, String name, int id, int egg1, int egg2) {
-		genEntityInfo(clazz, name, id, 80, 3, true);
+	private void genEntityInfo(Class<? extends Entity> entityClass, String name, int id, int egg1, int egg2) {
+		genEntityInfo(entityClass, name, id, 80, 3, true);
 	}
 
-	public void genEntityInfo(Class<? extends Entity> entityClass, String name, int id, int updateRange, int updateFreq, boolean sendVelocityUpdates) {
+	private void genEntityInfo(Class<? extends Entity> entityClass, String name, int id, int updateRange, int updateFreq, boolean sendVelocityUpdates) {
 		LFGDatabaseGenerator.CLASS_TO_ENTITY_NAME.put(entityClass, name);
 		LFGDatabaseGenerator.CLASS_TO_ENTITY_OBJ.put(entityClass, LFGReflectionHelper.newEntity(entityClass, world));
 		LFGDatabaseGenerator.ENTITY_SET.add(entityClass);
 	}
 
-	public void genStructureInfo(Class<?> clazz, String name) {
+	private void genStructureInfo(Class<?> clazz, String name) {
 		LFGDatabaseGenerator.CLASS_TO_STRUCTURE_NAME.put(clazz, name);
 	}
 
@@ -854,7 +854,7 @@ public class LFGConfig {
 		genStructureInfo(clazz, name);
 	}
 
-	public void genStructureInfo(int i, Class<?> clazz, String name, int egg1, int egg2) {
+	private void genStructureInfo(int i, Class<?> clazz, String name, int egg1, int egg2) {
 		genStructureInfo(clazz, name);
 	}
 

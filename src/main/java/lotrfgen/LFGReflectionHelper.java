@@ -32,7 +32,7 @@ import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.util.*;
 
-public class LFGReflectionHelper {
+public final class LFGReflectionHelper {
 	public static LOTRFaction getAlignmentFaction(LOTRShields shield) {
 		try {
 			Field privateField = LOTRShields.class.getDeclaredField("alignmentFaction");
@@ -185,7 +185,7 @@ public class LFGReflectionHelper {
 		return null;
 	}
 
-	public static <T, E> T getPotentiallyObfuscatedPrivateValue(Class<? super E> classToAccess, String fieldName) {
+	private static <T, E> T getPotentiallyObfuscatedPrivateValue(Class<? super E> classToAccess, String fieldName) {
 		try {
 			return ReflectionHelper.getPrivateValue(classToAccess, null, ObfuscationReflectionHelper.remapFieldNames(classToAccess.getName(), fieldName));
 		} catch (UnableToFindFieldException | UnableToAccessFieldException | NullPointerException e) {

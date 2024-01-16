@@ -11,7 +11,7 @@ import java.util.List;
 import java.util.Random;
 
 public class LFGCommandDatabase extends CommandBase {
-	public Random rand = new Random();
+	private final Random rand = new Random();
 
 	@Override
 	public List<String> addTabCompletionOptions(ICommandSender sender, String[] args) {
@@ -39,9 +39,8 @@ public class LFGCommandDatabase extends CommandBase {
 		if (db == null) {
 			CommandBase.func_152373_a(sender, this, "Database \"" + args[0] + "\" does not exist.");
 		} else {
-			LFGDatabaseGenerator.setDisplay(args[0]);
 			CommandBase.func_152373_a(sender, this, "Database \"" + args[0] + "\" is prepared.");
-			LFGDatabaseGenerator.generate(world, (EntityPlayer) sender, rand);
+			LFGDatabaseGenerator.generate(args[0], world, (EntityPlayer) sender, rand);
 		}
 	}
 }

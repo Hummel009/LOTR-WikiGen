@@ -466,8 +466,8 @@ public final class LFGDatabaseGenerator {
 			e.printStackTrace();
 		}
 		long newTime = System.nanoTime();
-		IChatComponent chatComponentTranslation = new ChatComponentText("Generated databases in " + (newTime - time) / 1.0E9 + 's');
-		player.addChatMessage(chatComponentTranslation);
+		IChatComponent iChatComponent = new ChatComponentText("Generated databases in " + (newTime - time) / 1.0E9 + 's');
+		player.addChatMessage(iChatComponent);
 	}
 
 	private static void genTemplateMobUnits(StringBuilder sb) {
@@ -826,6 +826,9 @@ public final class LFGDatabaseGenerator {
 				for (SpawnListEntry entry : spawnEntries) {
 					if (entry.entityClass == entityClass) {
 						spawnBiomes.add(biome);
+						spawnEntries.clear();
+						conquestEntries.clear();
+						invasionEntries.clear();
 						continue next;
 					}
 				}
@@ -1103,6 +1106,7 @@ public final class LFGDatabaseGenerator {
 									Entity entity = CLASS_TO_ENTITY_OBJ.get(entry.entityClass);
 									if (entity instanceof LOTREntityNPC && ((LOTREntityNPC) entity).getFaction() == fac) {
 										conquestBiomes.add(biome);
+										conquestContainers.clear();
 										continue next;
 									}
 								}
@@ -1149,6 +1153,7 @@ public final class LFGDatabaseGenerator {
 									Entity entity = CLASS_TO_ENTITY_OBJ.get(entry.entityClass);
 									if (entity instanceof LOTREntityNPC && ((LOTREntityNPC) entity).getFaction() == fac) {
 										spawnBiomes.add(biome);
+										spawnContainers.clear();
 										continue next;
 									}
 								}
@@ -1263,10 +1268,13 @@ public final class LFGDatabaseGenerator {
 			for (Object oreGenerant : oreGenerants) {
 				Block block = LFGReflectionHelper.getMineableBlock(LFGReflectionHelper.getOreGen(oreGenerant));
 				int meta = LFGReflectionHelper.getMineableBlockMeta(LFGReflectionHelper.getOreGen(oreGenerant));
+				float oreChance = LFGReflectionHelper.getOreChance(oreGenerant);
+				int minHeight = LFGReflectionHelper.getMinMaxHeight(oreGenerant, "minHeight");
+				int maxheight = LFGReflectionHelper.getMinMaxHeight(oreGenerant, "maxHeight");
 				if (block instanceof LOTRBlockOreGem || block instanceof BlockDirt || block instanceof LOTRBlockRock) {
-					sb.append("\n* [[").append(getBlockMetaName(block, meta)).append("]] (").append(LFGReflectionHelper.getOreChance(oreGenerant)).append("%; Y: ").append(LFGReflectionHelper.getMinMaxHeight(oreGenerant, "minHeight")).append('-').append(LFGReflectionHelper.getMinMaxHeight(oreGenerant, "maxHeight")).append(");");
+					sb.append("\n* [[").append(getBlockMetaName(block, meta)).append("]] (").append(oreChance).append("%; Y: ").append(minHeight).append('-').append(maxheight).append(");");
 				} else {
-					sb.append("\n* [[").append(getBlockName(block)).append("]] (").append(LFGReflectionHelper.getOreChance(oreGenerant)).append("%; Y: ").append(LFGReflectionHelper.getMinMaxHeight(oreGenerant, "minHeight")).append('-').append(LFGReflectionHelper.getMinMaxHeight(oreGenerant, "maxHeight")).append(");");
+					sb.append("\n* [[").append(getBlockName(block)).append("]] (").append(oreChance).append("%; Y: ").append(minHeight).append('-').append(maxheight).append(");");
 				}
 			}
 			oreGenerants.clear();
@@ -1597,7 +1605,11 @@ public final class LFGDatabaseGenerator {
 					Block block = LFGReflectionHelper.getMineableBlock(LFGReflectionHelper.getOreGen(oreGenerant));
 					int meta = LFGReflectionHelper.getMineableBlockMeta(LFGReflectionHelper.getOreGen(oreGenerant));
 					if (getBlockMetaName(block, meta).equals(mineral) || getBlockName(block).equals(mineral)) {
-						sb.append("\n* ").append(getBiomeLink(biome)).append(" (").append(LFGReflectionHelper.getOreChance(oreGenerant)).append("%; Y: ").append(LFGReflectionHelper.getMinMaxHeight(oreGenerant, "minHeight")).append('-').append(LFGReflectionHelper.getMinMaxHeight(oreGenerant, "maxHeight")).append(");");
+						float oreChance = LFGReflectionHelper.getOreChance(oreGenerant);
+						int minHeight = LFGReflectionHelper.getMinMaxHeight(oreGenerant, "minHeight");
+						int maxheight = LFGReflectionHelper.getMinMaxHeight(oreGenerant, "maxHeight");
+						sb.append("\n* ").append(getBiomeLink(biome)).append(" (").append(oreChance).append("%; Y: ").append(minHeight).append('-').append(maxheight).append(");");
+						oreGenerants.clear();
 						continue next;
 					}
 				}

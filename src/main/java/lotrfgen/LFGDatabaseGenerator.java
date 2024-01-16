@@ -56,6 +56,7 @@ public final class LFGDatabaseGenerator {
 	public static final Map<Class<? extends Entity>, String> CLASS_TO_ENTITY_NAME = new HashMap<>();
 	public static final Collection<Class<? extends Entity>> ENTITY_SET = new HashSet<>();
 	public static final Map<Class<?>, String> CLASS_TO_STRUCTURE_NAME = new HashMap<>();
+
 	private static final Map<String, String> FAC_TO_PAGE = new HashMap<>();
 	private static final Map<String, String> ENTITY_TO_PAGE = new HashMap<>();
 	private static final Map<String, String> BIOME_TO_PAGE = new HashMap<>();

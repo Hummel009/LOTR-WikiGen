@@ -182,7 +182,8 @@ public final class LFGReflectionHelper {
 	private static <T, E> T getPotentiallyObfuscatedPrivateValue(Class<? super E> classToAccess, String fieldName) {
 		try {
 			return ReflectionHelper.getPrivateValue(classToAccess, null, ObfuscationReflectionHelper.remapFieldNames(classToAccess.getName(), fieldName));
-		} catch (ReflectionHelper.UnableToFindFieldException | ReflectionHelper.UnableToAccessFieldException | NullPointerException e1) {
+		} catch (ReflectionHelper.UnableToFindFieldException | ReflectionHelper.UnableToAccessFieldException |
+		         NullPointerException e1) {
 			try {
 				return (T) classToAccess.getDeclaredField(fieldName);
 			} catch (NoSuchFieldException | SecurityException e2) {

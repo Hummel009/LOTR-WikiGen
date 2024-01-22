@@ -2,8 +2,6 @@ package lotrfgen;
 
 import cpw.mods.fml.common.ObfuscationReflectionHelper;
 import cpw.mods.fml.relauncher.ReflectionHelper;
-import cpw.mods.fml.relauncher.ReflectionHelper.UnableToAccessFieldException;
-import cpw.mods.fml.relauncher.ReflectionHelper.UnableToFindFieldException;
 import lotr.common.LOTRAchievement;
 import lotr.common.LOTRShields;
 import lotr.common.entity.npc.LOTREntityNPC;
@@ -13,16 +11,12 @@ import lotr.common.fac.LOTRFactionRank;
 import lotr.common.world.biome.LOTRBiomeDecorator;
 import lotr.common.world.biome.variant.LOTRBiomeVariant;
 import lotr.common.world.biome.variant.LOTRBiomeVariantList;
-import lotr.common.world.feature.LOTRTreeType.WeightedTreeType;
+import lotr.common.world.feature.LOTRTreeType;
 import lotr.common.world.map.LOTRWaypoint;
-import lotr.common.world.map.LOTRWaypoint.Region;
 import lotr.common.world.spawning.*;
-import lotr.common.world.spawning.LOTRBiomeSpawnList.FactionContainer;
-import lotr.common.world.spawning.LOTRBiomeSpawnList.SpawnListContainer;
 import net.minecraft.block.Block;
 import net.minecraft.entity.Entity;
 import net.minecraft.item.Item;
-import net.minecraft.item.Item.ToolMaterial;
 import net.minecraft.item.ItemSword;
 import net.minecraft.world.World;
 import net.minecraft.world.gen.feature.WorldGenMinable;
@@ -44,9 +38,9 @@ public final class LFGReflectionHelper {
 		return null;
 	}
 
-	public static int getBaseWeight(FactionContainer container) {
+	public static int getBaseWeight(LOTRBiomeSpawnList.FactionContainer container) {
 		try {
-			Field privateField = FactionContainer.class.getDeclaredField("baseWeight");
+			Field privateField = LOTRBiomeSpawnList.FactionContainer.class.getDeclaredField("baseWeight");
 			privateField.setAccessible(true);
 			return (int) privateField.get(container);
 		} catch (SecurityException | IllegalArgumentException | IllegalAccessException | NoSuchFieldException e2) {
@@ -77,11 +71,11 @@ public final class LFGReflectionHelper {
 		return 0.0f;
 	}
 
-	public static List<FactionContainer> getFactionContainers(LOTRBiomeSpawnList spawnlist) {
+	public static List<LOTRBiomeSpawnList.FactionContainer> getFactionContainers(LOTRBiomeSpawnList spawnlist) {
 		try {
 			Field privateField = LOTRBiomeSpawnList.class.getDeclaredField("factionContainers");
 			privateField.setAccessible(true);
-			return (List<FactionContainer>) privateField.get(spawnlist);
+			return (List<LOTRBiomeSpawnList.FactionContainer>) privateField.get(spawnlist);
 		} catch (NoSuchFieldException | SecurityException | IllegalArgumentException | IllegalAccessException e2) {
 			e2.printStackTrace();
 		}
@@ -188,7 +182,8 @@ public final class LFGReflectionHelper {
 	private static <T, E> T getPotentiallyObfuscatedPrivateValue(Class<? super E> classToAccess, String fieldName) {
 		try {
 			return ReflectionHelper.getPrivateValue(classToAccess, null, ObfuscationReflectionHelper.remapFieldNames(classToAccess.getName(), fieldName));
-		} catch (UnableToFindFieldException | UnableToAccessFieldException | NullPointerException e) {
+		} catch (ReflectionHelper.UnableToFindFieldException | ReflectionHelper.UnableToAccessFieldException |
+		         NullPointerException e) {
 			try {
 				return (T) classToAccess.getDeclaredField(fieldName);
 			} catch (NoSuchFieldException | SecurityException e1) {
@@ -220,11 +215,11 @@ public final class LFGReflectionHelper {
 		return new ArrayList<>();
 	}
 
-	public static Region getRegion(LOTRWaypoint wp) {
+	public static LOTRWaypoint.Region getRegion(LOTRWaypoint wp) {
 		try {
 			Field privateField = LOTRWaypoint.class.getDeclaredField("region");
 			privateField.setAccessible(true);
-			return (Region) privateField.get(wp);
+			return (LOTRWaypoint.Region) privateField.get(wp);
 		} catch (NoSuchFieldException | SecurityException | IllegalArgumentException | IllegalAccessException e2) {
 			e2.printStackTrace();
 		}
@@ -242,9 +237,9 @@ public final class LFGReflectionHelper {
 		return new ArrayList<>();
 	}
 
-	public static LOTRSpawnList getSpawnList(SpawnListContainer container) {
+	public static LOTRSpawnList getSpawnList(LOTRBiomeSpawnList.SpawnListContainer container) {
 		try {
-			Field privateField = SpawnListContainer.class.getDeclaredField("spawnList");
+			Field privateField = LOTRBiomeSpawnList.SpawnListContainer.class.getDeclaredField("spawnList");
 			privateField.setAccessible(true);
 			return (LOTRSpawnList) privateField.get(container);
 		} catch (NoSuchFieldException | SecurityException | IllegalArgumentException | IllegalAccessException e2) {
@@ -264,11 +259,11 @@ public final class LFGReflectionHelper {
 		return new ArrayList<>();
 	}
 
-	public static List<SpawnListContainer> getSpawnLists(FactionContainer container) {
+	public static List<LOTRBiomeSpawnList.SpawnListContainer> getSpawnLists(LOTRBiomeSpawnList.FactionContainer container) {
 		try {
-			Field privateField = FactionContainer.class.getDeclaredField("spawnLists");
+			Field privateField = LOTRBiomeSpawnList.FactionContainer.class.getDeclaredField("spawnLists");
 			privateField.setAccessible(true);
-			return (List<SpawnListContainer>) privateField.get(container);
+			return (List<LOTRBiomeSpawnList.SpawnListContainer>) privateField.get(container);
 		} catch (NoSuchFieldException | SecurityException | IllegalArgumentException | IllegalAccessException e2) {
 			e2.printStackTrace();
 		}
@@ -297,22 +292,22 @@ public final class LFGReflectionHelper {
 		return null;
 	}
 
-	public static ToolMaterial getToolMaterial(Item item) {
+	public static Item.ToolMaterial getToolMaterial(Item item) {
 		try {
 			Field privateField = getPotentiallyObfuscatedPrivateValue(ItemSword.class, "field_150933_b");
 			privateField.setAccessible(true);
-			return (ToolMaterial) privateField.get(item);
+			return (Item.ToolMaterial) privateField.get(item);
 		} catch (SecurityException | IllegalArgumentException | IllegalAccessException e2) {
 			e2.printStackTrace();
 		}
 		return null;
 	}
 
-	public static List<WeightedTreeType> getTreeTypes(LOTRBiomeDecorator decorator) {
+	public static List<LOTRTreeType.WeightedTreeType> getTreeTypes(LOTRBiomeDecorator decorator) {
 		try {
 			Field privateField = LOTRBiomeDecorator.class.getDeclaredField("treeTypes");
 			privateField.setAccessible(true);
-			return (List<WeightedTreeType>) privateField.get(decorator);
+			return (List<LOTRTreeType.WeightedTreeType>) privateField.get(decorator);
 		} catch (NoSuchFieldException | SecurityException | IllegalArgumentException | IllegalAccessException e2) {
 			e2.printStackTrace();
 		}
@@ -343,7 +338,7 @@ public final class LFGReflectionHelper {
 
 	public static Entity newEntity(Class<? extends Entity> entityClass, World world) {
 		try {
-			Class<?>[] param = {World.class};
+			Class<?>[] param = new Class[]{World.class};
 			return entityClass.getDeclaredConstructor(param).newInstance(world);
 		} catch (InstantiationException | IllegalAccessException | IllegalArgumentException |
 		         InvocationTargetException | NoSuchMethodException | SecurityException e) {

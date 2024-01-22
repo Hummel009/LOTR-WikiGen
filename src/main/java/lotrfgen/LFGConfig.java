@@ -821,12 +821,12 @@ public class LFGConfig {
 		genStructureInfo(1701, LOTRWorldGenHalfTrollWarlordHouse.class, "HalfTrollWarlordHouse", 10058344, 5325111);
 	}
 
-	public void genEntityInfo(Class<? extends Entity> entityClass, int id) {
+	private void genEntityInfo(Class<? extends Entity> entityClass, int id) {
 		String name = entityClass.getSimpleName().substring(10);
 		genEntityInfo(entityClass, name, id, 80, 3, true);
 	}
 
-	public void genEntityInfo(Class<? extends Entity> entityClass, int id, int egg1, int egg2) {
+	private void genEntityInfo(Class<? extends Entity> entityClass, int id, int egg1, int egg2) {
 		String name = entityClass.getSimpleName().substring(10);
 		genEntityInfo(entityClass, name, id, 80, 3, true);
 	}
@@ -849,7 +849,7 @@ public class LFGConfig {
 		LFGDatabaseGenerator.CLASS_TO_STRUCTURE_NAME.put(clazz, name);
 	}
 
-	public void genStructureInfo(int i, Class<?> clazz, int egg1, int egg2) {
+	private void genStructureInfo(int i, Class<?> clazz, int egg1, int egg2) {
 		String name = clazz.getSimpleName().substring(12);
 		genStructureInfo(clazz, name);
 	}
@@ -858,25 +858,25 @@ public class LFGConfig {
 		genStructureInfo(clazz, name);
 	}
 
-	public void genStructureInfo(int i, LOTRVillageGen clazz, int j, int k) {
+	private void genStructureInfo(int i, LOTRVillageGen clazz, int j, int k) {
 		String name = clazz.getClass().getSimpleName().substring(12);
 		genStructureInfo(clazz.getClass(), name);
 	}
 
-	public void genStructureInfo(int i, LOTRVillageGen clazz, int j, int k, IVillageProperties<?> iVillageProperties) {
+	private void genStructureInfo(int i, LOTRVillageGen clazz, int j, int k, IVillageProperties<?> iVillageProperties) {
 		String name = clazz.getClass().getSimpleName().substring(12);
 		genStructureInfo(clazz.getClass(), name);
 	}
 
-	public void genStructureInfo(int i, LOTRVillageGen clazz, String name, int j, int k) {
+	private void genStructureInfo(int i, LOTRVillageGen clazz, String name, int j, int k) {
 		genStructureInfo(clazz.getClass(), name);
 	}
 
-	public void genStructureInfo(int i, LOTRVillageGen clazz, String name, int j, int k, IVillageProperties<?> iVillageProperties) {
+	private void genStructureInfo(int i, LOTRVillageGen clazz, String name, int j, int k, IVillageProperties<?> iVillageProperties) {
 		genStructureInfo(clazz.getClass(), name);
 	}
 
-	public interface IVillageProperties<V> {
+	private interface IVillageProperties<V> {
 		void apply(V var1);
 	}
 }

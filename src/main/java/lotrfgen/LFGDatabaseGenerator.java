@@ -73,6 +73,9 @@ public final class LFGDatabaseGenerator {
 		UNITS.removeAll(Collections.singleton(null));
 	}
 
+	private LFGDatabaseGenerator() {
+	}
+
 	@SuppressWarnings("StringConcatenationMissingWhitespace")
 	public static void generate(String mode, World world, EntityPlayer player) {
 		long time = System.nanoTime();

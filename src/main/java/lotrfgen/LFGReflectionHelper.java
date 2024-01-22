@@ -27,6 +27,9 @@ import java.lang.reflect.Method;
 import java.util.*;
 
 public final class LFGReflectionHelper {
+	private LFGReflectionHelper() {
+	}
+
 	public static LOTRFaction getAlignmentFaction(LOTRShields shield) {
 		try {
 			Field privateField = LOTRShields.class.getDeclaredField("alignmentFaction");

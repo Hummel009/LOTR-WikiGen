@@ -67,22 +67,41 @@ LOTRStructures и вставить их в файл LFGConfig в практич�
 <!----------------------------------------------------------------------------->
 
 [code_smells_badge]: https://sonarcloud.io/api/project_badges/measure?project=Hummel009_LOTR-FGen&metric=code_smells
+
 [code_smells_link]: https://sonarcloud.io/summary/overall?id=Hummel009_LOTR-FGen
+
 [maintainability_rating_badge]: https://sonarcloud.io/api/project_badges/measure?project=Hummel009_LOTR-FGen&metric=sqale_rating
+
 [maintainability_rating_link]: https://sonarcloud.io/summary/overall?id=Hummel009_LOTR-FGen
+
 [security_rating_badge]: https://sonarcloud.io/api/project_badges/measure?project=Hummel009_LOTR-FGen&metric=security_rating
+
 [security_rating_link]: https://sonarcloud.io/summary/overall?id=Hummel009_LOTR-FGen
+
 [bugs_badge]: https://sonarcloud.io/api/project_badges/measure?project=Hummel009_LOTR-FGen&metric=bugs
+
 [bugs_link]: https://sonarcloud.io/summary/overall?id=Hummel009_LOTR-FGen
+
 [vulnerabilities_badge]: https://sonarcloud.io/api/project_badges/measure?project=Hummel009_LOTR-FGen&metric=vulnerabilities
+
 [vulnerabilities_link]: https://sonarcloud.io/summary/overall?id=Hummel009_LOTR-FGen
+
 [duplicated_lines_density_badge]: https://sonarcloud.io/api/project_badges/measure?project=Hummel009_LOTR-FGen&metric=duplicated_lines_density
+
 [duplicated_lines_density_link]: https://sonarcloud.io/summary/overall?id=Hummel009_LOTR-FGen
+
 [reliability_rating_badge]: https://sonarcloud.io/api/project_badges/measure?project=Hummel009_LOTR-FGen&metric=reliability_rating
+
 [reliability_rating_link]: https://sonarcloud.io/summary/overall?id=Hummel009_LOTR-FGen
+
 [quality_gate_status_badge]: https://sonarcloud.io/api/project_badges/measure?project=Hummel009_LOTR-FGen&metric=alert_status
+
 [quality_gate_status_link]: https://sonarcloud.io/summary/overall?id=Hummel009_LOTR-FGen
+
 [technical_debt_badge]: https://sonarcloud.io/api/project_badges/measure?project=Hummel009_LOTR-FGen&metric=sqale_index
+
 [technical_debt_link]: https://sonarcloud.io/summary/overall?id=Hummel009_LOTR-FGen
+
 [lines_of_code_badge]: https://sonarcloud.io/api/project_badges/measure?project=Hummel009_LOTR-FGen&metric=ncloc
+
 [lines_of_code_link]: https://sonarcloud.io/summary/overall?id=Hummel009_LOTR-FGen

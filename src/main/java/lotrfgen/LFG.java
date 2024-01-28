@@ -3,7 +3,7 @@ package lotrfgen;
 import cpw.mods.fml.common.Mod;
 import cpw.mods.fml.common.event.FMLServerStartingEvent;
 
-@Mod(modid = "lfg", dependencies = "required-after:lotr")
+@Mod(modid = "lfg", dependencies = "required-after:lotr", useMetadata = true)
 public class LFG {
 
 	@Mod.EventHandler

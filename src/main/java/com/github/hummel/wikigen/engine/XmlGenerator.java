@@ -1,5 +1,6 @@
 package com.github.hummel.wikigen.engine;
 
+import com.github.hummel.wikigen.util.ReflectionHelper;
 import lotr.common.LOTRAchievement;
 import lotr.common.LOTRMod;
 import lotr.common.LOTRShields;

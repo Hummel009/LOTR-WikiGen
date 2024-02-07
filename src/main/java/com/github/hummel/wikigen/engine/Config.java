@@ -1,5 +1,6 @@
 package com.github.hummel.wikigen.engine;
 
+import com.github.hummel.wikigen.util.ReflectionHelper;
 import lotr.common.entity.animal.*;
 import lotr.common.entity.npc.*;
 import lotr.common.world.biome.LOTRBiome;

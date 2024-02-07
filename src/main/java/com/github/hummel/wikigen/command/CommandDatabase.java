@@ -1,4 +1,4 @@
-package com.github.hummel.wikigen;
+package com.github.hummel.wikigen.command;
 
 import com.github.hummel.wikigen.engine.XmlGenerator;
 import net.minecraft.command.CommandBase;
@@ -9,7 +9,7 @@ import net.minecraft.world.World;
 import java.util.Collections;
 import java.util.List;
 
-public class DatabaseCommand extends CommandBase {
+public class CommandDatabase extends CommandBase {
 	@Override
 	public List<String> addTabCompletionOptions(ICommandSender sender, String[] args) {
 		if (args.length == 1) {

@@ -1,4 +1,4 @@
-package lotrfgen;
+package com.github.hummel.wikigen;
 
 import lotr.common.entity.animal.*;
 import lotr.common.entity.npc.*;
@@ -9,10 +9,10 @@ import lotr.common.world.village.*;
 import net.minecraft.entity.Entity;
 import net.minecraft.world.World;
 
-public class LFGConfig {
+public class Config {
 	private final World world;
 
-	public LFGConfig(World world) {
+	public Config(World world) {
 		this.world = world;
 	}
 
@@ -830,13 +830,13 @@ public class LFGConfig {
 	}
 
 	private void genEntityInfo(Class<? extends Entity> entityClass, String name, int id, int updateRange, int updateFreq, boolean sendVelocityUpdates) {
-		LFGDatabaseGenerator.CLASS_TO_ENTITY_NAME.put(entityClass, name);
-		LFGDatabaseGenerator.CLASS_TO_ENTITY_OBJ.put(entityClass, LFGReflectionHelper.newEntity(entityClass, world));
-		LFGDatabaseGenerator.ENTITY_SET.add(entityClass);
+		XmlGenerator.CLASS_TO_ENTITY_NAME.put(entityClass, name);
+		XmlGenerator.CLASS_TO_ENTITY_OBJ.put(entityClass, ReflectionHelper.newEntity(entityClass, world));
+		XmlGenerator.ENTITY_SET.add(entityClass);
 	}
 
 	private void genStructureInfo(Class<?> clazz, String name) {
-		LFGDatabaseGenerator.CLASS_TO_STRUCTURE_NAME.put(clazz, name);
+		XmlGenerator.CLASS_TO_STRUCTURE_NAME.put(clazz, name);
 	}
 
 	private void genStructureInfo(int i, Class<?> clazz, String name, int egg1, int egg2) {

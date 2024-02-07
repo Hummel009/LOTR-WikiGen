@@ -1,7 +1,7 @@
 [
 	{
-		"modid": "lfg",
-		"name": "LOTR Fandom Generator",
+		"modid": "wikigen",
+		"name": "LOTR Wiki Generator",
 		"description": "File that allows to create MediaWiki import file with data templates. Creating a huge accurate site in 5 minutes isn't a myth now.",
 		"version": "24.02.29",
 		"mcversion": "1.7.10",

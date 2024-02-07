@@ -1,7 +1,6 @@
-package lotrfgen;
+package com.github.hummel.wikigen;
 
 import cpw.mods.fml.common.ObfuscationReflectionHelper;
-import cpw.mods.fml.relauncher.ReflectionHelper;
 import lotr.common.LOTRAchievement;
 import lotr.common.LOTRShields;
 import lotr.common.entity.npc.LOTREntityNPC;
@@ -26,8 +25,8 @@ import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.util.*;
 
-public final class LFGReflectionHelper {
-	private LFGReflectionHelper() {
+public final class ReflectionHelper {
+	private ReflectionHelper() {
 	}
 
 	public static LOTRFaction getAlignmentFaction(LOTRShields shield) {
@@ -184,8 +183,9 @@ public final class LFGReflectionHelper {
 
 	private static <T, E> T getPotentiallyObfuscatedPrivateValue(Class<? super E> classToAccess, String fieldName) {
 		try {
-			return ReflectionHelper.getPrivateValue(classToAccess, null, ObfuscationReflectionHelper.remapFieldNames(classToAccess.getName(), fieldName));
-		} catch (ReflectionHelper.UnableToFindFieldException | ReflectionHelper.UnableToAccessFieldException |
+			return cpw.mods.fml.relauncher.ReflectionHelper.getPrivateValue(classToAccess, null, ObfuscationReflectionHelper.remapFieldNames(classToAccess.getName(), fieldName));
+		} catch (cpw.mods.fml.relauncher.ReflectionHelper.UnableToFindFieldException |
+		         cpw.mods.fml.relauncher.ReflectionHelper.UnableToAccessFieldException |
 		         NullPointerException e1) {
 			try {
 				return (T) classToAccess.getDeclaredField(fieldName);

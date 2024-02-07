@@ -1,4 +1,4 @@
-package lotrfgen;
+package com.github.hummel.wikigen;
 
 import lotr.common.LOTRAchievement;
 import lotr.common.LOTRMod;
@@ -43,7 +43,7 @@ import java.util.*;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
-public final class LFGDatabaseGenerator {
+public final class XmlGenerator {
 	public static final Map<Class<? extends Entity>, Entity> CLASS_TO_ENTITY_OBJ = new HashMap<>();
 	public static final Map<Class<? extends Entity>, String> CLASS_TO_ENTITY_NAME = new HashMap<>();
 	public static final Collection<Class<? extends Entity>> ENTITY_SET = new HashSet<>();
@@ -52,10 +52,10 @@ public final class LFGDatabaseGenerator {
 	private static final Map<String, String> FAC_TO_PAGE = new HashMap<>();
 	private static final Map<String, String> ENTITY_TO_PAGE = new HashMap<>();
 	private static final Map<String, String> BIOME_TO_PAGE = new HashMap<>();
-	private static final Iterable<Item> ITEMS = new HashSet<>(LFGReflectionHelper.getObjectFieldsOfType(LOTRMod.class, Item.class));
-	private static final Collection<LOTRUnitTradeEntries> UNITS = new HashSet<>(LFGReflectionHelper.getObjectFieldsOfType(LOTRUnitTradeEntries.class, LOTRUnitTradeEntries.class));
-	private static final Collection<LOTRAchievement> ACHIEVEMENTS = new HashSet<>(LFGReflectionHelper.getObjectFieldsOfType(LOTRAchievement.class, LOTRAchievement.class));
-	private static final Collection<LOTRBiome> BIOMES = new HashSet<>(LFGReflectionHelper.getObjectFieldsOfType(LOTRBiome.class, LOTRBiome.class));
+	private static final Iterable<Item> ITEMS = new HashSet<>(ReflectionHelper.getObjectFieldsOfType(LOTRMod.class, Item.class));
+	private static final Collection<LOTRUnitTradeEntries> UNITS = new HashSet<>(ReflectionHelper.getObjectFieldsOfType(LOTRUnitTradeEntries.class, LOTRUnitTradeEntries.class));
+	private static final Collection<LOTRAchievement> ACHIEVEMENTS = new HashSet<>(ReflectionHelper.getObjectFieldsOfType(LOTRAchievement.class, LOTRAchievement.class));
+	private static final Collection<LOTRBiome> BIOMES = new HashSet<>(ReflectionHelper.getObjectFieldsOfType(LOTRBiome.class, LOTRBiome.class));
 	private static final Set<LOTRFaction> FACTIONS = EnumSet.allOf(LOTRFaction.class);
 	private static final Set<LOTRTreeType> TREES = EnumSet.allOf(LOTRTreeType.class);
 	private static final Set<LOTRWaypoint> WAYPOINTS = EnumSet.allOf(LOTRWaypoint.class);
@@ -73,14 +73,14 @@ public final class LFGDatabaseGenerator {
 		UNITS.removeAll(Collections.singleton(null));
 	}
 
-	private LFGDatabaseGenerator() {
+	private XmlGenerator() {
 	}
 
 	@SuppressWarnings("StringConcatenationMissingWhitespace")
 	public static void generate(String mode, World world, EntityPlayer player) {
 		long time = System.nanoTime();
 		try {
-			LFGConfig cfg = new LFGConfig(world);
+			Config cfg = new Config(world);
 			cfg.authorizeEntityInfo();
 			cfg.authorizeStructureInfo();
 			searchForMinerals(BIOMES, MINERALS);
@@ -337,20 +337,20 @@ public final class LFGDatabaseGenerator {
 					sb.append("\n| ").append(getEntityLink(entry.entityClass));
 					if (entry.getPledgeType() == LOTRUnitTradeEntry.PledgeType.NONE) {
 						if (entry.mountClass == null) {
-							sb.append(" || {{Coins|").append(LFGReflectionHelper.getInitialCost(entry) * 2).append("}} || {{Coins|").append(LFGReflectionHelper.getInitialCost(entry)).append("}} || +").append(entry.alignmentRequired).append(" || -");
+							sb.append(" || {{Coins|").append(ReflectionHelper.getInitialCost(entry) * 2).append("}} || {{Coins|").append(ReflectionHelper.getInitialCost(entry)).append("}} || +").append(entry.alignmentRequired).append(" || -");
 						} else {
-							sb.append(" || {{Coins|").append(LFGReflectionHelper.getInitialCost(entry) * 2).append("}} (").append(Lang.RIDER).append(") || {{Coins|").append(LFGReflectionHelper.getInitialCost(entry)).append("}} || +").append(entry.alignmentRequired).append(" || -");
+							sb.append(" || {{Coins|").append(ReflectionHelper.getInitialCost(entry) * 2).append("}} (").append(Lang.RIDER).append(") || {{Coins|").append(ReflectionHelper.getInitialCost(entry)).append("}} || +").append(entry.alignmentRequired).append(" || -");
 						}
 					} else if (entry.mountClass == null) {
 						if (entry.alignmentRequired < 101.0f) {
-							sb.append(" || N/A || {{Coins|").append(LFGReflectionHelper.getInitialCost(entry)).append("}} || +100.0 || +");
+							sb.append(" || N/A || {{Coins|").append(ReflectionHelper.getInitialCost(entry)).append("}} || +100.0 || +");
 						} else {
-							sb.append(" || N/A || {{Coins|").append(LFGReflectionHelper.getInitialCost(entry)).append("}} || +").append(entry.alignmentRequired).append(" || +");
+							sb.append(" || N/A || {{Coins|").append(ReflectionHelper.getInitialCost(entry)).append("}} || +").append(entry.alignmentRequired).append(" || +");
 						}
 					} else if (entry.alignmentRequired < 101.0f) {
-						sb.append(" || N/A || {{Coins|").append(LFGReflectionHelper.getInitialCost(entry)).append("}} (").append(Lang.RIDER).append(") || +100.0 || +");
+						sb.append(" || N/A || {{Coins|").append(ReflectionHelper.getInitialCost(entry)).append("}} (").append(Lang.RIDER).append(") || +100.0 || +");
 					} else {
-						sb.append(" || N/A || {{Coins|").append(LFGReflectionHelper.getInitialCost(entry)).append("}} (").append(Lang.RIDER).append(") || +").append(entry.alignmentRequired).append(" || +");
+						sb.append(" || N/A || {{Coins|").append(ReflectionHelper.getInitialCost(entry)).append("}} (").append(Lang.RIDER).append(") || +").append(entry.alignmentRequired).append(" || +");
 					}
 					sb.append("\n|-");
 				} catch (Exception e) {
@@ -377,8 +377,8 @@ public final class LFGDatabaseGenerator {
 		StringBuilder sb = new StringBuilder();
 		for (Item item : ITEMS) {
 			if (item instanceof ItemSword) {
-				float damage = LFGReflectionHelper.getDamageAmount(item);
-				Item.ToolMaterial toolMaterial = LFGReflectionHelper.getToolMaterial(item);
+				float damage = ReflectionHelper.getDamageAmount(item);
+				Item.ToolMaterial toolMaterial = ReflectionHelper.getToolMaterial(item);
 				sb.append("\n| ").append(getItemName(item)).append(" || ").append(getItemFilename(item)).append(" || ").append(item.getMaxDamage()).append(" || ").append(damage).append(" || ");
 				if (toolMaterial == null || toolMaterial.getRepairItemStack() == null) {
 					sb.append("N/A");
@@ -424,12 +424,12 @@ public final class LFGDatabaseGenerator {
 		sb.append(TITLE).append("Template:DB Biome-ConquestNPC");
 		sb.append(BEGIN);
 		for (LOTRBiome biome : BIOMES) {
-			List<LOTRBiomeSpawnList.FactionContainer> facContainers = LFGReflectionHelper.getFactionContainers(biome.npcSpawnList);
+			List<LOTRBiomeSpawnList.FactionContainer> facContainers = ReflectionHelper.getFactionContainers(biome.npcSpawnList);
 			if (facContainers.isEmpty()) {
 				sb.append("\n| ").append(getBiomePagename(biome)).append(" = ").append(Lang.BIOME_NO_CONQUEST);
 			} else {
 				for (LOTRBiomeSpawnList.FactionContainer facContainer : facContainers) {
-					if (LFGReflectionHelper.getBaseWeight(facContainer) <= 0) {
+					if (ReflectionHelper.getBaseWeight(facContainer) <= 0) {
 						conqestContainers.add(facContainer);
 					}
 				}
@@ -440,8 +440,8 @@ public final class LFGDatabaseGenerator {
 					sb.append(Lang.BIOME_HAS_CONQUEST);
 					for (LOTRBiomeSpawnList.FactionContainer facContainer : conqestContainers) {
 						next:
-						for (LOTRBiomeSpawnList.SpawnListContainer container : LFGReflectionHelper.getSpawnLists(facContainer)) {
-							for (LOTRSpawnEntry entry : LFGReflectionHelper.getSpawnListEntries(LFGReflectionHelper.getSpawnList(container))) {
+						for (LOTRBiomeSpawnList.SpawnListContainer container : ReflectionHelper.getSpawnLists(facContainer)) {
+							for (LOTRSpawnEntry entry : ReflectionHelper.getSpawnListEntries(ReflectionHelper.getSpawnList(container))) {
 								Entity entity = CLASS_TO_ENTITY_OBJ.get(entry.entityClass);
 								if (entity instanceof LOTREntityNPC) {
 									LOTRFaction fac = ((LOTREntityNPC) entity).getFaction();
@@ -469,12 +469,12 @@ public final class LFGDatabaseGenerator {
 		sb.append(BEGIN);
 		for (LOTRBiome biome : BIOMES) {
 			sb.append("\n| ").append(getBiomePagename(biome)).append(" = ");
-			if (LFGReflectionHelper.getRegisteredInvasions(biome.invasionSpawns).isEmpty()) {
+			if (ReflectionHelper.getRegisteredInvasions(biome.invasionSpawns).isEmpty()) {
 				sb.append(Lang.BIOME_NO_INVASIONS);
 			} else {
 				sb.append(Lang.BIOME_HAS_INVASIONS);
 				next:
-				for (LOTRInvasions invasion : LFGReflectionHelper.getRegisteredInvasions(biome.invasionSpawns)) {
+				for (LOTRInvasions invasion : ReflectionHelper.getRegisteredInvasions(biome.invasionSpawns)) {
 					for (LOTRInvasions.InvasionSpawnEntry entry : invasion.invasionMobs) {
 						Entity entity = CLASS_TO_ENTITY_OBJ.get(entry.getEntityClass());
 						if (entity instanceof LOTREntityNPC) {
@@ -500,15 +500,15 @@ public final class LFGDatabaseGenerator {
 		sb.append(BEGIN);
 		for (LOTRBiome biome : BIOMES) {
 			sb.append("\n| ").append(getBiomePagename(biome)).append(" = ").append(Lang.BIOME_HAS_MINERALS);
-			oreGenerants.addAll(LFGReflectionHelper.getBiomeMinerals(biome.decorator, "biomeSoils"));
-			oreGenerants.addAll(LFGReflectionHelper.getBiomeMinerals(biome.decorator, "biomeOres"));
-			oreGenerants.addAll(LFGReflectionHelper.getBiomeMinerals(biome.decorator, "biomeGems"));
+			oreGenerants.addAll(ReflectionHelper.getBiomeMinerals(biome.decorator, "biomeSoils"));
+			oreGenerants.addAll(ReflectionHelper.getBiomeMinerals(biome.decorator, "biomeOres"));
+			oreGenerants.addAll(ReflectionHelper.getBiomeMinerals(biome.decorator, "biomeGems"));
 			for (Object oreGenerant : oreGenerants) {
-				Block block = LFGReflectionHelper.getMineableBlock(LFGReflectionHelper.getOreGen(oreGenerant));
-				int meta = LFGReflectionHelper.getMineableBlockMeta(LFGReflectionHelper.getOreGen(oreGenerant));
-				float oreChance = LFGReflectionHelper.getOreChance(oreGenerant);
-				int minHeight = LFGReflectionHelper.getMinMaxHeight(oreGenerant, "minHeight");
-				int maxheight = LFGReflectionHelper.getMinMaxHeight(oreGenerant, "maxHeight");
+				Block block = ReflectionHelper.getMineableBlock(ReflectionHelper.getOreGen(oreGenerant));
+				int meta = ReflectionHelper.getMineableBlockMeta(ReflectionHelper.getOreGen(oreGenerant));
+				float oreChance = ReflectionHelper.getOreChance(oreGenerant);
+				int minHeight = ReflectionHelper.getMinMaxHeight(oreGenerant, "minHeight");
+				int maxheight = ReflectionHelper.getMinMaxHeight(oreGenerant, "maxHeight");
 				if (block instanceof LOTRBlockOreGem || block instanceof BlockDirt || block instanceof LOTRBlockRock) {
 					sb.append("\n* [[").append(getBlockMetaName(block, meta)).append("]] (").append(oreChance).append("%; Y: ").append(minHeight).append('-').append(maxheight).append(");");
 				} else {
@@ -587,12 +587,12 @@ public final class LFGDatabaseGenerator {
 		sb.append(TITLE).append("Template:DB Biome-SpawnNPC");
 		sb.append(BEGIN);
 		for (LOTRBiome biome : BIOMES) {
-			List<LOTRBiomeSpawnList.FactionContainer> facContainers = LFGReflectionHelper.getFactionContainers(biome.npcSpawnList);
+			List<LOTRBiomeSpawnList.FactionContainer> facContainers = ReflectionHelper.getFactionContainers(biome.npcSpawnList);
 			if (facContainers.isEmpty()) {
 				sb.append("\n| ").append(getBiomePagename(biome)).append(" = ").append(Lang.BIOME_NO_SPAWN);
 			} else {
 				for (LOTRBiomeSpawnList.FactionContainer facContainer : facContainers) {
-					if (LFGReflectionHelper.getBaseWeight(facContainer) > 0) {
+					if (ReflectionHelper.getBaseWeight(facContainer) > 0) {
 						spawnContainers.add(facContainer);
 					}
 				}
@@ -602,8 +602,8 @@ public final class LFGDatabaseGenerator {
 				} else {
 					sb.append(Lang.BIOME_HAS_SPAWN);
 					for (LOTRBiomeSpawnList.FactionContainer facContainer : spawnContainers) {
-						for (LOTRBiomeSpawnList.SpawnListContainer container : LFGReflectionHelper.getSpawnLists(facContainer)) {
-							for (LOTRSpawnEntry entry : LFGReflectionHelper.getSpawnListEntries(LFGReflectionHelper.getSpawnList(container))) {
+						for (LOTRBiomeSpawnList.SpawnListContainer container : ReflectionHelper.getSpawnLists(facContainer)) {
+							for (LOTRSpawnEntry entry : ReflectionHelper.getSpawnListEntries(ReflectionHelper.getSpawnList(container))) {
 								sb.append("\n* ").append(getEntityLink(entry.entityClass)).append("; ");
 							}
 						}
@@ -620,12 +620,12 @@ public final class LFGDatabaseGenerator {
 		sb.append(BEGIN);
 		for (LOTRBiome biome : BIOMES) {
 			sb.append("\n| ").append(getBiomePagename(biome)).append(" = ");
-			if (LFGReflectionHelper.getRandomStructures(biome.decorator).isEmpty()) {
+			if (ReflectionHelper.getRandomStructures(biome.decorator).isEmpty()) {
 				sb.append(Lang.BIOME_NO_STRUCTURES);
 			} else {
 				sb.append(Lang.BIOME_HAS_STRUCTURES);
-				for (Object structure : LFGReflectionHelper.getRandomStructures(biome.decorator)) {
-					sb.append("\n* [[").append(getStructureName((Class<? extends WorldGenerator>) LFGReflectionHelper.getStructureGen(structure).getClass())).append("]];");
+				for (Object structure : ReflectionHelper.getRandomStructures(biome.decorator)) {
+					sb.append("\n* [[").append(getStructureName((Class<? extends WorldGenerator>) ReflectionHelper.getStructureGen(structure).getClass())).append("]];");
 				}
 			}
 		}
@@ -648,13 +648,13 @@ public final class LFGDatabaseGenerator {
 		sb.append(TITLE).append("Template:DB Biome-Trees");
 		sb.append(BEGIN);
 		for (LOTRBiome biome : BIOMES) {
-			for (LOTRTreeType.WeightedTreeType weightedTreeType : LFGReflectionHelper.getTreeTypes(biome.decorator)) {
+			for (LOTRTreeType.WeightedTreeType weightedTreeType : ReflectionHelper.getTreeTypes(biome.decorator)) {
 				trees.add(weightedTreeType.treeType);
 			}
-			for (Object variantBucket : LFGReflectionHelper.getVariantList(biome.getBiomeVariantsSmall())) {
-				for (LOTRTreeType.WeightedTreeType weightedTreeType : LFGReflectionHelper.getVariant(variantBucket).treeTypes) {
+			for (Object variantBucket : ReflectionHelper.getVariantList(biome.getBiomeVariantsSmall())) {
+				for (LOTRTreeType.WeightedTreeType weightedTreeType : ReflectionHelper.getVariant(variantBucket).treeTypes) {
 					if (!trees.contains(weightedTreeType.treeType)) {
-						additionalTrees.put(weightedTreeType.treeType, LFGReflectionHelper.getVariant(variantBucket));
+						additionalTrees.put(weightedTreeType.treeType, ReflectionHelper.getVariant(variantBucket));
 					}
 				}
 			}
@@ -685,11 +685,11 @@ public final class LFGDatabaseGenerator {
 		sb.append(BEGIN);
 		for (LOTRBiome biome : BIOMES) {
 			sb.append("\n| ").append(getBiomePagename(biome)).append(" = ");
-			if (LFGReflectionHelper.getVariantList(biome.getBiomeVariantsSmall()).isEmpty()) {
+			if (ReflectionHelper.getVariantList(biome.getBiomeVariantsSmall()).isEmpty()) {
 				sb.append(Lang.BIOME_NO_VARIANTS);
 			} else {
-				for (Object variantBucket : LFGReflectionHelper.getVariantList(biome.getBiomeVariantsSmall())) {
-					sb.append("\n* ").append(getBiomeVariantName(LFGReflectionHelper.getVariant(variantBucket))).append(';');
+				for (Object variantBucket : ReflectionHelper.getVariantList(biome.getBiomeVariantsSmall())) {
+					sb.append("\n* ").append(getBiomeVariantName(ReflectionHelper.getVariant(variantBucket))).append(';');
 				}
 			}
 		}
@@ -707,7 +707,7 @@ public final class LFGDatabaseGenerator {
 			} else {
 				sb.append(Lang.BIOME_HAS_WAYPOINTS);
 				for (LOTRWaypoint wp : WAYPOINTS) {
-					if (LFGReflectionHelper.getRegion(wp) == region) {
+					if (ReflectionHelper.getRegion(wp) == region) {
 						sb.append("\n* ").append(wp.getDisplayName()).append(" (").append(getFactionLink(wp.faction)).append(");");
 					}
 				}
@@ -723,7 +723,7 @@ public final class LFGDatabaseGenerator {
 		sb.append(BEGIN);
 		for (LOTRFaction fac : FACTIONS) {
 			for (LOTRShields shield : SHIELDS) {
-				if (LFGReflectionHelper.getAlignmentFaction(shield) == fac) {
+				if (ReflectionHelper.getAlignmentFaction(shield) == fac) {
 					facShields.add(shield);
 				}
 			}
@@ -778,17 +778,17 @@ public final class LFGDatabaseGenerator {
 		for (LOTRFaction fac : FACTIONS) {
 			next:
 			for (LOTRBiome biome : BIOMES) {
-				List<LOTRBiomeSpawnList.FactionContainer> facContainers = LFGReflectionHelper.getFactionContainers(biome.npcSpawnList);
+				List<LOTRBiomeSpawnList.FactionContainer> facContainers = ReflectionHelper.getFactionContainers(biome.npcSpawnList);
 				if (!facContainers.isEmpty()) {
 					for (LOTRBiomeSpawnList.FactionContainer facContainer : facContainers) {
-						if (LFGReflectionHelper.getBaseWeight(facContainer) <= 0) {
+						if (ReflectionHelper.getBaseWeight(facContainer) <= 0) {
 							conquestContainers.add(facContainer);
 						}
 					}
 					if (!conquestContainers.isEmpty()) {
 						for (LOTRBiomeSpawnList.FactionContainer facContainer : conquestContainers) {
-							for (LOTRBiomeSpawnList.SpawnListContainer container : LFGReflectionHelper.getSpawnLists(facContainer)) {
-								for (LOTRSpawnEntry entry : LFGReflectionHelper.getSpawnListEntries(LFGReflectionHelper.getSpawnList(container))) {
+							for (LOTRBiomeSpawnList.SpawnListContainer container : ReflectionHelper.getSpawnLists(facContainer)) {
+								for (LOTRSpawnEntry entry : ReflectionHelper.getSpawnListEntries(ReflectionHelper.getSpawnList(container))) {
 									Entity entity = CLASS_TO_ENTITY_OBJ.get(entry.entityClass);
 									if (entity instanceof LOTREntityNPC && ((LOTREntityNPC) entity).getFaction() == fac) {
 										conquestBiomes.add(biome);
@@ -884,7 +884,7 @@ public final class LFGDatabaseGenerator {
 		for (LOTRFaction fac : FACTIONS) {
 			next:
 			for (LOTRBiome biome : BIOMES) {
-				for (LOTRInvasions invasion : LFGReflectionHelper.getRegisteredInvasions(biome.invasionSpawns)) {
+				for (LOTRInvasions invasion : ReflectionHelper.getRegisteredInvasions(biome.invasionSpawns)) {
 					for (LOTRInvasions.InvasionSpawnEntry entry : invasion.invasionMobs) {
 						Entity entity = CLASS_TO_ENTITY_OBJ.get(entry.getEntityClass());
 						if (entity instanceof LOTREntityNPC && fac == ((LOTREntityNPC) entity).getFaction()) {
@@ -948,11 +948,11 @@ public final class LFGDatabaseGenerator {
 		sb.append(BEGIN);
 		for (LOTRFaction fac : FACTIONS) {
 			sb.append("\n| ").append(getFactionPagename(fac)).append(" = ");
-			if (LFGReflectionHelper.getRanksSortedDescending(fac).isEmpty()) {
+			if (ReflectionHelper.getRanksSortedDescending(fac).isEmpty()) {
 				sb.append(Lang.FACTION_NO_RANKS);
 			} else {
 				sb.append(Lang.FACTION_HAS_RANKS);
-				for (LOTRFactionRank rank : LFGReflectionHelper.getRanksSortedDescending(fac)) {
+				for (LOTRFactionRank rank : ReflectionHelper.getRanksSortedDescending(fac)) {
 					sb.append("\n* ").append(rank.getDisplayFullName()).append('/').append(rank.getDisplayFullNameFem()).append(" (+").append(rank.alignment).append(");");
 				}
 			}
@@ -983,17 +983,17 @@ public final class LFGDatabaseGenerator {
 		for (LOTRFaction fac : FACTIONS) {
 			next:
 			for (LOTRBiome biome : BIOMES) {
-				List<LOTRBiomeSpawnList.FactionContainer> facContainers = LFGReflectionHelper.getFactionContainers(biome.npcSpawnList);
+				List<LOTRBiomeSpawnList.FactionContainer> facContainers = ReflectionHelper.getFactionContainers(biome.npcSpawnList);
 				if (!facContainers.isEmpty()) {
 					for (LOTRBiomeSpawnList.FactionContainer facContainer : facContainers) {
-						if (LFGReflectionHelper.getBaseWeight(facContainer) > 0) {
+						if (ReflectionHelper.getBaseWeight(facContainer) > 0) {
 							spawnContainers.add(facContainer);
 						}
 					}
 					if (!spawnContainers.isEmpty()) {
 						for (LOTRBiomeSpawnList.FactionContainer facContainer : spawnContainers) {
-							for (LOTRBiomeSpawnList.SpawnListContainer container : LFGReflectionHelper.getSpawnLists(facContainer)) {
-								for (LOTRSpawnEntry entry : LFGReflectionHelper.getSpawnListEntries(LFGReflectionHelper.getSpawnList(container))) {
+							for (LOTRBiomeSpawnList.SpawnListContainer container : ReflectionHelper.getSpawnLists(facContainer)) {
+								for (LOTRSpawnEntry entry : ReflectionHelper.getSpawnListEntries(ReflectionHelper.getSpawnList(container))) {
 									Entity entity = CLASS_TO_ENTITY_OBJ.get(entry.entityClass);
 									if (entity instanceof LOTREntityNPC && ((LOTREntityNPC) entity).getFaction() == fac) {
 										spawnBiomes.add(biome);
@@ -1067,16 +1067,16 @@ public final class LFGDatabaseGenerator {
 			sb.append("\n| ").append(mineral).append(" = ").append(Lang.MINERAL_BIOMES);
 			next:
 			for (LOTRBiome biome : BIOMES) {
-				oreGenerants.addAll(LFGReflectionHelper.getBiomeMinerals(biome.decorator, "biomeSoils"));
-				oreGenerants.addAll(LFGReflectionHelper.getBiomeMinerals(biome.decorator, "biomeOres"));
-				oreGenerants.addAll(LFGReflectionHelper.getBiomeMinerals(biome.decorator, "biomeGems"));
+				oreGenerants.addAll(ReflectionHelper.getBiomeMinerals(biome.decorator, "biomeSoils"));
+				oreGenerants.addAll(ReflectionHelper.getBiomeMinerals(biome.decorator, "biomeOres"));
+				oreGenerants.addAll(ReflectionHelper.getBiomeMinerals(biome.decorator, "biomeGems"));
 				for (Object oreGenerant : oreGenerants) {
-					Block block = LFGReflectionHelper.getMineableBlock(LFGReflectionHelper.getOreGen(oreGenerant));
-					int meta = LFGReflectionHelper.getMineableBlockMeta(LFGReflectionHelper.getOreGen(oreGenerant));
+					Block block = ReflectionHelper.getMineableBlock(ReflectionHelper.getOreGen(oreGenerant));
+					int meta = ReflectionHelper.getMineableBlockMeta(ReflectionHelper.getOreGen(oreGenerant));
 					if (getBlockMetaName(block, meta).equals(mineral) || getBlockName(block).equals(mineral)) {
-						float oreChance = LFGReflectionHelper.getOreChance(oreGenerant);
-						int minHeight = LFGReflectionHelper.getMinMaxHeight(oreGenerant, "minHeight");
-						int maxheight = LFGReflectionHelper.getMinMaxHeight(oreGenerant, "maxHeight");
+						float oreChance = ReflectionHelper.getOreChance(oreGenerant);
+						int minHeight = ReflectionHelper.getMinMaxHeight(oreGenerant, "minHeight");
+						int maxheight = ReflectionHelper.getMinMaxHeight(oreGenerant, "maxHeight");
 						sb.append("\n* ").append(getBiomeLink(biome)).append(" (").append(oreChance).append("%; Y: ").append(minHeight).append('-').append(maxheight).append(");");
 						oreGenerants.clear();
 						continue next;
@@ -1093,7 +1093,7 @@ public final class LFGDatabaseGenerator {
 		sb.append(BEGIN);
 		for (Map.Entry<Class<? extends Entity>, Entity> entityEntry : CLASS_TO_ENTITY_OBJ.entrySet()) {
 			if (entityEntry.getValue() instanceof LOTREntityNPC) {
-				LOTRAchievement ach = LFGReflectionHelper.getKillAchievement((LOTREntityNPC) entityEntry.getValue());
+				LOTRAchievement ach = ReflectionHelper.getKillAchievement((LOTREntityNPC) entityEntry.getValue());
 				sb.append("\n| ").append(getEntityPagename(entityEntry.getKey())).append(" = ");
 				if (ach == null) {
 					sb.append("N/A");
@@ -1279,7 +1279,7 @@ public final class LFGDatabaseGenerator {
 			for (LOTRUnitTradeEntry entry : entries.tradeEntries) {
 				sb.append("\n| ").append(getEntityPagename(entry.entityClass)).append(" = ");
 				if (entry.getPledgeType() == LOTRUnitTradeEntry.PledgeType.NONE) {
-					sb.append("{{Coins|").append(LFGReflectionHelper.getInitialCost(entry) * 2).append("}}");
+					sb.append("{{Coins|").append(ReflectionHelper.getInitialCost(entry) * 2).append("}}");
 				} else {
 					sb.append("N/A");
 				}
@@ -1293,7 +1293,7 @@ public final class LFGDatabaseGenerator {
 		sb.append(BEGIN);
 		for (LOTRUnitTradeEntries entries : UNITS) {
 			for (LOTRUnitTradeEntry entry : entries.tradeEntries) {
-				sb.append("\n| ").append(getEntityPagename(entry.entityClass)).append(" = {{Coins|").append(LFGReflectionHelper.getInitialCost(entry)).append("}}");
+				sb.append("\n| ").append(getEntityPagename(entry.entityClass)).append(" = {{Coins|").append(ReflectionHelper.getInitialCost(entry)).append("}}");
 			}
 		}
 		sb.append(END);
@@ -1371,18 +1371,18 @@ public final class LFGDatabaseGenerator {
 				spawnEntries.addAll(biome.getSpawnableList(EnumCreatureType.creature));
 				spawnEntries.addAll(biome.getSpawnableList(EnumCreatureType.monster));
 				spawnEntries.addAll(biome.getSpawnableList(LOTRBiome.creatureType_LOTRAmbient));
-				for (LOTRBiomeSpawnList.FactionContainer facContainer : LFGReflectionHelper.getFactionContainers(biome.npcSpawnList)) {
-					if (LFGReflectionHelper.getBaseWeight(facContainer) > 0) {
-						for (LOTRBiomeSpawnList.SpawnListContainer container : LFGReflectionHelper.getSpawnLists(facContainer)) {
-							spawnEntries.addAll(LFGReflectionHelper.getSpawnListEntries(LFGReflectionHelper.getSpawnList(container)));
+				for (LOTRBiomeSpawnList.FactionContainer facContainer : ReflectionHelper.getFactionContainers(biome.npcSpawnList)) {
+					if (ReflectionHelper.getBaseWeight(facContainer) > 0) {
+						for (LOTRBiomeSpawnList.SpawnListContainer container : ReflectionHelper.getSpawnLists(facContainer)) {
+							spawnEntries.addAll(ReflectionHelper.getSpawnListEntries(ReflectionHelper.getSpawnList(container)));
 						}
 					} else {
-						for (LOTRBiomeSpawnList.SpawnListContainer container : LFGReflectionHelper.getSpawnLists(facContainer)) {
-							conquestEntries.addAll(LFGReflectionHelper.getSpawnListEntries(LFGReflectionHelper.getSpawnList(container)));
+						for (LOTRBiomeSpawnList.SpawnListContainer container : ReflectionHelper.getSpawnLists(facContainer)) {
+							conquestEntries.addAll(ReflectionHelper.getSpawnListEntries(ReflectionHelper.getSpawnList(container)));
 						}
 					}
 				}
-				for (LOTRInvasions invasion : LFGReflectionHelper.getRegisteredInvasions(biome.invasionSpawns)) {
+				for (LOTRInvasions invasion : ReflectionHelper.getRegisteredInvasions(biome.invasionSpawns)) {
 					invasionEntries.addAll(invasion.invasionMobs);
 				}
 				for (BiomeGenBase.SpawnListEntry entry : spawnEntries) {
@@ -1448,7 +1448,7 @@ public final class LFGDatabaseGenerator {
 		sb.append(TITLE).append("Template:DB Mob-SpawnInDarkness");
 		sb.append(BEGIN);
 		for (Map.Entry<Class<? extends Entity>, Entity> entityEntry : CLASS_TO_ENTITY_OBJ.entrySet()) {
-			if (entityEntry.getValue() instanceof LOTREntityNPC && LFGReflectionHelper.getSpawnsInDarkness((LOTREntityNPC) entityEntry.getValue())) {
+			if (entityEntry.getValue() instanceof LOTREntityNPC && ReflectionHelper.getSpawnsInDarkness((LOTREntityNPC) entityEntry.getValue())) {
 				sb.append("\n| ").append(getEntityPagename(entityEntry.getKey())).append(" = True");
 			}
 		}
@@ -1477,11 +1477,11 @@ public final class LFGDatabaseGenerator {
 					if (entry.mountClass == null) {
 						sb.append("\n* ").append(getEntityLink(entry.entityClass));
 						if (entry.getPledgeType() == LOTRUnitTradeEntry.PledgeType.NONE) {
-							sb.append(": {{Coins|").append(LFGReflectionHelper.getInitialCost(entry) * 2).append("}} ").append(Lang.NO_PLEDGE).append(", {{Coins|").append(LFGReflectionHelper.getInitialCost(entry)).append("}} ").append(Lang.NEED_PLEDGE).append("; ").append(entry.alignmentRequired).append("+ ").append(Lang.REPUTATION).append(';');
+							sb.append(": {{Coins|").append(ReflectionHelper.getInitialCost(entry) * 2).append("}} ").append(Lang.NO_PLEDGE).append(", {{Coins|").append(ReflectionHelper.getInitialCost(entry)).append("}} ").append(Lang.NEED_PLEDGE).append("; ").append(entry.alignmentRequired).append("+ ").append(Lang.REPUTATION).append(';');
 						} else if (entry.alignmentRequired < 101.0f) {
-							sb.append(": N/A ").append(Lang.NO_PLEDGE).append(", {{Coins|").append(LFGReflectionHelper.getInitialCost(entry)).append("}} ").append(Lang.NEED_PLEDGE).append("; +").append(100.0).append("+ ").append(Lang.REPUTATION).append(';');
+							sb.append(": N/A ").append(Lang.NO_PLEDGE).append(", {{Coins|").append(ReflectionHelper.getInitialCost(entry)).append("}} ").append(Lang.NEED_PLEDGE).append("; +").append(100.0).append("+ ").append(Lang.REPUTATION).append(';');
 						} else {
-							sb.append(": N/A ").append(Lang.NO_PLEDGE).append(", {{Coins|").append(LFGReflectionHelper.getInitialCost(entry)).append("}} ").append(Lang.NEED_PLEDGE).append("; +").append(entry.alignmentRequired).append("+ ").append(Lang.REPUTATION).append(';');
+							sb.append(": N/A ").append(Lang.NO_PLEDGE).append(", {{Coins|").append(ReflectionHelper.getInitialCost(entry)).append("}} ").append(Lang.NEED_PLEDGE).append("; +").append(entry.alignmentRequired).append("+ ").append(Lang.REPUTATION).append(';');
 						}
 					}
 				}
@@ -1508,8 +1508,8 @@ public final class LFGDatabaseGenerator {
 			sb.append("\n| ").append(getStructureName(strClass)).append(" = ").append(Lang.STRUCTURE_BIOMES);
 			next:
 			for (LOTRBiome biome : BIOMES) {
-				for (Object structure : LFGReflectionHelper.getRandomStructures(biome.decorator)) {
-					if (LFGReflectionHelper.getStructureGen(structure).getClass() == strClass) {
+				for (Object structure : ReflectionHelper.getRandomStructures(biome.decorator)) {
+					if (ReflectionHelper.getStructureGen(structure).getClass() == strClass) {
 						sb.append("\n* ").append(getBiomeLink(biome)).append(';');
 						continue next;
 					}
@@ -1528,14 +1528,14 @@ public final class LFGDatabaseGenerator {
 		for (LOTRTreeType tree : TREES) {
 			next:
 			for (LOTRBiome biome : BIOMES) {
-				for (LOTRTreeType.WeightedTreeType weightedTreeType : LFGReflectionHelper.getTreeTypes(biome.decorator)) {
+				for (LOTRTreeType.WeightedTreeType weightedTreeType : ReflectionHelper.getTreeTypes(biome.decorator)) {
 					if (weightedTreeType.treeType == tree) {
 						biomesTree.add(biome);
 						continue next;
 					}
 				}
-				for (Object variantBucket : LFGReflectionHelper.getVariantList(biome.getBiomeVariantsSmall())) {
-					for (LOTRTreeType.WeightedTreeType weightedTreeType : LFGReflectionHelper.getVariant(variantBucket).treeTypes) {
+				for (Object variantBucket : ReflectionHelper.getVariantList(biome.getBiomeVariantsSmall())) {
+					for (LOTRTreeType.WeightedTreeType weightedTreeType : ReflectionHelper.getVariant(variantBucket).treeTypes) {
 						if (weightedTreeType.treeType == tree) {
 							biomesVariantTree.add(biome);
 							continue next;
@@ -1671,12 +1671,12 @@ public final class LFGDatabaseGenerator {
 	private static void searchForMinerals(Iterable<LOTRBiome> biomes, Collection<String> minerals) {
 		Collection<Object> oreGenerants = new ArrayList<>();
 		for (LOTRBiome biome : biomes) {
-			oreGenerants.addAll(LFGReflectionHelper.getBiomeMinerals(biome.decorator, "biomeSoils"));
-			oreGenerants.addAll(LFGReflectionHelper.getBiomeMinerals(biome.decorator, "biomeOres"));
-			oreGenerants.addAll(LFGReflectionHelper.getBiomeMinerals(biome.decorator, "biomeGems"));
+			oreGenerants.addAll(ReflectionHelper.getBiomeMinerals(biome.decorator, "biomeSoils"));
+			oreGenerants.addAll(ReflectionHelper.getBiomeMinerals(biome.decorator, "biomeOres"));
+			oreGenerants.addAll(ReflectionHelper.getBiomeMinerals(biome.decorator, "biomeGems"));
 			for (Object oreGenerant : oreGenerants) {
-				Block block = LFGReflectionHelper.getMineableBlock(LFGReflectionHelper.getOreGen(oreGenerant));
-				int meta = LFGReflectionHelper.getMineableBlockMeta(LFGReflectionHelper.getOreGen(oreGenerant));
+				Block block = ReflectionHelper.getMineableBlock(ReflectionHelper.getOreGen(oreGenerant));
+				int meta = ReflectionHelper.getMineableBlockMeta(ReflectionHelper.getOreGen(oreGenerant));
 				if (block instanceof LOTRBlockOreGem || block instanceof BlockDirt || block instanceof LOTRBlockRock) {
 					minerals.add(getBlockMetaName(block, meta));
 				} else {
@@ -1749,8 +1749,8 @@ public final class LFGDatabaseGenerator {
 
 	private static void searchForStructures(Iterable<LOTRBiome> biomes, Collection<Class<? extends WorldGenerator>> structures) {
 		for (LOTRBiome biome : biomes) {
-			for (Object structure : LFGReflectionHelper.getRandomStructures(biome.decorator)) {
-				structures.add((Class<? extends WorldGenerator>) LFGReflectionHelper.getStructureGen(structure).getClass());
+			for (Object structure : ReflectionHelper.getRandomStructures(biome.decorator)) {
+				structures.add((Class<? extends WorldGenerator>) ReflectionHelper.getStructureGen(structure).getClass());
 			}
 		}
 	}

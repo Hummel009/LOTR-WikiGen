@@ -6,7 +6,7 @@ import cpw.mods.fml.common.event.FMLServerStartingEvent;
 @Mod(modid = "wikigen", dependencies = "required-after:lotr", useMetadata = true)
 public class Main {
 	@Mod.EventHandler
-	public void serverStarting(FMLServerStartingEvent e) {
-		e.registerServerCommand(new DatabaseCommand());
+	public void serverStarting(FMLServerStartingEvent event) {
+		event.registerServerCommand(new DatabaseCommand());
 	}
 }

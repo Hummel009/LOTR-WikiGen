@@ -1,4 +1,4 @@
-package com.github.hummel.wikigen;
+package com.github.hummel.wikigen.engine;
 
 import lotr.common.LOTRAchievement;
 import lotr.common.LOTRMod;

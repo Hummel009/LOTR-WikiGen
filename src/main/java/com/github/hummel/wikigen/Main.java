@@ -7,6 +7,6 @@ import cpw.mods.fml.common.event.FMLServerStartingEvent;
 public class Main {
 	@Mod.EventHandler
 	public void serverStarting(FMLServerStartingEvent e) {
-		e.registerServerCommand(new DbCommand());
+		e.registerServerCommand(new DatabaseCommand());
 	}
 }

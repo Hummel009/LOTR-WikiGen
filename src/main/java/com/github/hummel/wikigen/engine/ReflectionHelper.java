@@ -1,4 +1,4 @@
-package com.github.hummel.wikigen;
+package com.github.hummel.wikigen.engine;
 
 import cpw.mods.fml.common.ObfuscationReflectionHelper;
 import lotr.common.LOTRAchievement;

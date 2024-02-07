@@ -1,4 +1,4 @@
-package com.github.hummel.wikigen;
+package com.github.hummel.wikigen.engine;
 
 import lotr.common.entity.animal.*;
 import lotr.common.entity.npc.*;

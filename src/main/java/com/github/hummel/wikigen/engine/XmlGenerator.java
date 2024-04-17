@@ -954,7 +954,14 @@ public final class XmlGenerator {
 			} else {
 				sb.append(Lang.FACTION_HAS_RANKS);
 				for (LOTRFactionRank rank : ReflectionHelper.getRanksSortedDescending(fac)) {
-					sb.append("\n* ").append(rank.getDisplayFullName()).append('/').append(rank.getDisplayFullNameFem()).append(" (+").append(rank.alignment).append(");");
+					sb.append("\n* ").append(rank.getDisplayFullName());
+
+					String femRank = rank.getDisplayFullNameFem();
+					if (!femRank.contains("lotr")) {
+						sb.append('/').append(femRank);
+					}
+
+					sb.append(" (+").append(rank.alignment).append(");");
 				}
 			}
 		}
@@ -1414,6 +1421,7 @@ public final class XmlGenerator {
 				invasionEntries.clear();
 			}
 			sb.append("\n| ").append(getEntityPagename(entityClass)).append(" = ");
+			//noinspection StreamToLoop
 			if (Stream.of(spawnBiomes, conquestBiomes, invasionBiomes).allMatch(Collection::isEmpty)) {
 				sb.append(Lang.ENTITY_NO_BIOMES);
 			} else {

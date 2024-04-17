@@ -14,7 +14,7 @@ public class CommandDatabase extends CommandBase {
 	public List<String> addTabCompletionOptions(ICommandSender sender, String[] args) {
 		if (args.length == 1) {
 			List<String> list = XmlGenerator.Type.getNames();
-			return CommandBase.getListOfStringsMatchingLastWord(args, list.toArray(new String[0]));
+			return getListOfStringsMatchingLastWord(args, list.toArray(new String[0]));
 		}
 		return Collections.emptyList();
 	}
@@ -34,9 +34,9 @@ public class CommandDatabase extends CommandBase {
 		World world = sender.getEntityWorld();
 		XmlGenerator.Type type = XmlGenerator.Type.forName(args[0]);
 		if (type == null) {
-			CommandBase.func_152373_a(sender, this, "Database \"" + args[0] + "\" does not exist.");
+			func_152373_a(sender, this, "Database \"" + args[0] + "\" does not exist.");
 		} else {
-			CommandBase.func_152373_a(sender, this, "Database \"" + type + "\" is prepared.");
+			func_152373_a(sender, this, "Database \"" + type + "\" is prepared.");
 			XmlGenerator.generate(type.toString(), world, (EntityPlayer) sender);
 		}
 	}

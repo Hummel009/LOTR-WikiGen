@@ -340,7 +340,7 @@ public final class XmlGenerator {
 						if (entry.mountClass == null) {
 							sb.append(" || {{Coins|").append(ReflectionHelper.getInitialCost(entry) * 2).append("}} || {{Coins|").append(ReflectionHelper.getInitialCost(entry)).append("}} || +").append(entry.alignmentRequired).append(" || -");
 						} else {
-							sb.append(" || {{Coins|").append(ReflectionHelper.getInitialCost(entry) * 2).append("}} (").append(Lang.RIDER).append(") || {{Coins|").append(ReflectionHelper.getInitialCost(entry)).append("}} || +").append(entry.alignmentRequired).append(" || -");
+							sb.append(" (").append(Lang.RIDER).append(") || {{Coins|").append(ReflectionHelper.getInitialCost(entry) * 2).append("}} || {{Coins|").append(ReflectionHelper.getInitialCost(entry)).append("}} || +").append(entry.alignmentRequired).append(" || -");
 						}
 					} else if (entry.mountClass == null) {
 						if (entry.alignmentRequired < 101.0f) {
@@ -349,9 +349,9 @@ public final class XmlGenerator {
 							sb.append(" || N/A || {{Coins|").append(ReflectionHelper.getInitialCost(entry)).append("}} || +").append(entry.alignmentRequired).append(" || +");
 						}
 					} else if (entry.alignmentRequired < 101.0f) {
-						sb.append(" || N/A || {{Coins|").append(ReflectionHelper.getInitialCost(entry)).append("}} (").append(Lang.RIDER).append(") || +100.0 || +");
+						sb.append(" (").append(Lang.RIDER).append(") || N/A || {{Coins|").append(ReflectionHelper.getInitialCost(entry)).append("}} || +100.0 || +");
 					} else {
-						sb.append(" || N/A || {{Coins|").append(ReflectionHelper.getInitialCost(entry)).append("}} (").append(Lang.RIDER).append(") || +").append(entry.alignmentRequired).append(" || +");
+						sb.append(" (").append(Lang.RIDER).append(") || N/A || {{Coins|").append(ReflectionHelper.getInitialCost(entry)).append("}} || +").append(entry.alignmentRequired).append(" || +");
 					}
 					sb.append("\n|-");
 				} catch (Exception e) {

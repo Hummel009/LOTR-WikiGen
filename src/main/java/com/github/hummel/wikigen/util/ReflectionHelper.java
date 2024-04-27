@@ -24,7 +24,7 @@ import java.lang.reflect.Field;
 import java.lang.reflect.Method;
 import java.util.*;
 
-public final class ReflectionHelper {
+public class ReflectionHelper {
 	private ReflectionHelper() {
 	}
 

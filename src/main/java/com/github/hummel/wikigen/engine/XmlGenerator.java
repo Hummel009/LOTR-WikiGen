@@ -44,7 +44,7 @@ import java.util.*;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
-public final class XmlGenerator {
+public class XmlGenerator {
 	public static final Map<Class<? extends Entity>, Entity> CLASS_TO_ENTITY_OBJ = new HashMap<>();
 	public static final Map<Class<? extends Entity>, String> CLASS_TO_ENTITY_NAME = new HashMap<>();
 	public static final Collection<Class<? extends Entity>> ENTITY_SET = new HashSet<>();
@@ -83,7 +83,7 @@ public final class XmlGenerator {
 		try {
 			Config cfg = new Config(world);
 			cfg.authorizeEntityInfo();
-			cfg.authorizeStructureInfo();
+			Config.authorizeStructureInfo();
 			searchForMinerals(BIOMES, MINERALS);
 			searchForStructures(BIOMES, STRUCTURES);
 			searchForHireable(HIREABLE, UNITS);

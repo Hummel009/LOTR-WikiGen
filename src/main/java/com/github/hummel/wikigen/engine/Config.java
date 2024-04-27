@@ -10,6 +10,7 @@ import lotr.common.world.village.*;
 import net.minecraft.entity.Entity;
 import net.minecraft.world.World;
 
+@SuppressWarnings("all")
 public class Config {
 	private final World world;
 
@@ -440,7 +441,7 @@ public class Config {
 		genEntityInfo(LOTREntityGandalf.class, "Gandalf", 1003, 9605778, 5923198);
 	}
 
-	public void authorizeStructureInfo() {
+	public static void authorizeStructureInfo() {
 		genStructureInfo(1, LOTRWorldGenHobbitHole.class, "HobbitHole", 2727977, 8997164);
 		genStructureInfo(2, LOTRWorldGenHobbitTavern.class, "HobbitTavern", 9324081, 15975807);
 		genStructureInfo(3, LOTRWorldGenHobbitPicnicBench.class, "HobbitPicnicBench", 7032622, 13882323);
@@ -836,15 +837,15 @@ public class Config {
 		XmlGenerator.ENTITY_SET.add(entityClass);
 	}
 
-	private void genStructureInfo(Class<?> clazz, String name) {
+	private static void genStructureInfo(Class<?> clazz, String name) {
 		XmlGenerator.CLASS_TO_STRUCTURE_NAME.put(clazz, name);
 	}
 
-	private void genStructureInfo(int i, Class<?> clazz, String name, int egg1, int egg2) {
+	private static void genStructureInfo(int i, Class<?> clazz, String name, int egg1, int egg2) {
 		genStructureInfo(clazz, name);
 	}
 
-	private void genStructureInfo(int i, LOTRVillageGen clazz, String name, int j, int k, IVillageProperties<?> iVillageProperties) {
+	private static void genStructureInfo(int i, LOTRVillageGen clazz, String name, int j, int k, IVillageProperties<?> iVillageProperties) {
 		genStructureInfo(clazz.getClass(), name);
 	}
 

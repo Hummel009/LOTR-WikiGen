@@ -39,6 +39,7 @@ import net.minecraft.world.biome.BiomeGenBase;
 import net.minecraft.world.gen.feature.WorldGenMinable;
 
 import java.io.File;
+import java.io.IOException;
 import java.io.PrintWriter;
 import java.nio.file.Files;
 import java.nio.file.Paths;
@@ -111,40 +112,45 @@ public class WikiGenerator {
 
 	public static void generate(String type, World world, EntityPlayer entityPlayer) {
 		long time = System.nanoTime();
+
 		try {
-			Config.world = world;
-			Config.authorizeEntityInfo();
-			Config.authorizeStructureInfo();
-
 			Files.createDirectories(Paths.get("hummel"));
+		} catch (IOException e) {
+			throw new RuntimeException(e);
+		}
 
-			Collection<Runnable> pRunnables = new HashSet<>();
+		Config.world = world;
+		Config.authorizeEntityInfo();
+		Config.authorizeStructureInfo();
 
-			pRunnables.add(() -> searchForEntities(world));
-			pRunnables.add(() -> searchForMinerals(BIOMES, MINERALS));
-			pRunnables.add(() -> searchForStructures(BIOMES, STRUCTURES));
-			pRunnables.add(() -> searchForHireable(HIREABLE, UNIT_TRADE_ENTRIES));
-			pRunnables.add(() -> searchForPagenamesEntity(BIOMES, FACTIONS));
-			pRunnables.add(() -> searchForPagenamesBiome(BIOMES, FACTIONS));
-			pRunnables.add(() -> searchForPagenamesFaction(BIOMES, FACTIONS));
+		Collection<Runnable> pRunnables = new HashSet<>();
 
-			pRunnables.parallelStream().forEach(Runnable::run);
+		pRunnables.add(() -> searchForEntities(world));
+		pRunnables.add(() -> searchForMinerals(BIOMES, MINERALS));
+		pRunnables.add(() -> searchForStructures(BIOMES, STRUCTURES));
+		pRunnables.add(() -> searchForHireable(HIREABLE, UNIT_TRADE_ENTRIES));
+		pRunnables.add(() -> searchForPagenamesEntity(BIOMES, FACTIONS));
+		pRunnables.add(() -> searchForPagenamesBiome(BIOMES, FACTIONS));
+		pRunnables.add(() -> searchForPagenamesFaction(BIOMES, FACTIONS));
 
-			if ("tables".equalsIgnoreCase(type)) {
-				Collection<Runnable> runnables = new HashSet<>();
+		pRunnables.parallelStream().forEach(Runnable::run);
 
-				runnables.add(() -> genTableAchievements(entityPlayer));
-				runnables.add(WikiGenerator::genTableShields);
-				runnables.add(WikiGenerator::genTableUnits);
-				runnables.add(WikiGenerator::genTableArmor);
-				runnables.add(WikiGenerator::genTableWeapons);
-				runnables.add(WikiGenerator::genTableFood);
+		if ("tables".equalsIgnoreCase(type)) {
+			Collection<Runnable> runnables = new HashSet<>();
 
-				runnables.add(() -> genTableWaypoints(entityPlayer));
+			runnables.add(() -> genTableAchievements(entityPlayer));
+			runnables.add(WikiGenerator::genTableShields);
+			runnables.add(WikiGenerator::genTableUnits);
+			runnables.add(WikiGenerator::genTableArmor);
+			runnables.add(WikiGenerator::genTableWeapons);
+			runnables.add(WikiGenerator::genTableFood);
 
-				runnables.parallelStream().forEach(Runnable::run);
+			runnables.add(() -> genTableWaypoints(entityPlayer));
 
-			} else if ("xml".equalsIgnoreCase(type)) {
+			runnables.parallelStream().forEach(Runnable::run);
+
+		} else if ("xml".equalsIgnoreCase(type)) {
+			try (PrintWriter printWriter = new PrintWriter("hummel/import.xml", UTF_8)) {
 				StringBuilder xmlBuilder = new StringBuilder();
 
 				xmlBuilder.append("<mediawiki xmlns=\"http://www.mediawiki.org/xml/export-0.11/\" xmlns:xsi=\"http://www.w3.org/2001/XMLSchema-instance\" xsi:schemaLocation=\"http://www.mediawiki.org/xml/export-0.11/ http://www.mediawiki.org/xml/export-0.11.xsd\" version=\"0.11\" xml:lang=\"ru\">");
@@ -255,12 +261,10 @@ public class WikiGenerator {
 
 				xmlBuilder.append("</mediawiki>");
 
-				PrintWriter xml = new PrintWriter("hummel/import.xml", UTF_8);
-				xml.write(xmlBuilder.toString());
-				xml.close();
+				printWriter.write(xmlBuilder.toString());
+			} catch (Exception e) {
+				e.printStackTrace();
 			}
-		} catch (Exception e) {
-			e.printStackTrace();
 		}
 		long newTime = System.nanoTime();
 
@@ -359,7 +363,7 @@ public class WikiGenerator {
 	}
 
 	private static void genTableAchievements(EntityPlayer entityPlayer) {
-		try {
+		try (PrintWriter printWriter = new PrintWriter("hummel/achievements.txt", UTF_8)) {
 			StringBuilder sb = new StringBuilder();
 
 			List<String> sortable = new ArrayList<>();
@@ -372,16 +376,14 @@ public class WikiGenerator {
 
 			appendSortedList(sb, sortable);
 
-			PrintWriter printWriter = new PrintWriter("hummel/achievements.txt", UTF_8);
 			printWriter.write(sb.toString());
-			printWriter.close();
 		} catch (Exception e) {
 			e.printStackTrace();
 		}
 	}
 
 	private static void genTableArmor() {
-		try {
+		try (PrintWriter printWriter = new PrintWriter("hummel/armor.txt", UTF_8)) {
 			StringBuilder sb = new StringBuilder();
 
 			for (Item item : ITEMS) {
@@ -399,9 +401,7 @@ public class WikiGenerator {
 					sb.append(NL).append("|-");
 				}
 			}
-			PrintWriter printWriter = new PrintWriter("hummel/armor.txt", UTF_8);
 			printWriter.write(sb.toString());
-			printWriter.close();
 		} catch (Exception e) {
 			e.printStackTrace();
 		}
@@ -409,7 +409,7 @@ public class WikiGenerator {
 
 	@SuppressWarnings("deprecation")
 	private static void genTableFood() {
-		try {
+		try (PrintWriter printWriter = new PrintWriter("hummel/food.txt", UTF_8)) {
 			StringBuilder sb = new StringBuilder();
 
 			List<String> sortable = new ArrayList<>();
@@ -434,32 +434,28 @@ public class WikiGenerator {
 
 			appendSortedList(sb, sortable);
 
-			PrintWriter printWriter = new PrintWriter("hummel/food.txt", UTF_8);
 			printWriter.write(sb.toString());
-			printWriter.close();
 		} catch (Exception e) {
 			e.printStackTrace();
 		}
 	}
 
 	private static void genTableShields() {
-		try {
+		try (PrintWriter printWriter = new PrintWriter("hummel/shields.txt", UTF_8)) {
 			StringBuilder sb = new StringBuilder();
 
 			for (LOTRShields shield : SHIELDS) {
 				sb.append(NL).append("| ");
 				sb.append(shield.getShieldName()).append(" || ").append(shield.getShieldDesc()).append(" || ").append(getShieldFilename(shield)).append(NL).append("|-");
 			}
-			PrintWriter printWriter = new PrintWriter("hummel/shields.txt", UTF_8);
 			printWriter.write(sb.toString());
-			printWriter.close();
 		} catch (Exception e) {
 			e.printStackTrace();
 		}
 	}
 
 	private static void genTableUnits() {
-		try {
+		try (PrintWriter printWriter = new PrintWriter("hummel/units.txt", UTF_8)) {
 			StringBuilder sb = new StringBuilder();
 
 			for (LOTRUnitTradeEntries unitTradeEntries : UNIT_TRADE_ENTRIES) {
@@ -489,16 +485,14 @@ public class WikiGenerator {
 					}
 				}
 			}
-			PrintWriter printWriter = new PrintWriter("hummel/units.txt", UTF_8);
 			printWriter.write(sb.toString());
-			printWriter.close();
 		} catch (Exception e) {
 			e.printStackTrace();
 		}
 	}
 
 	private static void genTableWaypoints(EntityPlayer entityPlayer) {
-		try {
+		try (PrintWriter printWriter = new PrintWriter("hummel/waypoints.txt", UTF_8)) {
 			StringBuilder sb = new StringBuilder();
 
 			List<String> sortable = new ArrayList<>();
@@ -509,16 +503,14 @@ public class WikiGenerator {
 
 			appendSortedList(sb, sortable);
 
-			PrintWriter printWriter = new PrintWriter("hummel/waypoints.txt", UTF_8);
 			printWriter.write(sb.toString());
-			printWriter.close();
 		} catch (Exception e) {
 			e.printStackTrace();
 		}
 	}
 
 	private static void genTableWeapons() {
-		try {
+		try (PrintWriter printWriter = new PrintWriter("hummel/weapon.txt", UTF_8)) {
 			StringBuilder sb = new StringBuilder();
 
 			List<String> sortable = new ArrayList<>();
@@ -545,9 +537,7 @@ public class WikiGenerator {
 
 			appendSortedList(sb, sortable);
 
-			PrintWriter printWriter = new PrintWriter("hummel/weapon.txt", UTF_8);
 			printWriter.write(sb.toString());
-			printWriter.close();
 		} catch (Exception e) {
 			e.printStackTrace();
 		}
@@ -2162,7 +2152,7 @@ public class WikiGenerator {
 	}
 
 	private static void markPagesForRemoval(Collection<String> neededPages, Iterable<String> existingPages) {
-		try {
+		try (PrintWriter printWriter = new PrintWriter("hummel/removal.txt", UTF_8)) {
 			StringBuilder sb = new StringBuilder();
 
 			for (String existing : existingPages) {
@@ -2170,9 +2160,7 @@ public class WikiGenerator {
 					sb.append(existing).append('\n');
 				}
 			}
-			PrintWriter printWriter = new PrintWriter("hummel/removal.txt", UTF_8);
 			printWriter.write(sb.toString());
-			printWriter.close();
 		} catch (Exception e) {
 			e.printStackTrace();
 		}

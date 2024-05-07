@@ -1,6 +1,6 @@
 package com.github.hummel.wikigen;
 
-import com.github.hummel.wikigen.command.CommandDatabase;
+import com.github.hummel.wikigen.command.CommandWikiGen;
 import cpw.mods.fml.common.Mod;
 import cpw.mods.fml.common.event.FMLServerStartingEvent;
 
@@ -8,6 +8,6 @@ import cpw.mods.fml.common.event.FMLServerStartingEvent;
 public class Main {
 	@Mod.EventHandler
 	public void serverStarting(FMLServerStartingEvent event) {
-		event.registerServerCommand(new CommandDatabase());
+		event.registerServerCommand(new CommandWikiGen());
 	}
 }

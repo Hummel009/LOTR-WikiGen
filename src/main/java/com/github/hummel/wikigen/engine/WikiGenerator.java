@@ -116,7 +116,7 @@ public class WikiGenerator {
 		try {
 			Files.createDirectories(Paths.get("hummel"));
 		} catch (IOException e) {
-			throw new RuntimeException(e);
+			e.printStackTrace();
 		}
 
 		Config.world = world;

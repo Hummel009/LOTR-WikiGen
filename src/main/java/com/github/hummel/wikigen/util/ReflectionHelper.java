@@ -129,22 +129,11 @@ public class ReflectionHelper {
 		return null;
 	}
 
-	public static Block getOreGenBlock(WorldGenMinable worldGenMinable) {
+	public static int getMaxHeight(Object oreGenerant) {
 		try {
-			Field privateField = getPotentiallyObfuscatedPrivateValue(WorldGenMinable.class, "field_150519_a");
+			Field privateField = oreGenerant.getClass().getDeclaredField("maxHeight");
 			privateField.setAccessible(true);
-			return (Block) privateField.get(worldGenMinable);
-		} catch (Exception e) {
-			e.printStackTrace();
-		}
-		return null;
-	}
-
-	public static int getOreGenMeta(WorldGenMinable worldGenMinable) {
-		try {
-			Field privateField = getPotentiallyObfuscatedPrivateValue(WorldGenMinable.class, "mineableBlockMeta");
-			privateField.setAccessible(true);
-			return (int) privateField.get(worldGenMinable);
+			return (int) privateField.get(oreGenerant);
 		} catch (Exception e) {
 			e.printStackTrace();
 		}
@@ -154,17 +143,6 @@ public class ReflectionHelper {
 	public static int getMinHeight(Object oreGenerant) {
 		try {
 			Field privateField = oreGenerant.getClass().getDeclaredField("minHeight");
-			privateField.setAccessible(true);
-			return (int) privateField.get(oreGenerant);
-		} catch (Exception e) {
-			e.printStackTrace();
-		}
-		return 0;
-	}
-
-	public static int getMaxHeight(Object oreGenerant) {
-		try {
-			Field privateField = oreGenerant.getClass().getDeclaredField("maxHeight");
 			privateField.setAccessible(true);
 			return (int) privateField.get(oreGenerant);
 		} catch (Exception e) {
@@ -214,6 +192,28 @@ public class ReflectionHelper {
 		return null;
 	}
 
+	public static Block getOreGenBlock(WorldGenMinable worldGenMinable) {
+		try {
+			Field privateField = getPotentiallyObfuscatedPrivateValue(WorldGenMinable.class, "field_150519_a");
+			privateField.setAccessible(true);
+			return (Block) privateField.get(worldGenMinable);
+		} catch (Exception e) {
+			e.printStackTrace();
+		}
+		return null;
+	}
+
+	public static int getOreGenMeta(WorldGenMinable worldGenMinable) {
+		try {
+			Field privateField = getPotentiallyObfuscatedPrivateValue(WorldGenMinable.class, "mineableBlockMeta");
+			privateField.setAccessible(true);
+			return (int) privateField.get(worldGenMinable);
+		} catch (Exception e) {
+			e.printStackTrace();
+		}
+		return 0;
+	}
+
 	private static <T, E> T getPotentiallyObfuscatedPrivateValue(Class<? super E> classToAccess, String fieldName) {
 		try {
 			return cpw.mods.fml.relauncher.ReflectionHelper.getPrivateValue(classToAccess, null, ObfuscationReflectionHelper.remapFieldNames(classToAccess.getName(), fieldName));
@@ -225,39 +225,6 @@ public class ReflectionHelper {
 			}
 		}
 		return null;
-	}
-
-	public static float getSpawnChance(LOTRVillageGen village) {
-		try {
-			Field privateField = LOTRVillageGen.class.getDeclaredField("spawnChance");
-			privateField.setAccessible(true);
-			return (float) privateField.get(village);
-		} catch (Exception e) {
-			e.printStackTrace();
-		}
-		return 0.0f;
-	}
-
-	public static List<Object> getStructures(LOTRBiomeDecorator decorator) {
-		try {
-			Field privateField = LOTRBiomeDecorator.class.getDeclaredField("randomStructures");
-			privateField.setAccessible(true);
-			return (List<Object>) privateField.get(decorator);
-		} catch (Exception e) {
-			e.printStackTrace();
-		}
-		return new ArrayList<>();
-	}
-
-	public static List<LOTRVillageGen> getVillages(LOTRBiomeDecorator decorator) {
-		try {
-			Field privateField = LOTRBiomeDecorator.class.getDeclaredField("villages");
-			privateField.setAccessible(true);
-			return (List<LOTRVillageGen>) privateField.get(decorator);
-		} catch (Exception e) {
-			e.printStackTrace();
-		}
-		return new ArrayList<>();
 	}
 
 	public static List<LOTRFactionRank> getRanksSortedDescending(LOTRFaction fac) {
@@ -293,15 +260,15 @@ public class ReflectionHelper {
 		return new ArrayList<>();
 	}
 
-	public static LOTRSpawnList getSpawnList(LOTRBiomeSpawnList.SpawnListContainer container) {
+	public static float getSpawnChance(LOTRVillageGen village) {
 		try {
-			Field privateField = LOTRBiomeSpawnList.SpawnListContainer.class.getDeclaredField("spawnList");
+			Field privateField = LOTRVillageGen.class.getDeclaredField("spawnChance");
 			privateField.setAccessible(true);
-			return (LOTRSpawnList) privateField.get(container);
+			return (float) privateField.get(village);
 		} catch (Exception e) {
 			e.printStackTrace();
 		}
-		return null;
+		return 0.0f;
 	}
 
 	public static List<LOTRSpawnEntry> getSpawnEntries(LOTRSpawnList spawnList) {
@@ -315,6 +282,17 @@ public class ReflectionHelper {
 		return new ArrayList<>();
 	}
 
+	public static LOTRSpawnList getSpawnList(LOTRBiomeSpawnList.SpawnListContainer container) {
+		try {
+			Field privateField = LOTRBiomeSpawnList.SpawnListContainer.class.getDeclaredField("spawnList");
+			privateField.setAccessible(true);
+			return (LOTRSpawnList) privateField.get(container);
+		} catch (Exception e) {
+			e.printStackTrace();
+		}
+		return null;
+	}
+
 	public static List<LOTRBiomeSpawnList.SpawnListContainer> getSpawnLists(LOTRBiomeSpawnList.FactionContainer container) {
 		try {
 			Field privateField = LOTRBiomeSpawnList.FactionContainer.class.getDeclaredField("spawnLists");
@@ -326,28 +304,6 @@ public class ReflectionHelper {
 		return new ArrayList<>();
 	}
 
-	public static boolean isTargetSeeker(LOTREntityNPC entity) {
-		try {
-			Field privateField = LOTREntityNPC.class.getDeclaredField("isTargetSeeker");
-			privateField.setAccessible(true);
-			return (boolean) privateField.get(entity);
-		} catch (Exception e) {
-			e.printStackTrace();
-		}
-		return false;
-	}
-
-	public static boolean isSpawnsInDarkness(LOTREntityNPC entity) {
-		try {
-			Field privateField = LOTREntityNPC.class.getDeclaredField("spawnsInDarkness");
-			privateField.setAccessible(true);
-			return (boolean) privateField.get(entity);
-		} catch (Exception e) {
-			e.printStackTrace();
-		}
-		return false;
-	}
-
 	public static Object getStructureGen(Object randomStructure) {
 		try {
 			Field privateField = randomStructure.getClass().getDeclaredField("structureGen");
@@ -357,6 +313,17 @@ public class ReflectionHelper {
 			e.printStackTrace();
 		}
 		return null;
+	}
+
+	public static List<Object> getStructures(LOTRBiomeDecorator decorator) {
+		try {
+			Field privateField = LOTRBiomeDecorator.class.getDeclaredField("randomStructures");
+			privateField.setAccessible(true);
+			return (List<Object>) privateField.get(decorator);
+		} catch (Exception e) {
+			e.printStackTrace();
+		}
+		return new ArrayList<>();
 	}
 
 	public static Item.ToolMaterial getToolMaterial(Item item) {
@@ -401,6 +368,39 @@ public class ReflectionHelper {
 			e.printStackTrace();
 		}
 		return new ArrayList<>();
+	}
+
+	public static List<LOTRVillageGen> getVillages(LOTRBiomeDecorator decorator) {
+		try {
+			Field privateField = LOTRBiomeDecorator.class.getDeclaredField("villages");
+			privateField.setAccessible(true);
+			return (List<LOTRVillageGen>) privateField.get(decorator);
+		} catch (Exception e) {
+			e.printStackTrace();
+		}
+		return new ArrayList<>();
+	}
+
+	public static boolean isSpawnsInDarkness(LOTREntityNPC entity) {
+		try {
+			Field privateField = LOTREntityNPC.class.getDeclaredField("spawnsInDarkness");
+			privateField.setAccessible(true);
+			return (boolean) privateField.get(entity);
+		} catch (Exception e) {
+			e.printStackTrace();
+		}
+		return false;
+	}
+
+	public static boolean isTargetSeeker(LOTREntityNPC entity) {
+		try {
+			Field privateField = LOTREntityNPC.class.getDeclaredField("isTargetSeeker");
+			privateField.setAccessible(true);
+			return (boolean) privateField.get(entity);
+		} catch (Exception e) {
+			e.printStackTrace();
+		}
+		return false;
 	}
 
 	public static Entity newEntity(Class<? extends Entity> entityClass, World world) {

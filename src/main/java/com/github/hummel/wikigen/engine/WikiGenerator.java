@@ -1,6 +1,9 @@
 package com.github.hummel.wikigen.engine;
 
-import lotr.common.*;
+import lotr.common.LOTRAchievement;
+import lotr.common.LOTRAchievementRank;
+import lotr.common.LOTRMod;
+import lotr.common.LOTRShields;
 import lotr.common.block.LOTRBlockOreGem;
 import lotr.common.block.LOTRBlockRock;
 import lotr.common.entity.npc.*;
@@ -52,7 +55,6 @@ import static com.github.hummel.wikigen.util.ReflectionHelper.*;
 public class WikiGenerator {
 	public static final Map<Class<? extends Entity>, Entity> CLASS_TO_ENTITY = new HashMap<>();
 	public static final Map<Class<? extends Entity>, String> CLASS_TO_ENTITY_NAME = new HashMap<>();
-
 	public static final Map<Class<?>, String> CLASS_TO_STRUCTURE_NAME = new HashMap<>();
 	public static final Map<Class<?>, Set<String>> CLASS_TO_VILLAGE_NAMES = new HashMap<>();
 
@@ -144,8 +146,6 @@ public class WikiGenerator {
 
 			} else if ("xml".equalsIgnoreCase(type)) {
 				StringBuilder xmlBuilder = new StringBuilder();
-
-				LOTRDate.Season season = LOTRDate.ShireReckoning.getShireDate().month.season;
 
 				xmlBuilder.append("<mediawiki xmlns=\"http://www.mediawiki.org/xml/export-0.11/\" xmlns:xsi=\"http://www.w3.org/2001/XMLSchema-instance\" xsi:schemaLocation=\"http://www.mediawiki.org/xml/export-0.11/ http://www.mediawiki.org/xml/export-0.11.xsd\" version=\"0.11\" xml:lang=\"ru\">");
 
@@ -255,8 +255,6 @@ public class WikiGenerator {
 
 				xmlBuilder.append("</mediawiki>");
 
-				LOTRDate.ShireReckoning.getShireDate().month.season = season;
-
 				PrintWriter xml = new PrintWriter("hummel/import.xml", UTF_8);
 				xml.write(xmlBuilder.toString());
 				xml.close();
@@ -269,6 +267,95 @@ public class WikiGenerator {
 		//noinspection StringConcatenationMissingWhitespace
 		IChatComponent component = new ChatComponentText("Generated databases in " + (newTime - time) / 1.0E9 + 's');
 		entityPlayer.addChatMessage(component);
+	}
+
+	private static StringBuilder addPagesBiomes(Collection<String> neededPages, Collection<String> existingPages) {
+		StringBuilder sb = new StringBuilder();
+
+		for (LOTRBiome biome : BIOMES) {
+			String pageName = getBiomePagename(biome);
+			neededPages.add(pageName);
+			if (!existingPages.contains(pageName)) {
+				String page = PAGE_LEFT + "{{Статья Биом}}" + PAGE_RIGHT;
+				sb.append(TITLE_SINGLE).append(pageName).append(page);
+			}
+		}
+
+		return sb;
+	}
+
+	private static StringBuilder addPagesEntities(Collection<String> neededPages, Collection<String> existingPages) {
+		StringBuilder sb = new StringBuilder();
+
+		for (Class<? extends Entity> entityClass : ENTITIES) {
+			String pageName = getEntityPagename(entityClass);
+			neededPages.add(pageName);
+			if (!existingPages.contains(pageName)) {
+				String page = PAGE_LEFT + "{{Статья Моб}}" + PAGE_RIGHT;
+				sb.append(TITLE_SINGLE).append(pageName).append(page);
+			}
+		}
+
+		return sb;
+	}
+
+	private static StringBuilder addPagesFactions(Collection<String> neededPages, Collection<String> existingPages) {
+		StringBuilder sb = new StringBuilder();
+
+		for (LOTRFaction faction : FACTIONS) {
+			String pageName = getFactionPagename(faction);
+			neededPages.add(pageName);
+			if (!existingPages.contains(pageName)) {
+				String page = PAGE_LEFT + "{{Статья Фракция}}" + PAGE_RIGHT;
+				sb.append(TITLE_SINGLE).append(pageName).append(page);
+			}
+		}
+
+		return sb;
+	}
+
+	private static StringBuilder addPagesMinerals(Collection<String> neededPages, Collection<String> existingPages) {
+		StringBuilder sb = new StringBuilder();
+
+		for (String pageName : MINERALS) {
+			neededPages.add(pageName);
+			if (!existingPages.contains(pageName)) {
+				String page = PAGE_LEFT + "{{Статья Ископаемое}}" + PAGE_RIGHT;
+				sb.append(TITLE_SINGLE).append(pageName).append(page);
+			}
+		}
+
+		return sb;
+	}
+
+	private static StringBuilder addPagesStructures(Collection<String> neededPages, Collection<String> existingPages) {
+		StringBuilder sb = new StringBuilder();
+
+		for (Class<?> strClass : STRUCTURES) {
+			String pageName = getStructureName(strClass);
+			neededPages.add(pageName);
+			if (!existingPages.contains(pageName)) {
+				String page = PAGE_LEFT + "{{Статья Структура}}" + PAGE_RIGHT;
+				sb.append(TITLE_SINGLE).append(pageName).append(page);
+			}
+		}
+
+		return sb;
+	}
+
+	private static StringBuilder addPagesTrees(Collection<String> neededPages, Collection<String> existingPages) {
+		StringBuilder sb = new StringBuilder();
+
+		for (LOTRTreeType tree : TREES) {
+			String pageName = getTreeName(tree);
+			neededPages.add(pageName);
+			if (!existingPages.contains(pageName)) {
+				String page = PAGE_LEFT + "{{Статья Дерево}}" + PAGE_RIGHT;
+				sb.append(TITLE_SINGLE).append(pageName).append(page);
+			}
+		}
+
+		return sb;
 	}
 
 	private static void genTableAchievements(EntityPlayer entityPlayer) {
@@ -2055,95 +2142,6 @@ public class WikiGenerator {
 		return sb;
 	}
 
-	private static StringBuilder addPagesBiomes(Collection<String> neededPages, Collection<String> existingPages) {
-		StringBuilder sb = new StringBuilder();
-
-		for (LOTRBiome biome : BIOMES) {
-			String pageName = getBiomePagename(biome);
-			neededPages.add(pageName);
-			if (!existingPages.contains(pageName)) {
-				String page = PAGE_LEFT + "{{Статья Биом}}" + PAGE_RIGHT;
-				sb.append(TITLE_SINGLE).append(pageName).append(page);
-			}
-		}
-
-		return sb;
-	}
-
-	private static StringBuilder addPagesEntities(Collection<String> neededPages, Collection<String> existingPages) {
-		StringBuilder sb = new StringBuilder();
-
-		for (Class<? extends Entity> entityClass : ENTITIES) {
-			String pageName = getEntityPagename(entityClass);
-			neededPages.add(pageName);
-			if (!existingPages.contains(pageName)) {
-				String page = PAGE_LEFT + "{{Статья Моб}}" + PAGE_RIGHT;
-				sb.append(TITLE_SINGLE).append(pageName).append(page);
-			}
-		}
-
-		return sb;
-	}
-
-	private static StringBuilder addPagesFactions(Collection<String> neededPages, Collection<String> existingPages) {
-		StringBuilder sb = new StringBuilder();
-
-		for (LOTRFaction faction : FACTIONS) {
-			String pageName = getFactionPagename(faction);
-			neededPages.add(pageName);
-			if (!existingPages.contains(pageName)) {
-				String page = PAGE_LEFT + "{{Статья Фракция}}" + PAGE_RIGHT;
-				sb.append(TITLE_SINGLE).append(pageName).append(page);
-			}
-		}
-
-		return sb;
-	}
-
-	private static StringBuilder addPagesMinerals(Collection<String> neededPages, Collection<String> existingPages) {
-		StringBuilder sb = new StringBuilder();
-
-		for (String pageName : MINERALS) {
-			neededPages.add(pageName);
-			if (!existingPages.contains(pageName)) {
-				String page = PAGE_LEFT + "{{Статья Ископаемое}}" + PAGE_RIGHT;
-				sb.append(TITLE_SINGLE).append(pageName).append(page);
-			}
-		}
-
-		return sb;
-	}
-
-	private static StringBuilder addPagesStructures(Collection<String> neededPages, Collection<String> existingPages) {
-		StringBuilder sb = new StringBuilder();
-
-		for (Class<?> strClass : STRUCTURES) {
-			String pageName = getStructureName(strClass);
-			neededPages.add(pageName);
-			if (!existingPages.contains(pageName)) {
-				String page = PAGE_LEFT + "{{Статья Структура}}" + PAGE_RIGHT;
-				sb.append(TITLE_SINGLE).append(pageName).append(page);
-			}
-		}
-
-		return sb;
-	}
-
-	private static StringBuilder addPagesTrees(Collection<String> neededPages, Collection<String> existingPages) {
-		StringBuilder sb = new StringBuilder();
-
-		for (LOTRTreeType tree : TREES) {
-			String pageName = getTreeName(tree);
-			neededPages.add(pageName);
-			if (!existingPages.contains(pageName)) {
-				String page = PAGE_LEFT + "{{Статья Дерево}}" + PAGE_RIGHT;
-				sb.append(TITLE_SINGLE).append(pageName).append(page);
-			}
-		}
-
-		return sb;
-	}
-
 	private static Set<String> getExistingPages() {
 		try {
 			File file = new File("hummel/sitemap.txt");
@@ -2321,6 +2319,16 @@ public class WikiGenerator {
 		private Utils() {
 		}
 
+		protected static void appendSortedList(StringBuilder sb, List<String> sortable) {
+			Collections.sort(sortable);
+
+			for (String item : sortable) {
+				sb.append(item);
+			}
+
+			sortable.clear();
+		}
+
 		protected static String getBannerName(LOTRItemBanner.BannerType banner) {
 			return StatCollector.translateToLocal("item.lotr:banner." + banner.bannerName + ".name");
 		}
@@ -2400,6 +2408,10 @@ public class WikiGenerator {
 			return StatCollector.translateToLocal(item.getUnlocalizedName() + ".name");
 		}
 
+		protected static String getSettlementName(String nameAlias) {
+			return StatCollector.translateToLocal("lotr.structure." + nameAlias + ".name");
+		}
+
 		protected static String getShieldFilename(LOTRShields shield) {
 			return "[[File:Shield " + shield.name().toLowerCase(Locale.ROOT) + ".png]]";
 		}
@@ -2408,22 +2420,8 @@ public class WikiGenerator {
 			return StatCollector.translateToLocal("lotr.structure." + CLASS_TO_STRUCTURE_NAME.get(structureClass) + ".name");
 		}
 
-		protected static String getSettlementName(String nameAlias) {
-			return StatCollector.translateToLocal("lotr.structure." + nameAlias + ".name");
-		}
-
 		protected static String getTreeName(LOTRTreeType tree) {
 			return StatCollector.translateToLocal("lotr.tree." + tree.name().toLowerCase(Locale.ROOT) + ".name");
-		}
-
-		protected static void appendSortedList(StringBuilder sb, List<String> sortable) {
-			Collections.sort(sortable);
-
-			for (String item : sortable) {
-				sb.append(item);
-			}
-
-			sortable.clear();
 		}
 	}
 }

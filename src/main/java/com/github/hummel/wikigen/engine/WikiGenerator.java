@@ -138,13 +138,12 @@ public class WikiGenerator {
 			Collection<Runnable> runnables = new HashSet<>();
 
 			runnables.add(() -> genTableAchievements(entityPlayer));
+			runnables.add(() -> genTableWaypoints(entityPlayer));
 			runnables.add(WikiGenerator::genTableShields);
 			runnables.add(WikiGenerator::genTableUnits);
 			runnables.add(WikiGenerator::genTableArmor);
 			runnables.add(WikiGenerator::genTableWeapons);
 			runnables.add(WikiGenerator::genTableFood);
-
-			runnables.add(() -> genTableWaypoints(entityPlayer));
 
 			runnables.parallelStream().forEach(Runnable::run);
 

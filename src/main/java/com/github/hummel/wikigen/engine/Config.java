@@ -9,6 +9,7 @@ import lotr.common.world.structure2.*;
 import lotr.common.world.village.*;
 import net.minecraft.entity.Entity;
 import net.minecraft.world.World;
+import net.minecraft.world.gen.feature.WorldGenerator;
 
 import java.util.HashSet;
 
@@ -835,18 +836,18 @@ public class Config {
 		WikiGenerator.ENTITIES.add(entityClass);
 	}
 
-	private static void genStructureInfo(Class<?> clazz, String name) {
+	private static void genStructureInfo(Class<? extends WorldGenerator> clazz, String name) {
 		WikiGenerator.CLASS_TO_STRUCTURE_NAME.put(clazz, name);
+		WikiGenerator.STRUCTURES.add(clazz);
 	}
 
-	private static void genStructureInfo(int i, Class<?> clazz, String name, int egg1, int egg2) {
+	private static void genStructureInfo(int i, Class<? extends WorldGenerator> clazz, String name, int egg1, int egg2) {
 		genStructureInfo(clazz, name);
 	}
 
 	private static void genStructureInfo(int i, LOTRVillageGen clazz, String name, int j, int k, IVillageProperties<?> iVillageProperties) {
 		WikiGenerator.CLASS_TO_VILLAGE_NAMES.computeIfAbsent(clazz.getClass(), s -> new HashSet<>());
 		WikiGenerator.CLASS_TO_VILLAGE_NAMES.get(clazz.getClass()).add(name);
-		genStructureInfo(clazz.getClass(), name);
 	}
 
 	private interface IVillageProperties<V> {

@@ -37,6 +37,7 @@ import net.minecraft.util.StatCollector;
 import net.minecraft.world.World;
 import net.minecraft.world.biome.BiomeGenBase;
 import net.minecraft.world.gen.feature.WorldGenMinable;
+import net.minecraft.world.gen.feature.WorldGenerator;
 
 import java.io.File;
 import java.io.PrintWriter;
@@ -59,6 +60,7 @@ public class WikiGenerator {
 	public static final Map<Class<?>, Set<String>> CLASS_TO_VILLAGE_NAMES = new HashMap<>();
 
 	public static final Set<Class<? extends Entity>> ENTITIES = new HashSet<>();
+	public static final Set<Class<? extends WorldGenerator>> STRUCTURES = new HashSet<>();
 
 	private static final Map<String, String> FACTION_TO_PAGE = new HashMap<>();
 	private static final Map<String, String> ENTITY_TO_PAGE = new HashMap<>();
@@ -75,7 +77,6 @@ public class WikiGenerator {
 	private static final Collection<LOTRShields> SHIELDS = EnumSet.allOf(LOTRShields.class);
 
 	private static final Collection<String> MINERALS = new HashSet<>();
-	private static final Collection<Class<?>> STRUCTURES = new HashSet<>();
 	private static final Collection<Class<? extends Entity>> HIREABLE = new HashSet<>();
 
 	private static final String BEGIN = "</title>\n<ns>10</ns>\n<revision>\n<text>&lt;includeonly&gt;{{#switch: {{{1}}}";
@@ -126,7 +127,6 @@ public class WikiGenerator {
 
 		pRunnables.add(() -> searchForEntities(world));
 		pRunnables.add(() -> searchForMinerals(BIOMES, MINERALS));
-		pRunnables.add(() -> searchForStructures(BIOMES, STRUCTURES));
 		pRunnables.add(() -> searchForHireable(HIREABLE, UNIT_TRADE_ENTRIES));
 		pRunnables.add(() -> searchForPagenamesEntity(BIOMES, FACTIONS));
 		pRunnables.add(() -> searchForPagenamesBiome(BIOMES, FACTIONS));
@@ -134,140 +134,146 @@ public class WikiGenerator {
 
 		pRunnables.parallelStream().forEach(Runnable::run);
 
-		if ("tables".equalsIgnoreCase(type)) {
-			Collection<Runnable> runnables = new HashSet<>();
+		switch (type) {
+			case "tables":
+			case "TABLES":
+				Collection<Runnable> runnables = new HashSet<>();
 
-			runnables.add(() -> genTableAchievements(entityPlayer));
-			runnables.add(() -> genTableWaypoints(entityPlayer));
-			runnables.add(WikiGenerator::genTableShields);
-			runnables.add(WikiGenerator::genTableUnits);
-			runnables.add(WikiGenerator::genTableArmor);
-			runnables.add(WikiGenerator::genTableWeapons);
-			runnables.add(WikiGenerator::genTableFood);
+				runnables.add(() -> genTableAchievements(entityPlayer));
+				runnables.add(() -> genTableWaypoints(entityPlayer));
+				runnables.add(WikiGenerator::genTableShields);
+				runnables.add(WikiGenerator::genTableUnits);
+				runnables.add(WikiGenerator::genTableArmor);
+				runnables.add(WikiGenerator::genTableWeapons);
+				runnables.add(WikiGenerator::genTableFood);
 
-			runnables.parallelStream().forEach(Runnable::run);
+				runnables.parallelStream().forEach(Runnable::run);
 
-		} else if ("xml".equalsIgnoreCase(type)) {
-			try (PrintWriter printWriter = new PrintWriter("hummel/import.xml", UTF_8)) {
-				StringBuilder xmlBuilder = new StringBuilder();
+				break;
+			case "xml":
+			case "XML":
+				try (PrintWriter printWriter = new PrintWriter("hummel/import.xml", UTF_8)) {
+					StringBuilder xmlBuilder = new StringBuilder();
 
-				xmlBuilder.append("<mediawiki xmlns=\"http://www.mediawiki.org/xml/export-0.11/\" xmlns:xsi=\"http://www.w3.org/2001/XMLSchema-instance\" xsi:schemaLocation=\"http://www.mediawiki.org/xml/export-0.11/ http://www.mediawiki.org/xml/export-0.11.xsd\" version=\"0.11\" xml:lang=\"ru\">");
+					xmlBuilder.append("<mediawiki xmlns=\"http://www.mediawiki.org/xml/export-0.11/\" xmlns:xsi=\"http://www.w3.org/2001/XMLSchema-instance\" xsi:schemaLocation=\"http://www.mediawiki.org/xml/export-0.11/ http://www.mediawiki.org/xml/export-0.11.xsd\" version=\"0.11\" xml:lang=\"ru\">");
 
-				Collection<Supplier<StringBuilder>> suppliers = new HashSet<>();
-				Collection<StringBuilder> sbs = new HashSet<>();
+					Collection<Supplier<StringBuilder>> suppliers = new HashSet<>();
+					Collection<StringBuilder> sbs = new HashSet<>();
 
-				Set<String> existingPages = getExistingPages();
-				Collection<String> neededPages = new HashSet<>();
+					Set<String> existingPages = getExistingPages();
+					Collection<String> neededPages = new HashSet<>();
 
-				suppliers.add(() -> addPagesMinerals(neededPages, existingPages));
-				suppliers.add(() -> addPagesEntities(neededPages, existingPages));
-				suppliers.add(() -> addPagesBiomes(neededPages, existingPages));
-				suppliers.add(() -> addPagesFactions(neededPages, existingPages));
-				suppliers.add(() -> addPagesTrees(neededPages, existingPages));
-				suppliers.add(() -> addPagesStructures(neededPages, existingPages));
+					suppliers.add(() -> addPagesMinerals(neededPages, existingPages));
+					suppliers.add(() -> addPagesEntities(neededPages, existingPages));
+					suppliers.add(() -> addPagesBiomes(neededPages, existingPages));
+					suppliers.add(() -> addPagesFactions(neededPages, existingPages));
+					suppliers.add(() -> addPagesTrees(neededPages, existingPages));
+					suppliers.add(() -> addPagesStructures(neededPages, existingPages));
 
-				suppliers.parallelStream().map(Supplier::get).forEach(sbs::add);
-				sbs.forEach(xmlBuilder::append);
+					suppliers.parallelStream().map(Supplier::get).forEach(sbs::add);
+					sbs.forEach(xmlBuilder::append);
 
-				suppliers.clear();
-				sbs.clear();
+					suppliers.clear();
+					sbs.clear();
 
-				markPagesForRemoval(neededPages, existingPages);
+					markPagesForRemoval(neededPages, existingPages);
 
-				suppliers.add(WikiGenerator::genTemplateStructureBiomes);
-				suppliers.add(WikiGenerator::genTemplateMineralBiomes);
-				suppliers.add(WikiGenerator::genTemplateTreeBiomes);
+					suppliers.add(WikiGenerator::genTemplateStructureBiomes);
+					suppliers.add(WikiGenerator::genTemplateMineralBiomes);
+					suppliers.add(WikiGenerator::genTemplateTreeBiomes);
 
-				suppliers.add(WikiGenerator::genTemplateBiomeBandits);
-				suppliers.add(WikiGenerator::genTemplateBiomeConquestFactions);
-				suppliers.add(WikiGenerator::genTemplateBiomeInvasionFactions);
-				suppliers.add(WikiGenerator::genTemplateBiomeMinerals);
-				suppliers.add(WikiGenerator::genTemplateBiomeMobs);
-				suppliers.add(WikiGenerator::genTemplateBiomeMusic);
-				suppliers.add(WikiGenerator::genTemplateBiomeName);
-				suppliers.add(WikiGenerator::genTemplateBiomeRainfall);
-				suppliers.add(WikiGenerator::genTemplateBiomeSpawnNPCs);
-				suppliers.add(WikiGenerator::genTemplateBiomeStructuresSettlements);
-				suppliers.add(WikiGenerator::genTemplateBiomeTemperature);
-				suppliers.add(WikiGenerator::genTemplateBiomeTrees);
-				suppliers.add(WikiGenerator::genTemplateBiomeVariants);
-				suppliers.add(WikiGenerator::genTemplateBiomeWaypoints);
+					suppliers.add(WikiGenerator::genTemplateBiomeBandits);
+					suppliers.add(WikiGenerator::genTemplateBiomeConquestFactions);
+					suppliers.add(WikiGenerator::genTemplateBiomeInvasionFactions);
+					suppliers.add(WikiGenerator::genTemplateBiomeMinerals);
+					suppliers.add(WikiGenerator::genTemplateBiomeMobs);
+					suppliers.add(WikiGenerator::genTemplateBiomeMusic);
+					suppliers.add(WikiGenerator::genTemplateBiomeName);
+					suppliers.add(WikiGenerator::genTemplateBiomeRainfall);
+					suppliers.add(WikiGenerator::genTemplateBiomeSpawnNPCs);
+					suppliers.add(WikiGenerator::genTemplateBiomeStructuresSettlements);
+					suppliers.add(WikiGenerator::genTemplateBiomeTemperature);
+					suppliers.add(WikiGenerator::genTemplateBiomeTrees);
+					suppliers.add(WikiGenerator::genTemplateBiomeVariants);
+					suppliers.add(WikiGenerator::genTemplateBiomeWaypoints);
 
-				suppliers.add(() -> genTemplateBiomeVisitAchievement(entityPlayer));
+					suppliers.add(() -> genTemplateBiomeVisitAchievement(entityPlayer));
 
-				suppliers.add(WikiGenerator::genTemplateFactionBanners);
-				suppliers.add(WikiGenerator::genTemplateFactionCodename);
-				suppliers.add(WikiGenerator::genTemplateFactionConquestBiomes);
-				suppliers.add(WikiGenerator::genTemplateFactionEnemies);
-				suppliers.add(WikiGenerator::genTemplateFactionFriends);
-				suppliers.add(WikiGenerator::genTemplateFactionInvasionBiomes);
-				suppliers.add(WikiGenerator::genTemplateFactionNPCs);
-				suppliers.add(WikiGenerator::genTemplateFactionName);
-				suppliers.add(WikiGenerator::genTemplateFactionPledgeRank);
-				suppliers.add(WikiGenerator::genTemplateFactionRanks);
-				suppliers.add(WikiGenerator::genTemplateFactionRegion);
-				suppliers.add(WikiGenerator::genTemplateFactionShields);
-				suppliers.add(WikiGenerator::genTemplateFactionSpawnBiomes);
-				suppliers.add(WikiGenerator::genTemplateFactionWarCrimes);
-				suppliers.add(WikiGenerator::genTemplateFactionWaypoints);
+					suppliers.add(WikiGenerator::genTemplateFactionBanners);
+					suppliers.add(WikiGenerator::genTemplateFactionCodename);
+					suppliers.add(WikiGenerator::genTemplateFactionConquestBiomes);
+					suppliers.add(WikiGenerator::genTemplateFactionEnemies);
+					suppliers.add(WikiGenerator::genTemplateFactionFriends);
+					suppliers.add(WikiGenerator::genTemplateFactionInvasionBiomes);
+					suppliers.add(WikiGenerator::genTemplateFactionNPCs);
+					suppliers.add(WikiGenerator::genTemplateFactionName);
+					suppliers.add(WikiGenerator::genTemplateFactionPledgeRank);
+					suppliers.add(WikiGenerator::genTemplateFactionRanks);
+					suppliers.add(WikiGenerator::genTemplateFactionRegion);
+					suppliers.add(WikiGenerator::genTemplateFactionShields);
+					suppliers.add(WikiGenerator::genTemplateFactionSpawnBiomes);
+					suppliers.add(WikiGenerator::genTemplateFactionWarCrimes);
+					suppliers.add(WikiGenerator::genTemplateFactionWaypoints);
 
-				suppliers.add(WikiGenerator::genTemplateEntityBannerBearer);
-				suppliers.add(WikiGenerator::genTemplateEntityBuys);
-				suppliers.add(WikiGenerator::genTemplateEntityFaction);
-				suppliers.add(WikiGenerator::genTemplateEntityFarmhand);
-				suppliers.add(WikiGenerator::genTemplateEntityHealth);
-				suppliers.add(WikiGenerator::genTemplateEntityHireAlignment);
-				suppliers.add(WikiGenerator::genTemplateEntityHirePrice);
-				suppliers.add(WikiGenerator::genTemplateEntityHirePricePledge);
-				suppliers.add(WikiGenerator::genTemplateEntityImmuneToFire);
-				suppliers.add(WikiGenerator::genTemplateEntityImmuneToFrost);
-				suppliers.add(WikiGenerator::genTemplateEntityImmuneToHeat);
-				suppliers.add(WikiGenerator::genTemplateEntityKillAlignment);
-				suppliers.add(WikiGenerator::genTemplateEntityMarriage);
-				suppliers.add(WikiGenerator::genTemplateEntityMercenary);
-				suppliers.add(WikiGenerator::genTemplateEntityOwner);
-				suppliers.add(WikiGenerator::genTemplateEntityRideableMob);
-				suppliers.add(WikiGenerator::genTemplateEntityRideableNPC);
-				suppliers.add(WikiGenerator::genTemplateEntitySells);
-				suppliers.add(WikiGenerator::genTemplateEntitySellsUnits);
-				suppliers.add(WikiGenerator::genTemplateEntitySmith);
-				suppliers.add(WikiGenerator::genTemplateEntitySpawn);
-				suppliers.add(WikiGenerator::genTemplateEntitySpawnsInDarkness);
-				suppliers.add(WikiGenerator::genTemplateEntityTargetSeeker);
-				suppliers.add(WikiGenerator::genTemplateEntityTradeable);
-				suppliers.add(WikiGenerator::genTemplateEntityUnitTradeable);
+					suppliers.add(WikiGenerator::genTemplateEntityBannerBearer);
+					suppliers.add(WikiGenerator::genTemplateEntityBuys);
+					suppliers.add(WikiGenerator::genTemplateEntityFaction);
+					suppliers.add(WikiGenerator::genTemplateEntityFarmhand);
+					suppliers.add(WikiGenerator::genTemplateEntityHealth);
+					suppliers.add(WikiGenerator::genTemplateEntityHireAlignment);
+					suppliers.add(WikiGenerator::genTemplateEntityHirePrice);
+					suppliers.add(WikiGenerator::genTemplateEntityHirePricePledge);
+					suppliers.add(WikiGenerator::genTemplateEntityImmuneToFire);
+					suppliers.add(WikiGenerator::genTemplateEntityImmuneToFrost);
+					suppliers.add(WikiGenerator::genTemplateEntityImmuneToHeat);
+					suppliers.add(WikiGenerator::genTemplateEntityKillAlignment);
+					suppliers.add(WikiGenerator::genTemplateEntityMarriage);
+					suppliers.add(WikiGenerator::genTemplateEntityMercenary);
+					suppliers.add(WikiGenerator::genTemplateEntityOwner);
+					suppliers.add(WikiGenerator::genTemplateEntityRideableMob);
+					suppliers.add(WikiGenerator::genTemplateEntityRideableNPC);
+					suppliers.add(WikiGenerator::genTemplateEntitySells);
+					suppliers.add(WikiGenerator::genTemplateEntitySellsUnits);
+					suppliers.add(WikiGenerator::genTemplateEntitySmith);
+					suppliers.add(WikiGenerator::genTemplateEntitySpawn);
+					suppliers.add(WikiGenerator::genTemplateEntitySpawnsInDarkness);
+					suppliers.add(WikiGenerator::genTemplateEntityTargetSeeker);
+					suppliers.add(WikiGenerator::genTemplateEntityTradeable);
+					suppliers.add(WikiGenerator::genTemplateEntityUnitTradeable);
 
-				suppliers.add(() -> genTemplateEntityKillAchievement(entityPlayer));
+					suppliers.add(() -> genTemplateEntityKillAchievement(entityPlayer));
 
-				// структуры - лут
-				// структуры - мобы
-				// структуры - поселения
+					// структуры - лут
+					// структуры - мобы
+					// структуры - поселения
 
-				// мобы - структуры
-				// мобы - поселения
+					// мобы - структуры
+					// мобы - поселения
 
-				// поселения - мобы
-				// поселения - структуры
-				// поселения - лут
-				// поселения - биомы
+					// поселения - мобы
+					// поселения - структуры
+					// поселения - лут
+					// поселения - биомы
 
-				suppliers.parallelStream().map(Supplier::get).forEach(sbs::add);
-				sbs.forEach(xmlBuilder::append);
+					suppliers.parallelStream().map(Supplier::get).forEach(sbs::add);
+					sbs.forEach(xmlBuilder::append);
 
-				suppliers.clear();
-				sbs.clear();
+					suppliers.clear();
+					sbs.clear();
 
-				xmlBuilder.append("</mediawiki>");
+					xmlBuilder.append("</mediawiki>");
 
-				printWriter.write(xmlBuilder.toString());
-			} catch (Exception e) {
-				e.printStackTrace();
-			}
+					printWriter.write(xmlBuilder.toString());
+				} catch (Exception e) {
+					e.printStackTrace();
+				}
+
+				break;
 		}
+
 		long newTime = System.nanoTime();
 
-		//noinspection StringConcatenationMissingWhitespace
-		IChatComponent component = new ChatComponentText("Generated databases in " + (newTime - time) / 1.0E9 + 's');
+		IChatComponent component = new ChatComponentText("Generated databases in " + (newTime - time) / 1.0E6 + " milliseconds");
 		entityPlayer.addChatMessage(component);
 	}
 
@@ -364,15 +370,15 @@ public class WikiGenerator {
 		try (PrintWriter printWriter = new PrintWriter("hummel/achievements.txt", UTF_8)) {
 			StringBuilder sb = new StringBuilder();
 
-			List<String> sortable = new ArrayList<>();
+			Collection<String> content = new TreeSet<>();
 
 			for (LOTRAchievement ach : ACHIEVEMENTS) {
 				if (!(ach instanceof LOTRAchievementRank)) {
-					sortable.add(NL + "| " + ach.getTitle(entityPlayer) + " || " + ach.getDescription(entityPlayer) + NL + "|-");
+					content.add(NL + "| " + ach.getTitle(entityPlayer) + " || " + ach.getDescription(entityPlayer) + NL + "|-");
 				}
 			}
 
-			appendSortedList(sb, sortable);
+			appendSortedSet(sb, content);
 
 			printWriter.write(sb.toString());
 		} catch (Exception e) {
@@ -410,7 +416,7 @@ public class WikiGenerator {
 		try (PrintWriter printWriter = new PrintWriter("hummel/food.txt", UTF_8)) {
 			StringBuilder sb = new StringBuilder();
 
-			List<String> sortable = new ArrayList<>();
+			Collection<String> content = new TreeSet<>();
 
 			for (Item item : ITEMS) {
 				if (item instanceof ItemFood) {
@@ -426,11 +432,11 @@ public class WikiGenerator {
 					localSb.append(" || ").append(item.getItemStackLimit());
 					localSb.append(NL).append("|-");
 
-					sortable.add(localSb.toString());
+					content.add(localSb.toString());
 				}
 			}
 
-			appendSortedList(sb, sortable);
+			appendSortedSet(sb, content);
 
 			printWriter.write(sb.toString());
 		} catch (Exception e) {
@@ -493,13 +499,13 @@ public class WikiGenerator {
 		try (PrintWriter printWriter = new PrintWriter("hummel/waypoints.txt", UTF_8)) {
 			StringBuilder sb = new StringBuilder();
 
-			List<String> sortable = new ArrayList<>();
+			Collection<String> content = new TreeSet<>();
 
 			for (LOTRWaypoint wp : WAYPOINTS) {
-				sortable.add(NL + "| " + wp.getDisplayName() + " || " + wp.getLoreText(entityPlayer) + NL + "|-");
+				content.add(NL + "| " + wp.getDisplayName() + " || " + wp.getLoreText(entityPlayer) + NL + "|-");
 			}
 
-			appendSortedList(sb, sortable);
+			appendSortedSet(sb, content);
 
 			printWriter.write(sb.toString());
 		} catch (Exception e) {
@@ -511,7 +517,7 @@ public class WikiGenerator {
 		try (PrintWriter printWriter = new PrintWriter("hummel/weapon.txt", UTF_8)) {
 			StringBuilder sb = new StringBuilder();
 
-			List<String> sortable = new ArrayList<>();
+			Collection<String> content = new TreeSet<>();
 
 			for (Item item : ITEMS) {
 				if (item instanceof ItemSword) {
@@ -529,11 +535,11 @@ public class WikiGenerator {
 					}
 					localSb.append(NL).append("|-");
 
-					sortable.add(localSb.toString());
+					content.add(localSb.toString());
 				}
 			}
 
-			appendSortedList(sb, sortable);
+			appendSortedSet(sb, content);
 
 			printWriter.write(sb.toString());
 		} catch (Exception e) {
@@ -560,7 +566,7 @@ public class WikiGenerator {
 		sb.append(TITLE).append(TEMPLATE).append("DB Biome-ConquestNPC");
 		sb.append(BEGIN);
 		for (LOTRBiome biome : BIOMES) {
-			List<String> sortable = new ArrayList<>();
+			Collection<String> content = new TreeSet<>();
 
 			List<LOTRBiomeSpawnList.FactionContainer> facContainers = getFactionContainers(biome.npcSpawnList);
 			if (facContainers.isEmpty()) {
@@ -594,12 +600,12 @@ public class WikiGenerator {
 						}
 					}
 					for (LOTRFaction fac : conquestFactions) {
-						sortable.add(NL + "* " + getFactionLink(fac) + ';');
+						content.add(NL + "* " + getFactionLink(fac) + ';');
 					}
 				}
 			}
 
-			appendSortedList(sb, sortable);
+			appendSortedSet(sb, content);
 		}
 		sb.append(END);
 
@@ -612,7 +618,7 @@ public class WikiGenerator {
 		sb.append(TITLE).append(TEMPLATE).append("DB Biome-Invasions");
 		sb.append(BEGIN);
 		for (LOTRBiome biome : BIOMES) {
-			List<String> sortable = new ArrayList<>();
+			Collection<String> content = new TreeSet<>();
 
 			sb.append(NL).append("| ");
 			sb.append(getBiomePagename(biome)).append(" = ");
@@ -633,11 +639,11 @@ public class WikiGenerator {
 					}
 				}
 				for (LOTRFaction fac : invasionFactions) {
-					sortable.add(NL + "* " + getFactionLink(fac) + ';');
+					content.add(NL + "* " + getFactionLink(fac) + ';');
 				}
 			}
 
-			appendSortedList(sb, sortable);
+			appendSortedSet(sb, content);
 		}
 		sb.append(END);
 
@@ -650,7 +656,7 @@ public class WikiGenerator {
 		sb.append(TITLE).append(TEMPLATE).append("DB Biome-Minerals");
 		sb.append(BEGIN);
 		for (LOTRBiome biome : BIOMES) {
-			List<String> sortable = new ArrayList<>();
+			Collection<String> content = new TreeSet<>();
 
 			sb.append(NL).append("| ");
 			sb.append(getBiomePagename(biome)).append(" = ").append(Lang.BIOME_HAS_MINERALS);
@@ -664,13 +670,13 @@ public class WikiGenerator {
 				String stats = " (" + getOreChance(oreGenerant) + "%; Y: " + getMinHeight(oreGenerant) + '-' + getMaxHeight(oreGenerant) + ");";
 
 				if (block instanceof LOTRBlockOreGem || block instanceof BlockDirt || block instanceof LOTRBlockRock) {
-					sortable.add(NL + "* [[" + getBlockMetaName(block, meta) + "]]" + stats);
+					content.add(NL + "* [[" + getBlockMetaName(block, meta) + "]]" + stats);
 				} else {
-					sortable.add(NL + "* [[" + getBlockName(block) + "]]" + stats);
+					content.add(NL + "* [[" + getBlockName(block) + "]]" + stats);
 				}
 			}
 
-			appendSortedList(sb, sortable);
+			appendSortedSet(sb, content);
 		}
 		sb.append(END);
 
@@ -683,7 +689,7 @@ public class WikiGenerator {
 		sb.append(TITLE).append(TEMPLATE).append("DB Biome-Mobs");
 		sb.append(BEGIN);
 		for (LOTRBiome biome : BIOMES) {
-			List<String> sortable = new ArrayList<>();
+			Collection<String> content = new TreeSet<>();
 
 			Collection<BiomeGenBase.SpawnListEntry> entries = new HashSet<BiomeGenBase.SpawnListEntry>(biome.getSpawnableList(EnumCreatureType.ambient));
 			entries.addAll(biome.getSpawnableList(EnumCreatureType.waterCreature));
@@ -698,14 +704,14 @@ public class WikiGenerator {
 				sb.append(Lang.BIOME_HAS_ANIMALS);
 				for (BiomeGenBase.SpawnListEntry entry : entries) {
 					if (CLASS_TO_ENTITY_NAME.containsKey(entry.entityClass)) {
-						sortable.add(NL + "* " + getEntityLink(entry.entityClass) + ';');
+						content.add(NL + "* " + getEntityLink(entry.entityClass) + ';');
 					} else {
-						sortable.add(NL + "* " + getEntityVanillaName(entry.entityClass) + ';');
+						content.add(NL + "* " + getEntityVanillaName(entry.entityClass) + ';');
 					}
 				}
 			}
 
-			appendSortedList(sb, sortable);
+			appendSortedSet(sb, content);
 		}
 		sb.append(END);
 
@@ -767,7 +773,7 @@ public class WikiGenerator {
 		sb.append(TITLE).append(TEMPLATE).append("DB Biome-SpawnNPC");
 		sb.append(BEGIN);
 		for (LOTRBiome biome : BIOMES) {
-			List<String> sortable = new ArrayList<>();
+			Collection<String> content = new TreeSet<>();
 
 			List<LOTRBiomeSpawnList.FactionContainer> facContainers = getFactionContainers(biome.npcSpawnList);
 			if (facContainers.isEmpty()) {
@@ -789,14 +795,14 @@ public class WikiGenerator {
 					for (LOTRBiomeSpawnList.FactionContainer facContainer : spawnContainers) {
 						for (LOTRBiomeSpawnList.SpawnListContainer container : getSpawnLists(facContainer)) {
 							for (LOTRSpawnEntry entry : getSpawnEntries(getSpawnList(container))) {
-								sortable.add(NL + "* " + getEntityLink(entry.entityClass) + ';');
+								content.add(NL + "* " + getEntityLink(entry.entityClass) + ';');
 							}
 						}
 					}
 				}
 			}
 
-			appendSortedList(sb, sortable);
+			appendSortedSet(sb, content);
 		}
 		sb.append(END);
 
@@ -809,7 +815,7 @@ public class WikiGenerator {
 		sb.append(TITLE).append(TEMPLATE).append("DB Biome-Structures");
 		sb.append(BEGIN);
 		for (LOTRBiome biome : BIOMES) {
-			List<String> sortable = new ArrayList<>();
+			Collection<String> content = new TreeSet<>();
 
 			sb.append(NL).append("| ");
 			sb.append(getBiomePagename(biome)).append(" = ");
@@ -819,23 +825,23 @@ public class WikiGenerator {
 				sb.append(Lang.BIOME_HAS_STRUCTURES);
 
 				for (Object structure : getStructures(biome.decorator)) {
-					sortable.add(NL + "* [[" + getStructureName(getStructureGen(structure).getClass()) + "]];");
+					content.add(NL + "* [[" + getStructureName(getStructureGen(structure).getClass()) + "]];");
 				}
 
-				appendSortedList(sb, sortable);
+				appendSortedSet(sb, content);
 
 				for (LOTRVillageGen settlement : getVillages(biome.decorator)) {
 					if (getSpawnChance(settlement) != 0.0f) {
 						Set<String> names = CLASS_TO_VILLAGE_NAMES.get(settlement.getClass());
 						if (names != null) {
 							for (String name : names) {
-								sortable.add(NL + "* " + getSettlementName(name) + ';');
+								content.add(NL + "* " + getSettlementName(name) + ';');
 							}
 						}
 					}
 				}
 
-				appendSortedList(sb, sortable);
+				appendSortedSet(sb, content);
 			}
 		}
 		sb.append(END);
@@ -864,7 +870,7 @@ public class WikiGenerator {
 		sb.append(TITLE).append(TEMPLATE).append("DB Biome-Trees");
 		sb.append(BEGIN);
 		for (LOTRBiome biome : BIOMES) {
-			List<String> sortable = new ArrayList<>();
+			Collection<String> content = new TreeSet<>();
 
 			Collection<LOTRTreeType> trees = EnumSet.noneOf(LOTRTreeType.class);
 			Map<LOTRTreeType, LOTRBiomeVariant> additionalTrees = new EnumMap<>(LOTRTreeType.class);
@@ -889,16 +895,16 @@ public class WikiGenerator {
 					sb.append(Lang.BIOME_HAS_TREES);
 				}
 				for (LOTRTreeType tree : trees) {
-					sortable.add(NL + "* [[" + getTreeName(tree) + "]];");
+					content.add(NL + "* [[" + getTreeName(tree) + "]];");
 				}
 
-				appendSortedList(sb, sortable);
+				appendSortedSet(sb, content);
 
 				for (Map.Entry<LOTRTreeType, LOTRBiomeVariant> tree : additionalTrees.entrySet()) {
-					sortable.add(NL + "* [[" + getTreeName(tree.getKey()) + "]] (" + getBiomeVariantName(tree.getValue()).toLowerCase(Locale.ROOT) + ");");
+					content.add(NL + "* [[" + getTreeName(tree.getKey()) + "]] (" + getBiomeVariantName(tree.getValue()).toLowerCase(Locale.ROOT) + ");");
 				}
 
-				appendSortedList(sb, sortable);
+				appendSortedSet(sb, content);
 			}
 		}
 		sb.append(END);
@@ -912,7 +918,7 @@ public class WikiGenerator {
 		sb.append(TITLE).append(TEMPLATE).append("DB Biome-Variants");
 		sb.append(BEGIN);
 		for (LOTRBiome biome : BIOMES) {
-			List<String> sortable = new ArrayList<>();
+			Collection<String> content = new TreeSet<>();
 
 			sb.append(NL).append("| ");
 			sb.append(getBiomePagename(biome)).append(" = ");
@@ -920,11 +926,11 @@ public class WikiGenerator {
 				sb.append(Lang.BIOME_NO_VARIANTS);
 			} else {
 				for (Object variantBucket : getVariantList(biome.getBiomeVariantsSmall())) {
-					sortable.add(NL + "* " + getBiomeVariantName(getVariant(variantBucket)) + ';');
+					content.add(NL + "* " + getBiomeVariantName(getVariant(variantBucket)) + ';');
 				}
 			}
 
-			appendSortedList(sb, sortable);
+			appendSortedSet(sb, content);
 		}
 		sb.append(END);
 
@@ -957,7 +963,7 @@ public class WikiGenerator {
 		sb.append(TITLE).append(TEMPLATE).append("DB Biome-Waypoints");
 		sb.append(BEGIN);
 		for (LOTRBiome biome : BIOMES) {
-			List<String> sortable = new ArrayList<>();
+			Collection<String> content = new TreeSet<>();
 
 			LOTRWaypoint.Region region = biome.getBiomeWaypoints();
 			sb.append(NL).append("| ");
@@ -968,12 +974,12 @@ public class WikiGenerator {
 				sb.append(Lang.BIOME_HAS_WAYPOINTS);
 				for (LOTRWaypoint wp : WAYPOINTS) {
 					if (getRegion(wp).contains(region)) {
-						sortable.add(NL + "* " + wp.getDisplayName() + " (" + getFactionLink(wp.faction) + ");");
+						content.add(NL + "* " + wp.getDisplayName() + " (" + getFactionLink(wp.faction) + ");");
 					}
 				}
 			}
 
-			appendSortedList(sb, sortable);
+			appendSortedSet(sb, content);
 		}
 		sb.append(END);
 
@@ -1003,16 +1009,16 @@ public class WikiGenerator {
 		sb.append(BEGIN);
 		for (Map.Entry<Class<? extends Entity>, Entity> entityEntry : CLASS_TO_ENTITY.entrySet()) {
 			if (entityEntry.getValue() instanceof LOTRTradeable) {
-				List<String> sortable = new ArrayList<>();
+				Collection<String> content = new TreeSet<>();
 
 				LOTRTradeEntries entries = ((LOTRTradeable) entityEntry.getValue()).getSellPool();
 				sb.append(NL).append("| ");
 				sb.append(getEntityPagename(entityEntry.getKey())).append(" = ");
 				for (LOTRTradeEntry entry : entries.tradeEntries) {
-					sortable.add(NL + "* " + entry.createTradeItem().getDisplayName() + ": {{Coins|" + entry.getCost() + "}};");
+					content.add(NL + "* " + entry.createTradeItem().getDisplayName() + ": {{Coins|" + entry.getCost() + "}};");
 				}
 
-				appendSortedList(sb, sortable);
+				appendSortedSet(sb, content);
 			}
 		}
 		sb.append(END);
@@ -1329,16 +1335,16 @@ public class WikiGenerator {
 		sb.append(BEGIN);
 		for (Map.Entry<Class<? extends Entity>, Entity> entityEntry : CLASS_TO_ENTITY.entrySet()) {
 			if (entityEntry.getValue() instanceof LOTRTradeable) {
-				List<String> sortable = new ArrayList<>();
+				Collection<String> content = new TreeSet<>();
 
 				LOTRTradeEntries entries = ((LOTRTradeable) entityEntry.getValue()).getBuyPool();
 				sb.append(NL).append("| ");
 				sb.append(getEntityPagename(entityEntry.getKey())).append(" = ");
 				for (LOTRTradeEntry entry : entries.tradeEntries) {
-					sortable.add(NL + "* " + entry.createTradeItem().getDisplayName() + ": {{Coins|" + entry.getCost() + "}};");
+					content.add(NL + "* " + entry.createTradeItem().getDisplayName() + ": {{Coins|" + entry.getCost() + "}};");
 				}
 
-				appendSortedList(sb, sortable);
+				appendSortedSet(sb, content);
 			}
 		}
 		sb.append(END);
@@ -1405,7 +1411,7 @@ public class WikiGenerator {
 		sb.append(TITLE).append(TEMPLATE).append("DB Mob-Spawn");
 		sb.append(BEGIN);
 		for (Class<? extends Entity> entityClass : ENTITIES) {
-			List<String> sortable = new ArrayList<>();
+			Collection<String> content = new TreeSet<>();
 
 			Collection<LOTRBiome> spawnBiomes = new HashSet<>();
 			Collection<LOTRBiome> conquestBiomes = new HashSet<>();
@@ -1464,34 +1470,34 @@ public class WikiGenerator {
 			} else {
 				sb.append(Lang.ENTITY_HAS_BIOMES);
 				for (LOTRBiome biome : spawnBiomes) {
-					sortable.add(NL + "* " + getBiomeLink(biome) + ';');
+					content.add(NL + "* " + getBiomeLink(biome) + ';');
 				}
 
-				appendSortedList(sb, sortable);
+				appendSortedSet(sb, content);
 
 				for (LOTRBiome biome : conquestBiomes) {
 					if (!invasionBiomes.contains(biome)) {
-						sortable.add(NL + "* " + getBiomeLink(biome) + ' ' + Lang.ENTITY_CONQUEST + ';');
+						content.add(NL + "* " + getBiomeLink(biome) + ' ' + Lang.ENTITY_CONQUEST + ';');
 					}
 				}
 
-				appendSortedList(sb, sortable);
+				appendSortedSet(sb, content);
 
 				for (LOTRBiome biome : invasionBiomes) {
 					if (!conquestBiomes.contains(biome)) {
-						sortable.add(NL + "* " + getBiomeLink(biome) + ' ' + Lang.ENTITY_INVASION + ';');
+						content.add(NL + "* " + getBiomeLink(biome) + ' ' + Lang.ENTITY_INVASION + ';');
 					}
 				}
 
-				appendSortedList(sb, sortable);
+				appendSortedSet(sb, content);
 
 				for (LOTRBiome biome : conquestIvasionBiomes) {
 					if (conquestBiomes.contains(biome) && invasionBiomes.contains(biome)) {
-						sortable.add(NL + "* " + getBiomeLink(biome) + ' ' + Lang.ENTITY_CONQUEST_INVASION + ';');
+						content.add(NL + "* " + getBiomeLink(biome) + ' ' + Lang.ENTITY_CONQUEST_INVASION + ';');
 					}
 				}
 
-				appendSortedList(sb, sortable);
+				appendSortedSet(sb, content);
 			}
 		}
 		sb.append(END);
@@ -1569,7 +1575,7 @@ public class WikiGenerator {
 		sb.append(TITLE).append(TEMPLATE).append("DB Faction-Banners");
 		sb.append(BEGIN);
 		for (LOTRFaction fac : FACTIONS) {
-			List<String> sortable = new ArrayList<>();
+			Collection<String> content = new TreeSet<>();
 
 			sb.append(NL).append("| ");
 			sb.append(getFactionPagename(fac)).append(" = ");
@@ -1578,11 +1584,11 @@ public class WikiGenerator {
 			} else {
 				sb.append(Lang.FACTION_HAS_BANNERS);
 				for (LOTRItemBanner.BannerType banner : fac.factionBanners) {
-					sortable.add(NL + "* " + getBannerName(banner) + ';');
+					content.add(NL + "* " + getBannerName(banner) + ';');
 				}
 			}
 
-			appendSortedList(sb, sortable);
+			appendSortedSet(sb, content);
 		}
 		sb.append(END);
 
@@ -1609,7 +1615,7 @@ public class WikiGenerator {
 		sb.append(TITLE).append(TEMPLATE).append("DB Faction-Conquest");
 		sb.append(BEGIN);
 		for (LOTRFaction fac : FACTIONS) {
-			List<String> sortable = new ArrayList<>();
+			Collection<String> content = new TreeSet<>();
 
 			Collection<LOTRBiome> conquestBiomes = new HashSet<>();
 			next:
@@ -1644,11 +1650,11 @@ public class WikiGenerator {
 			} else {
 				sb.append(Lang.FACTION_HAS_CONQUEST);
 				for (LOTRBiome biome : conquestBiomes) {
-					sortable.add(NL + "* " + getBiomeLink(biome) + ';');
+					content.add(NL + "* " + getBiomeLink(biome) + ';');
 				}
 			}
 
-			appendSortedList(sb, sortable);
+			appendSortedSet(sb, content);
 		}
 		sb.append(END);
 
@@ -1661,7 +1667,7 @@ public class WikiGenerator {
 		sb.append(TITLE).append(TEMPLATE).append("DB Faction-Enemies");
 		sb.append(BEGIN);
 		for (LOTRFaction fac1 : FACTIONS) {
-			List<String> sortable = new ArrayList<>();
+			Collection<String> content = new TreeSet<>();
 
 			Collection<LOTRFaction> facEnemies = EnumSet.noneOf(LOTRFaction.class);
 			for (LOTRFaction fac2 : FACTIONS) {
@@ -1675,13 +1681,11 @@ public class WikiGenerator {
 				sb.append(Lang.FACTION_NO_ENEMIES);
 			} else {
 				for (LOTRFaction fac : facEnemies) {
-					sortable.add(getFactionLink(fac));
+					content.add(getFactionLink(fac));
 				}
 
-				Collections.sort(sortable);
-
 				StringJoiner sj = new StringJoiner(" • ");
-				for (String item : sortable) {
+				for (String item : content) {
 					sj.add(item);
 				}
 
@@ -1699,7 +1703,7 @@ public class WikiGenerator {
 		sb.append(TITLE).append(TEMPLATE).append("DB Faction-Friends");
 		sb.append(BEGIN);
 		for (LOTRFaction fac1 : FACTIONS) {
-			List<String> sortable = new ArrayList<>();
+			Collection<String> content = new TreeSet<>();
 
 			Collection<LOTRFaction> facFriends = EnumSet.noneOf(LOTRFaction.class);
 			for (LOTRFaction fac2 : FACTIONS) {
@@ -1713,13 +1717,11 @@ public class WikiGenerator {
 				sb.append(Lang.FACTION_NO_FRIENDS);
 			} else {
 				for (LOTRFaction fac : facFriends) {
-					sortable.add(getFactionLink(fac));
+					content.add(getFactionLink(fac));
 				}
 
-				Collections.sort(sortable);
-
 				StringJoiner sj = new StringJoiner(" • ");
-				for (String item : sortable) {
+				for (String item : content) {
 					sj.add(item);
 				}
 
@@ -1737,7 +1739,7 @@ public class WikiGenerator {
 		sb.append(TITLE).append(TEMPLATE).append("DB Faction-Invasions");
 		sb.append(BEGIN);
 		for (LOTRFaction fac : FACTIONS) {
-			List<String> sortable = new ArrayList<>();
+			Collection<String> content = new TreeSet<>();
 
 			Collection<LOTRBiome> invasionBiomes = new HashSet<>();
 			next:
@@ -1759,11 +1761,11 @@ public class WikiGenerator {
 			} else {
 				sb.append(Lang.FACTION_HAS_INVASION);
 				for (LOTRBiome biome : invasionBiomes) {
-					sortable.add(NL + "* " + getBiomeLink(biome) + ';');
+					content.add(NL + "* " + getBiomeLink(biome) + ';');
 				}
 			}
 
-			appendSortedList(sb, sortable);
+			appendSortedSet(sb, content);
 		}
 		sb.append(END);
 
@@ -1790,18 +1792,18 @@ public class WikiGenerator {
 		sb.append(TITLE).append(TEMPLATE).append("DB Faction-NPC");
 		sb.append(BEGIN);
 		for (LOTRFaction fac : FACTIONS) {
-			List<String> sortable = new ArrayList<>();
+			Collection<String> content = new TreeSet<>();
 
 			sb.append(NL).append("| ");
 			sb.append(getFactionPagename(fac)).append(" = ");
 			for (Map.Entry<Class<? extends Entity>, Entity> entityEntry : CLASS_TO_ENTITY.entrySet()) {
 				Entity entity = entityEntry.getValue();
 				if (entity instanceof LOTREntityNPC && ((LOTREntityNPC) entity).getFaction() == fac) {
-					sortable.add(NL + "* " + getEntityLink(entityEntry.getKey()) + ';');
+					content.add(NL + "* " + getEntityLink(entityEntry.getKey()) + ';');
 				}
 			}
 
-			appendSortedList(sb, sortable);
+			appendSortedSet(sb, content);
 		}
 		sb.append(END);
 
@@ -1886,7 +1888,7 @@ public class WikiGenerator {
 		sb.append(TITLE).append(TEMPLATE).append("DB Faction-Shields");
 		sb.append(BEGIN);
 		for (LOTRFaction fac : FACTIONS) {
-			List<String> sortable = new ArrayList<>();
+			Collection<String> content = new TreeSet<>();
 
 			Collection<LOTRShields> facShields = EnumSet.noneOf(LOTRShields.class);
 			for (LOTRShields shield : SHIELDS) {
@@ -1903,10 +1905,10 @@ public class WikiGenerator {
 				sb.append(NL).append("&lt;table class=\"wikitable shields\"&gt;");
 
 				for (LOTRShields shield : facShields) {
-					sortable.add(NL + "&lt;tr&gt;&lt;td&gt;" + shield.getShieldName() + "&lt;/td&gt;&lt;td&gt;" + shield.getShieldDesc() + "&lt;/td&gt;&lt;td&gt;" + getShieldFilename(shield) + "&lt;/td&gt;&lt;/tr&gt;");
+					content.add(NL + "&lt;tr&gt;&lt;td&gt;" + shield.getShieldName() + "&lt;/td&gt;&lt;td&gt;" + shield.getShieldDesc() + "&lt;/td&gt;&lt;td&gt;" + getShieldFilename(shield) + "&lt;/td&gt;&lt;/tr&gt;");
 				}
 
-				appendSortedList(sb, sortable);
+				appendSortedSet(sb, content);
 
 				sb.append(NL).append("&lt;table&gt;");
 			}
@@ -1922,7 +1924,7 @@ public class WikiGenerator {
 		sb.append(TITLE).append(TEMPLATE).append("DB Faction-Spawn");
 		sb.append(BEGIN);
 		for (LOTRFaction fac : FACTIONS) {
-			List<String> sortable = new ArrayList<>();
+			Collection<String> content = new TreeSet<>();
 
 			Collection<LOTRBiome> spawnBiomes = new HashSet<>();
 			next:
@@ -1957,11 +1959,11 @@ public class WikiGenerator {
 			} else {
 				sb.append(Lang.FACTION_HAS_SPAWN);
 				for (LOTRBiome biome : spawnBiomes) {
-					sortable.add(NL + "* " + getBiomeLink(biome) + ';');
+					content.add(NL + "* " + getBiomeLink(biome) + ';');
 				}
 			}
 
-			appendSortedList(sb, sortable);
+			appendSortedSet(sb, content);
 		}
 		sb.append(END);
 
@@ -1991,26 +1993,26 @@ public class WikiGenerator {
 		sb.append(TITLE).append(TEMPLATE).append("DB Faction-Waypoints");
 		sb.append(BEGIN);
 		for (LOTRFaction fac : FACTIONS) {
-			List<String> sortable = new ArrayList<>();
+			Collection<String> content = new TreeSet<>();
 
-			Collection<LOTRWaypoint> facWaypoints = EnumSet.noneOf(LOTRWaypoint.class);
+			Collection<LOTRWaypoint> waypoints = EnumSet.noneOf(LOTRWaypoint.class);
 			for (LOTRWaypoint wp : WAYPOINTS) {
 				if (wp.faction == fac) {
-					facWaypoints.add(wp);
+					waypoints.add(wp);
 				}
 			}
 			sb.append(NL).append("| ");
 			sb.append(getFactionPagename(fac)).append(" = ");
-			if (facWaypoints.isEmpty()) {
+			if (waypoints.isEmpty()) {
 				sb.append(Lang.FACTION_NO_WAYPOINTS);
 			} else {
 				sb.append(Lang.FACTION_HAS_WAYPOINTS);
-				for (LOTRWaypoint wp : facWaypoints) {
-					sortable.add(NL + "* " + wp.getDisplayName() + ';');
+				for (LOTRWaypoint wp : waypoints) {
+					content.add(NL + "* " + wp.getDisplayName() + ';');
 				}
 			}
 
-			appendSortedList(sb, sortable);
+			appendSortedSet(sb, content);
 		}
 		sb.append(END);
 
@@ -2024,7 +2026,7 @@ public class WikiGenerator {
 		sb.append(BEGIN);
 
 		for (String mineral : MINERALS) {
-			List<String> sortable = new ArrayList<>();
+			Collection<String> content = new TreeSet<>();
 
 			sb.append(NL).append("| ");
 			sb.append(mineral).append(" = ").append(Lang.MINERAL_BIOMES);
@@ -2036,13 +2038,13 @@ public class WikiGenerator {
 					Block block = getOreGenBlock(getOreGen(oreGenerant));
 					int meta = getOreGenMeta(getOreGen(oreGenerant));
 					if (getBlockMetaName(block, meta).equals(mineral) || getBlockName(block).equals(mineral)) {
-						sortable.add(NL + "* " + getBiomeLink(biome) + " (" + getOreChance(oreGenerant) + "%; Y: " + getMinHeight(oreGenerant) + '-' + getMaxHeight(oreGenerant) + ");");
+						content.add(NL + "* " + getBiomeLink(biome) + " (" + getOreChance(oreGenerant) + "%; Y: " + getMinHeight(oreGenerant) + '-' + getMaxHeight(oreGenerant) + ");");
 						break;
 					}
 				}
 			}
 
-			appendSortedList(sb, sortable);
+			appendSortedSet(sb, content);
 		}
 
 		sb.append(END);
@@ -2057,20 +2059,20 @@ public class WikiGenerator {
 		sb.append(BEGIN);
 
 		for (Class<?> strClass : STRUCTURES) {
-			List<String> sortable = new ArrayList<>();
+			Collection<String> content = new TreeSet<>();
 
 			sb.append(NL).append("| ");
 			sb.append(getStructureName(strClass)).append(" = ").append(Lang.STRUCTURE_BIOMES);
 			for (LOTRBiome biome : BIOMES) {
 				for (Object structure : getStructures(biome.decorator)) {
 					if (getStructureGen(structure).getClass() == strClass) {
-						sortable.add(NL + "* " + getBiomeLink(biome) + ';');
+						content.add(NL + "* " + getBiomeLink(biome) + ';');
 						break;
 					}
 				}
 			}
 
-			appendSortedList(sb, sortable);
+			appendSortedSet(sb, content);
 		}
 
 		sb.append(END);
@@ -2085,7 +2087,7 @@ public class WikiGenerator {
 		sb.append(BEGIN);
 
 		for (LOTRTreeType tree : TREES) {
-			List<String> sortable = new ArrayList<>();
+			Collection<String> content = new TreeSet<>();
 
 			Collection<LOTRBiome> biomesTree = new HashSet<>();
 			Collection<LOTRBiome> biomesVariantTree = new HashSet<>();
@@ -2114,16 +2116,16 @@ public class WikiGenerator {
 				sb.append(Lang.TREE_HAS_BIOMES);
 			}
 			for (LOTRBiome biome : biomesTree) {
-				sortable.add(NL + "* " + getBiomeLink(biome) + ';');
+				content.add(NL + "* " + getBiomeLink(biome) + ';');
 			}
 
-			appendSortedList(sb, sortable);
+			appendSortedSet(sb, content);
 
 			for (LOTRBiome biome : biomesVariantTree) {
-				sortable.add(NL + "* " + getBiomeLink(biome) + " (" + Lang.TREE_VARIANT_ONLY + ");");
+				content.add(NL + "* " + getBiomeLink(biome) + " (" + Lang.TREE_VARIANT_ONLY + ");");
 			}
 
-			appendSortedList(sb, sortable);
+			appendSortedSet(sb, content);
 		}
 		sb.append(END);
 
@@ -2192,14 +2194,6 @@ public class WikiGenerator {
 				} else {
 					minerals.add(getBlockName(block));
 				}
-			}
-		}
-	}
-
-	private static void searchForStructures(Iterable<LOTRBiome> biomes, Collection<Class<?>> structures) {
-		for (LOTRBiome biome : biomes) {
-			for (Object structure : getStructures(biome.decorator)) {
-				structures.add(getStructureGen(structure).getClass());
 			}
 		}
 	}
@@ -2305,14 +2299,12 @@ public class WikiGenerator {
 		private Utils() {
 		}
 
-		protected static void appendSortedList(StringBuilder sb, List<String> sortable) {
-			Collections.sort(sortable);
-
-			for (String item : sortable) {
+		protected static void appendSortedSet(StringBuilder sb, Collection<String> content) {
+			for (String item : content) {
 				sb.append(item);
 			}
 
-			sortable.clear();
+			content.clear();
 		}
 
 		protected static String getBannerName(LOTRItemBanner.BannerType banner) {

@@ -11,10 +11,17 @@ import net.minecraft.entity.Entity;
 import net.minecraft.world.World;
 import net.minecraft.world.gen.feature.WorldGenerator;
 
+import java.util.HashMap;
 import java.util.HashSet;
+import java.util.Map;
+import java.util.Set;
 
 @SuppressWarnings("all")
 public class Config {
+	public static final Map<Class<? extends Entity>, String> ENTITY_CLASS_TO_NAME = new HashMap<>();
+	public static final Map<Class<?>, String> STRUCTURE_CLASS_TO_NAME = new HashMap<>();
+	public static final Map<Class<?>, Set<String>> SETTLEMENT_CLASS_TO_NAMES = new HashMap<>();
+
 	public static World world;
 
 	public static void authorizeEntityInfo() {
@@ -831,14 +838,14 @@ public class Config {
 	}
 
 	private static void genEntityInfo(Class<? extends Entity> entityClass, String name, int id, int updateRange, int updateFreq, boolean sendVelocityUpdates) {
-		WikiGenerator.CLASS_TO_ENTITY_NAME.put(entityClass, name);
-		WikiGenerator.CLASS_TO_ENTITY.put(entityClass, ReflectionHelper.newEntity(entityClass, world));
-		WikiGenerator.ENTITIES.add(entityClass);
+		ENTITY_CLASS_TO_NAME.put(entityClass, name);
+		WikiGenerator.ENTITY_CLASS_TO_ENTITY.put(entityClass, ReflectionHelper.newEntity(entityClass, world));
+		WikiGenerator.ENTITY_CLASSES.add(entityClass);
 	}
 
 	private static void genStructureInfo(Class<? extends WorldGenerator> clazz, String name) {
-		WikiGenerator.CLASS_TO_STRUCTURE_NAME.put(clazz, name);
-		WikiGenerator.STRUCTURES.add(clazz);
+		STRUCTURE_CLASS_TO_NAME.put(clazz, name);
+		WikiGenerator.STRUCTURE_CLASSES.add(clazz);
 	}
 
 	private static void genStructureInfo(int i, Class<? extends WorldGenerator> clazz, String name, int egg1, int egg2) {
@@ -846,8 +853,8 @@ public class Config {
 	}
 
 	private static void genStructureInfo(int i, LOTRVillageGen clazz, String name, int j, int k, IVillageProperties<?> iVillageProperties) {
-		WikiGenerator.CLASS_TO_VILLAGE_NAMES.computeIfAbsent(clazz.getClass(), s -> new HashSet<>());
-		WikiGenerator.CLASS_TO_VILLAGE_NAMES.get(clazz.getClass()).add(name);
+		SETTLEMENT_CLASS_TO_NAMES.computeIfAbsent(clazz.getClass(), s -> new HashSet<>());
+		SETTLEMENT_CLASS_TO_NAMES.get(clazz.getClass()).add(name);
 	}
 
 	private interface IVillageProperties<V> {

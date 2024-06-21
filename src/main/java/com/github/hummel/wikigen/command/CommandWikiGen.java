@@ -38,7 +38,8 @@ public class CommandWikiGen extends CommandBase {
 			func_152373_a(sender, this, "Database \"" + args[0] + "\" does not exist.");
 		} else {
 			func_152373_a(sender, this, "Database \"" + type + "\" is prepared.");
-			new Thread(() -> WikiGenerator.generate(type.toString(), world, (EntityPlayer) sender)).start();
+
+			WikiGenerator.generate(type, world, (EntityPlayer) sender);
 		}
 	}
 }

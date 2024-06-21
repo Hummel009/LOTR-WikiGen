@@ -11,7 +11,6 @@ import lotr.common.world.biome.LOTRBiomeDecorator;
 import lotr.common.world.biome.variant.LOTRBiomeVariant;
 import lotr.common.world.biome.variant.LOTRBiomeVariantList;
 import lotr.common.world.feature.LOTRTreeType;
-import lotr.common.world.map.LOTRWaypoint;
 import lotr.common.world.spawning.*;
 import lotr.common.world.village.LOTRVillageGen;
 import net.minecraft.block.Block;
@@ -238,17 +237,6 @@ public class ReflectionHelper {
 		return new ArrayList<>();
 	}
 
-	public static List<LOTRWaypoint.Region> getRegion(LOTRWaypoint wp) {
-		try {
-			Field privateField = LOTRWaypoint.class.getDeclaredField("region");
-			privateField.setAccessible(true);
-			return Collections.singletonList((LOTRWaypoint.Region) privateField.get(wp));
-		} catch (Exception e) {
-			e.printStackTrace();
-		}
-		return null;
-	}
-
 	public static List<LOTRInvasions> getRegisteredInvasions(LOTRBiomeInvasionSpawns invasionSpawns) {
 		try {
 			Field privateField = LOTRBiomeInvasionSpawns.class.getDeclaredField("registeredInvasions");
@@ -293,7 +281,7 @@ public class ReflectionHelper {
 		return null;
 	}
 
-	public static List<LOTRBiomeSpawnList.SpawnListContainer> getSpawnLists(LOTRBiomeSpawnList.FactionContainer container) {
+	public static List<LOTRBiomeSpawnList.SpawnListContainer> getSpawnListContainers(LOTRBiomeSpawnList.FactionContainer container) {
 		try {
 			Field privateField = LOTRBiomeSpawnList.FactionContainer.class.getDeclaredField("spawnLists");
 			privateField.setAccessible(true);

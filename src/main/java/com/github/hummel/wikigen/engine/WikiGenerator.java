@@ -1,9 +1,6 @@
 package com.github.hummel.wikigen.engine;
 
-import lotr.common.LOTRAchievement;
-import lotr.common.LOTRAchievementRank;
-import lotr.common.LOTRMod;
-import lotr.common.LOTRShields;
+import lotr.common.*;
 import lotr.common.block.LOTRBlockOreGem;
 import lotr.common.block.LOTRBlockRock;
 import lotr.common.entity.npc.*;
@@ -36,7 +33,6 @@ import net.minecraft.util.IChatComponent;
 import net.minecraft.util.StatCollector;
 import net.minecraft.world.World;
 import net.minecraft.world.biome.BiomeGenBase;
-import net.minecraft.world.gen.feature.WorldGenMinable;
 import net.minecraft.world.gen.feature.WorldGenerator;
 
 import java.io.File;
@@ -49,35 +45,32 @@ import java.util.function.Supplier;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
-import static com.github.hummel.wikigen.engine.WikiGenerator.Utils.*;
 import static com.github.hummel.wikigen.util.ReflectionHelper.*;
 
 @SuppressWarnings("StreamToLoop")
 public class WikiGenerator {
-	public static final Map<Class<? extends Entity>, Entity> CLASS_TO_ENTITY = new HashMap<>();
-	public static final Map<Class<? extends Entity>, String> CLASS_TO_ENTITY_NAME = new HashMap<>();
-	public static final Map<Class<?>, String> CLASS_TO_STRUCTURE_NAME = new HashMap<>();
-	public static final Map<Class<?>, Set<String>> CLASS_TO_VILLAGE_NAMES = new HashMap<>();
+	public static final Map<Class<? extends Entity>, Entity> ENTITY_CLASS_TO_ENTITY = new HashMap<>();
 
-	public static final Set<Class<? extends Entity>> ENTITIES = new HashSet<>();
-	public static final Set<Class<? extends WorldGenerator>> STRUCTURES = new HashSet<>();
+	private static final Map<LOTRFaction, String> FACTION_TO_PAGENAME = new EnumMap<>(LOTRFaction.class);
+	private static final Map<Class<? extends Entity>, String> ENTITY_CLASS_TO_PAGENAME = new HashMap<>();
+	private static final Map<LOTRBiome, String> BIOME_TO_PAGENAME = new HashMap<>();
 
-	private static final Map<String, String> FACTION_TO_PAGE = new HashMap<>();
-	private static final Map<String, String> ENTITY_TO_PAGE = new HashMap<>();
-	private static final Map<String, String> BIOME_TO_PAGE = new HashMap<>();
+	public static final Collection<Class<? extends Entity>> ENTITY_CLASSES = new HashSet<>();
+	public static final Collection<Class<? extends WorldGenerator>> STRUCTURE_CLASSES = new HashSet<>();
 
 	private static final Collection<Item> ITEMS = new ArrayList<>(getObjectFieldsOfType(LOTRMod.class, Item.class));
 	private static final Collection<LOTRUnitTradeEntries> UNIT_TRADE_ENTRIES = new ArrayList<>(getObjectFieldsOfType(LOTRUnitTradeEntries.class, LOTRUnitTradeEntries.class));
 	private static final Collection<LOTRAchievement> ACHIEVEMENTS = new HashSet<>(getObjectFieldsOfType(LOTRAchievement.class, LOTRAchievement.class));
+
 	private static final Collection<LOTRBiome> BIOMES = new HashSet<>(getObjectFieldsOfType(LOTRBiome.class, LOTRBiome.class));
 
-	private static final Collection<LOTRFaction> FACTIONS = EnumSet.allOf(LOTRFaction.class);
 	private static final Collection<LOTRTreeType> TREES = EnumSet.allOf(LOTRTreeType.class);
-	private static final Collection<LOTRWaypoint> WAYPOINTS = EnumSet.allOf(LOTRWaypoint.class);
-	private static final Collection<LOTRShields> SHIELDS = EnumSet.allOf(LOTRShields.class);
+
+	private static final Iterable<LOTRFaction> FACTIONS = EnumSet.allOf(LOTRFaction.class);
+	private static final Iterable<LOTRWaypoint> WAYPOINTS = EnumSet.allOf(LOTRWaypoint.class);
+	private static final Iterable<LOTRShields> SHIELDS = EnumSet.allOf(LOTRShields.class);
 
 	private static final Collection<String> MINERALS = new HashSet<>();
-	private static final Collection<Class<? extends Entity>> HIREABLE = new HashSet<>();
 
 	private static final String BEGIN = "</title>\n<ns>10</ns>\n<revision>\n<text>&lt;includeonly&gt;{{#switch: {{{1}}}";
 	private static final String END = "\n}}&lt;/includeonly&gt;&lt;noinclude&gt;[[" + Lang.CATEGORY + "]]&lt;/noinclude&gt;</text>\n</revision>\n</page>\n";
@@ -89,9 +82,10 @@ public class WikiGenerator {
 	private static final String TEMPLATE = "Template:";
 	private static final String NL = "\n";
 	private static final String TRUE = "True";
+	private static final String FALSE = "False";
+	private static final String N_A = "N/A";
 
 	static {
-		BIOMES.remove(LOTRBiome.ocean);
 		BIOMES.remove(LOTRBiome.beach);
 		BIOMES.remove(LOTRBiome.beachGravel);
 		BIOMES.remove(LOTRBiome.beachWhite);
@@ -110,7 +104,7 @@ public class WikiGenerator {
 	private WikiGenerator() {
 	}
 
-	public static void generate(String type, World world, EntityPlayer entityPlayer) {
+	public static void generate(Type type, World world, EntityPlayer entityPlayer) {
 		long time = System.nanoTime();
 
 		try {
@@ -123,42 +117,40 @@ public class WikiGenerator {
 		Config.authorizeEntityInfo();
 		Config.authorizeStructureInfo();
 
-		Collection<Runnable> pRunnables = new HashSet<>();
-
-		pRunnables.add(() -> searchForEntities(world));
-		pRunnables.add(() -> searchForMinerals(BIOMES, MINERALS));
-		pRunnables.add(() -> searchForHireable(HIREABLE, UNIT_TRADE_ENTRIES));
-		pRunnables.add(() -> searchForPagenamesEntity(BIOMES, FACTIONS));
-		pRunnables.add(() -> searchForPagenamesBiome(BIOMES, FACTIONS));
-		pRunnables.add(() -> searchForPagenamesFaction(BIOMES, FACTIONS));
-
-		pRunnables.parallelStream().forEach(Runnable::run);
-
 		switch (type) {
-			case "tables":
-			case "TABLES":
-				Collection<Runnable> runnables = new HashSet<>();
+			case TABLES:
+				Collection<Runnable> tableGens = new HashSet<>();
 
-				runnables.add(() -> genTableAchievements(entityPlayer));
-				runnables.add(() -> genTableWaypoints(entityPlayer));
-				runnables.add(WikiGenerator::genTableShields);
-				runnables.add(WikiGenerator::genTableUnits);
-				runnables.add(WikiGenerator::genTableArmor);
-				runnables.add(WikiGenerator::genTableWeapons);
-				runnables.add(WikiGenerator::genTableFood);
+				tableGens.add(WikiGenerator::genTableShields);
+				tableGens.add(WikiGenerator::genTableUnits);
+				tableGens.add(WikiGenerator::genTableArmor);
+				tableGens.add(WikiGenerator::genTableWeapons);
+				tableGens.add(WikiGenerator::genTableFood);
+				tableGens.add(() -> genTableAchievements(entityPlayer));
+				tableGens.add(() -> genTableWaypoints(entityPlayer));
 
-				runnables.parallelStream().forEach(Runnable::run);
+				tableGens.parallelStream().forEach(Runnable::run);
 
 				break;
-			case "xml":
-			case "XML":
+			case XML:
 				try (PrintWriter printWriter = new PrintWriter("hummel/import.xml", UTF_8)) {
-					StringBuilder xmlBuilder = new StringBuilder();
+					StringBuilder sb = new StringBuilder();
 
-					xmlBuilder.append("<mediawiki xmlns=\"http://www.mediawiki.org/xml/export-0.11/\" xmlns:xsi=\"http://www.w3.org/2001/XMLSchema-instance\" xsi:schemaLocation=\"http://www.mediawiki.org/xml/export-0.11/ http://www.mediawiki.org/xml/export-0.11.xsd\" version=\"0.11\" xml:lang=\"ru\">");
+					LOTRDate.Season season = LOTRDate.ShireReckoning.getSeason();
+
+					sb.append("<mediawiki xmlns=\"http://www.mediawiki.org/xml/export-0.11/\" xmlns:xsi=\"http://www.w3.org/2001/XMLSchema-instance\" xsi:schemaLocation=\"http://www.mediawiki.org/xml/export-0.11/ http://www.mediawiki.org/xml/export-0.11.xsd\" version=\"0.11\" xml:lang=\"ru\">");
+
+					Collection<Runnable> runnables = new HashSet<>();
+
+					runnables.add(WikiGenerator::searchForMinerals);
+					runnables.add(WikiGenerator::searchForPagenamesEntity);
+					runnables.add(WikiGenerator::searchForPagenamesBiome);
+					runnables.add(WikiGenerator::searchForPagenamesFaction);
+					runnables.add(() -> searchForEntities(world));
+
+					runnables.parallelStream().forEach(Runnable::run);
 
 					Collection<Supplier<StringBuilder>> suppliers = new HashSet<>();
-					Collection<StringBuilder> sbs = new HashSet<>();
 
 					Set<String> existingPages = getExistingPages();
 					Collection<String> neededPages = new HashSet<>();
@@ -170,34 +162,31 @@ public class WikiGenerator {
 					suppliers.add(() -> addPagesTrees(neededPages, existingPages));
 					suppliers.add(() -> addPagesStructures(neededPages, existingPages));
 
-					suppliers.parallelStream().map(Supplier::get).forEach(sbs::add);
-					sbs.forEach(xmlBuilder::append);
-
+					suppliers.parallelStream().map(Supplier::get).forEach(sb::append);
 					suppliers.clear();
-					sbs.clear();
 
 					markPagesForRemoval(neededPages, existingPages);
 
-					suppliers.add(WikiGenerator::genTemplateStructureBiomes);
 					suppliers.add(WikiGenerator::genTemplateMineralBiomes);
 					suppliers.add(WikiGenerator::genTemplateTreeBiomes);
 
+					suppliers.add(WikiGenerator::genTemplateStructureBiomes);
+
+					suppliers.add(WikiGenerator::genTemplateBiomeAnimals);
 					suppliers.add(WikiGenerator::genTemplateBiomeBandits);
 					suppliers.add(WikiGenerator::genTemplateBiomeConquestFactions);
 					suppliers.add(WikiGenerator::genTemplateBiomeInvasionFactions);
 					suppliers.add(WikiGenerator::genTemplateBiomeMinerals);
-					suppliers.add(WikiGenerator::genTemplateBiomeMobs);
 					suppliers.add(WikiGenerator::genTemplateBiomeMusic);
+					suppliers.add(WikiGenerator::genTemplateBiomeNPCs);
 					suppliers.add(WikiGenerator::genTemplateBiomeName);
 					suppliers.add(WikiGenerator::genTemplateBiomeRainfall);
-					suppliers.add(WikiGenerator::genTemplateBiomeSpawnNPCs);
-					suppliers.add(WikiGenerator::genTemplateBiomeStructuresSettlements);
+					suppliers.add(WikiGenerator::genTemplateBiomeStructures);
 					suppliers.add(WikiGenerator::genTemplateBiomeTemperature);
 					suppliers.add(WikiGenerator::genTemplateBiomeTrees);
 					suppliers.add(WikiGenerator::genTemplateBiomeVariants);
+					suppliers.add(WikiGenerator::genTemplateBiomeVisitAchievement);
 					suppliers.add(WikiGenerator::genTemplateBiomeWaypoints);
-
-					suppliers.add(() -> genTemplateBiomeVisitAchievement(entityPlayer));
 
 					suppliers.add(WikiGenerator::genTemplateFactionBanners);
 					suppliers.add(WikiGenerator::genTemplateFactionCodename);
@@ -210,60 +199,47 @@ public class WikiGenerator {
 					suppliers.add(WikiGenerator::genTemplateFactionPledgeRank);
 					suppliers.add(WikiGenerator::genTemplateFactionRanks);
 					suppliers.add(WikiGenerator::genTemplateFactionRegion);
-					suppliers.add(WikiGenerator::genTemplateFactionShields);
+					suppliers.add(WikiGenerator::genTemplateFactionShieldsCapes);
 					suppliers.add(WikiGenerator::genTemplateFactionSpawnBiomes);
 					suppliers.add(WikiGenerator::genTemplateFactionWarCrimes);
 					suppliers.add(WikiGenerator::genTemplateFactionWaypoints);
 
 					suppliers.add(WikiGenerator::genTemplateEntityBannerBearer);
-					suppliers.add(WikiGenerator::genTemplateEntityBuys);
+					suppliers.add(WikiGenerator::genTemplateEntityBiomes);
+					suppliers.add(WikiGenerator::genTemplateEntityBuyPools);
 					suppliers.add(WikiGenerator::genTemplateEntityFaction);
 					suppliers.add(WikiGenerator::genTemplateEntityFarmhand);
 					suppliers.add(WikiGenerator::genTemplateEntityHealth);
 					suppliers.add(WikiGenerator::genTemplateEntityHireAlignment);
 					suppliers.add(WikiGenerator::genTemplateEntityHirePrice);
 					suppliers.add(WikiGenerator::genTemplateEntityHirePricePledge);
+					suppliers.add(WikiGenerator::genTemplateEntityHireable);
 					suppliers.add(WikiGenerator::genTemplateEntityImmuneToFire);
 					suppliers.add(WikiGenerator::genTemplateEntityImmuneToFrost);
 					suppliers.add(WikiGenerator::genTemplateEntityImmuneToHeat);
+					suppliers.add(WikiGenerator::genTemplateEntityKillAchievement);
 					suppliers.add(WikiGenerator::genTemplateEntityKillAlignment);
 					suppliers.add(WikiGenerator::genTemplateEntityMarriage);
 					suppliers.add(WikiGenerator::genTemplateEntityMercenary);
-					suppliers.add(WikiGenerator::genTemplateEntityOwner);
-					suppliers.add(WikiGenerator::genTemplateEntityRideableMob);
+					suppliers.add(WikiGenerator::genTemplateEntityOwners);
+					suppliers.add(WikiGenerator::genTemplateEntityRideableAnimal);
 					suppliers.add(WikiGenerator::genTemplateEntityRideableNPC);
-					suppliers.add(WikiGenerator::genTemplateEntitySells);
-					suppliers.add(WikiGenerator::genTemplateEntitySellsUnits);
+					suppliers.add(WikiGenerator::genTemplateEntitySellPools);
+					suppliers.add(WikiGenerator::genTemplateEntitySellUnitPools);
 					suppliers.add(WikiGenerator::genTemplateEntitySmith);
-					suppliers.add(WikiGenerator::genTemplateEntitySpawn);
 					suppliers.add(WikiGenerator::genTemplateEntitySpawnsInDarkness);
 					suppliers.add(WikiGenerator::genTemplateEntityTargetSeeker);
 					suppliers.add(WikiGenerator::genTemplateEntityTradeable);
 					suppliers.add(WikiGenerator::genTemplateEntityUnitTradeable);
 
-					suppliers.add(() -> genTemplateEntityKillAchievement(entityPlayer));
-
-					// структуры - лут
-					// структуры - мобы
-					// структуры - поселения
-
-					// мобы - структуры
-					// мобы - поселения
-
-					// поселения - мобы
-					// поселения - структуры
-					// поселения - лут
-					// поселения - биомы
-
-					suppliers.parallelStream().map(Supplier::get).forEach(sbs::add);
-					sbs.forEach(xmlBuilder::append);
-
+					suppliers.parallelStream().map(Supplier::get).forEach(sb::append);
 					suppliers.clear();
-					sbs.clear();
 
-					xmlBuilder.append("</mediawiki>");
+					sb.append("</mediawiki>");
 
-					printWriter.write(xmlBuilder.toString());
+					LOTRDate.ShireReckoning.getShireDate().month.season = season;
+
+					printWriter.write(sb.toString());
 				} catch (Exception e) {
 					e.printStackTrace();
 				}
@@ -273,8 +249,2209 @@ public class WikiGenerator {
 
 		long newTime = System.nanoTime();
 
-		IChatComponent component = new ChatComponentText("Generated databases in " + (newTime - time) / 1.0E6 + " milliseconds");
+		IChatComponent component = new ChatComponentText("Generated in " + (newTime - time) / 1.0E6 + " milliseconds");
 		entityPlayer.addChatMessage(component);
+	}
+
+	@SuppressWarnings("StringBufferReplaceableByString")
+	private static void genTableAchievements(EntityPlayer entityPlayer) {
+		Collection<String> data = new TreeSet<>();
+
+		for (LOTRAchievement achievement : ACHIEVEMENTS) {
+			if (!(achievement instanceof LOTRAchievementRank)) {
+				StringBuilder sb = new StringBuilder();
+
+				sb.append(NL).append("| ");
+				sb.append(achievement.getTitle(entityPlayer));
+				sb.append(" || ").append(achievement.getDescription(null));
+				sb.append(NL).append("|-");
+
+				data.add(sb.toString());
+			}
+		}
+
+		StringBuilder sb = new StringBuilder();
+
+		for (String datum : data) {
+			sb.append(datum);
+		}
+
+		try (PrintWriter printWriter = new PrintWriter("hummel/achievements.txt", UTF_8)) {
+			printWriter.write(sb.toString());
+		} catch (Exception e) {
+			e.printStackTrace();
+		}
+	}
+
+	private static void genTableArmor() {
+		Collection<String> data = new TreeSet<>();
+
+		for (Item item : ITEMS) {
+			if (item instanceof ItemArmor) {
+				StringBuilder sb = new StringBuilder();
+
+				float damage = ((ItemArmor) item).damageReduceAmount;
+				ItemArmor.ArmorMaterial material = ((ItemArmor) item).getArmorMaterial();
+
+				sb.append(NL).append("| ");
+				sb.append(getItemName(item));
+				sb.append(" || ").append(getItemFilename(item));
+				sb.append(" || ").append(item.getMaxDamage());
+				sb.append(" || ").append(damage);
+
+				sb.append(" || ");
+				if (material == null || material.customCraftingMaterial == null) {
+					sb.append(N_A);
+				} else {
+					sb.append(getItemName(material.customCraftingMaterial));
+				}
+
+				sb.append(NL).append("|-");
+
+				data.add(sb.toString());
+			}
+		}
+
+		StringBuilder sb = new StringBuilder();
+
+		for (String datum : data) {
+			sb.append(datum);
+		}
+
+		try (PrintWriter printWriter = new PrintWriter("hummel/armor.txt", UTF_8)) {
+			printWriter.write(sb.toString());
+		} catch (Exception e) {
+			e.printStackTrace();
+		}
+	}
+
+	@SuppressWarnings("deprecation")
+	private static void genTableFood() {
+		Collection<String> data = new TreeSet<>();
+
+		DecimalFormat decimalFormat = new DecimalFormat("#.##");
+
+		for (Item item : ITEMS) {
+			if (item instanceof ItemFood) {
+				StringBuilder sb = new StringBuilder();
+
+				int heal = ((ItemFood) item).func_150905_g(null);
+				float saturation = ((ItemFood) item).func_150906_h(null);
+
+				sb.append(NL).append("| ");
+				sb.append(getItemName(item));
+				sb.append(" || ").append(getItemFilename(item));
+				sb.append(" || ").append("{{Bar|bread|").append(decimalFormat.format(saturation * heal * 2)).append("}}");
+				sb.append(" || ").append("{{Bar|food|").append(heal).append("}}");
+				sb.append(" || ").append(item.getItemStackLimit());
+				sb.append(NL).append("|-");
+
+				data.add(sb.toString());
+			}
+		}
+
+		StringBuilder sb = new StringBuilder();
+
+		for (String datum : data) {
+			sb.append(datum);
+		}
+
+		try (PrintWriter printWriter = new PrintWriter("hummel/food.txt", UTF_8)) {
+			printWriter.write(sb.toString());
+		} catch (Exception e) {
+			e.printStackTrace();
+		}
+	}
+
+	@SuppressWarnings("StringBufferReplaceableByString")
+	private static void genTableShields() {
+		Collection<String> data = new TreeSet<>();
+
+		for (LOTRShields shield : SHIELDS) {
+			StringBuilder sb = new StringBuilder();
+
+			sb.append(NL).append("| ");
+			sb.append(shield.getShieldName());
+			sb.append(" || ").append(shield.getShieldDesc());
+			sb.append(" || ").append(getShieldFilename(shield));
+			sb.append(NL).append("|-");
+
+			data.add(sb.toString());
+		}
+
+		StringBuilder sb = new StringBuilder();
+
+		for (String datum : data) {
+			sb.append(datum);
+		}
+
+		try (PrintWriter printWriter = new PrintWriter("hummel/shields.txt", UTF_8)) {
+			printWriter.write(sb.toString());
+		} catch (Exception e) {
+			e.printStackTrace();
+		}
+	}
+
+	private static void genTableUnits() {
+		Collection<String> data = new TreeSet<>();
+
+		for (LOTRUnitTradeEntries unitTradeEntries : UNIT_TRADE_ENTRIES) {
+			for (LOTRUnitTradeEntry entry : unitTradeEntries.tradeEntries) {
+				StringBuilder sb = new StringBuilder();
+
+				sb.append(NL).append("| ");
+				sb.append(getEntityLink(entry.entityClass));
+
+				if (entry.mountClass != null) {
+					sb.append(Lang.RIDER);
+				}
+
+				int cost = getInitialCost(entry);
+				int alignment = (int) entry.alignmentRequired;
+
+				if (entry.getPledgeType() == LOTRUnitTradeEntry.PledgeType.NONE) {
+					sb.append(" || ").append("{{Coins|").append(cost * 2).append("}}");
+					sb.append(" || ").append("{{Coins|").append(cost).append("}}");
+					sb.append(" || ").append('+').append(alignment);
+					sb.append(" || ").append('-');
+				} else {
+					sb.append(" || ").append(N_A);
+					sb.append(" || ").append("{{Coins|").append(cost).append("}}");
+					sb.append(" || ").append('+').append(Math.max(alignment, 100));
+					sb.append(" || ").append('+');
+				}
+
+				sb.append(NL).append("|-");
+
+				data.add(sb.toString());
+			}
+		}
+
+		StringBuilder sb = new StringBuilder();
+
+		for (String datum : data) {
+			sb.append(datum);
+		}
+
+		try (PrintWriter printWriter = new PrintWriter("hummel/units.txt", UTF_8)) {
+			printWriter.write(sb.toString());
+		} catch (Exception e) {
+			e.printStackTrace();
+		}
+	}
+
+	@SuppressWarnings("StringBufferReplaceableByString")
+	private static void genTableWaypoints(EntityPlayer entityPlayer) {
+		Collection<String> data = new TreeSet<>();
+
+		for (LOTRWaypoint wp : WAYPOINTS) {
+			StringBuilder sb = new StringBuilder();
+
+			sb.append(NL).append("| ");
+			sb.append(wp.getDisplayName());
+			sb.append(" || ").append(wp.getLoreText(entityPlayer));
+			sb.append(NL).append("|-");
+
+			data.add(sb.toString());
+		}
+
+		StringBuilder sb = new StringBuilder();
+
+		for (String datum : data) {
+			sb.append(datum);
+		}
+
+		try (PrintWriter printWriter = new PrintWriter("hummel/waypoints.txt", UTF_8)) {
+			printWriter.write(sb.toString());
+		} catch (Exception e) {
+			e.printStackTrace();
+		}
+	}
+
+	private static void genTableWeapons() {
+		Collection<String> data = new TreeSet<>();
+
+		for (Item item : ITEMS) {
+			if (item instanceof ItemSword) {
+				StringBuilder sb = new StringBuilder();
+
+				float damage = getDamageAmount(item);
+				Item.ToolMaterial material = getToolMaterial(item);
+
+				sb.append(NL).append("| ");
+				sb.append(getItemName(item));
+				sb.append(" || ").append(getItemFilename(item));
+				sb.append(" || ").append(item.getMaxDamage());
+				sb.append(" || ").append(damage);
+
+				sb.append(" || ");
+				if (material == null || material.getRepairItemStack() == null) {
+					sb.append(N_A);
+				} else {
+					sb.append(getItemName(material.getRepairItemStack().getItem()));
+				}
+
+				sb.append(NL).append("|-");
+
+				data.add(sb.toString());
+			}
+		}
+
+		StringBuilder sb = new StringBuilder();
+
+		for (String datum : data) {
+			sb.append(datum);
+		}
+
+		try (PrintWriter printWriter = new PrintWriter("hummel/weapon.txt", UTF_8)) {
+			printWriter.write(sb.toString());
+		} catch (Exception e) {
+			e.printStackTrace();
+		}
+	}
+
+	private static StringBuilder genTemplateBiomeAnimals() {
+		Map<LOTRBiome, Set<String>> data = new HashMap<>();
+
+		for (LOTRBiome biome : BIOMES) {
+			data.put(biome, new TreeSet<>());
+
+			Collection<BiomeGenBase.SpawnListEntry> spawnListEntries = new HashSet<BiomeGenBase.SpawnListEntry>(biome.getSpawnableList(EnumCreatureType.ambient));
+			spawnListEntries.addAll(biome.getSpawnableList(EnumCreatureType.waterCreature));
+			spawnListEntries.addAll(biome.getSpawnableList(EnumCreatureType.creature));
+			spawnListEntries.addAll(biome.getSpawnableList(EnumCreatureType.monster));
+			spawnListEntries.addAll(biome.getSpawnableList(LOTRBiome.creatureType_LOTRAmbient));
+
+			for (BiomeGenBase.SpawnListEntry spawnListEntry : spawnListEntries) {
+				data.get(biome).add(getEntityLink(spawnListEntry.entityClass));
+			}
+		}
+
+		StringBuilder sb = new StringBuilder();
+
+		sb.append(TITLE).append(TEMPLATE).append("DB Biome-Animals");
+		sb.append(BEGIN);
+
+		for (Map.Entry<LOTRBiome, Set<String>> entry : data.entrySet()) {
+			sb.append(NL).append("| ");
+			sb.append(getBiomePagename(entry.getKey())).append(" = ");
+
+			appendPreamble(sb, entry.getValue(), Lang.BIOME_HAS_ANIMALS, Lang.BIOME_NO_ANIMALS);
+			appendSection(sb, entry.getValue());
+		}
+
+		sb.append(END);
+
+		return sb;
+	}
+
+	private static StringBuilder genTemplateBiomeBandits() {
+		Map<LOTRBiome, String> data = new HashMap<>();
+
+		for (LOTRBiome biome : BIOMES) {
+			data.put(biome, biome.getBanditChance().toString());
+		}
+
+		StringBuilder sb = new StringBuilder();
+
+		sb.append(TITLE).append(TEMPLATE).append("DB Biome-Bandits");
+		sb.append(BEGIN);
+
+		for (Map.Entry<LOTRBiome, String> entry : data.entrySet()) {
+			sb.append(NL).append("| ");
+			sb.append(getBiomePagename(entry.getKey())).append(" = ");
+
+			appendSection(sb, entry.getValue());
+		}
+
+		sb.append(END);
+
+		return sb;
+	}
+
+	private static StringBuilder genTemplateBiomeConquestFactions() {
+		Map<LOTRBiome, Set<String>> data = new HashMap<>();
+
+		for (LOTRBiome biome : BIOMES) {
+			data.put(biome, new TreeSet<>());
+
+			for (LOTRBiomeSpawnList.FactionContainer factionContainer : getFactionContainers(biome.npcSpawnList)) {
+				if (getBaseWeight(factionContainer) <= 0) {
+					for (LOTRBiomeSpawnList.SpawnListContainer spawnListContainer : getSpawnListContainers(factionContainer)) {
+						for (LOTRSpawnEntry spawnEntry : getSpawnEntries(getSpawnList(spawnListContainer))) {
+							Entity entity = ENTITY_CLASS_TO_ENTITY.get(spawnEntry.entityClass);
+							if (entity instanceof LOTREntityNPC) {
+								LOTRFaction faction = ((LOTREntityNPC) entity).getFaction();
+								data.get(biome).add(getFactionLink(faction));
+								break;
+							}
+						}
+					}
+				}
+			}
+		}
+
+		StringBuilder sb = new StringBuilder();
+
+		sb.append(TITLE).append(TEMPLATE).append("DB Biome-ConquestFactions");
+		sb.append(BEGIN);
+
+		for (Map.Entry<LOTRBiome, Set<String>> entry : data.entrySet()) {
+			sb.append(NL).append("| ");
+			sb.append(getBiomePagename(entry.getKey())).append(" = ");
+
+			appendPreamble(sb, entry.getValue(), Lang.BIOME_HAS_CONQUEST_FACTIONS, Lang.BIOME_NO_CONQUEST_FACTIONS);
+			appendSection(sb, entry.getValue());
+		}
+
+		sb.append(END);
+
+		return sb;
+	}
+
+	private static StringBuilder genTemplateBiomeInvasionFactions() {
+		Map<LOTRBiome, Set<String>> data = new HashMap<>();
+
+		for (LOTRBiome biome : BIOMES) {
+			data.put(biome, new TreeSet<>());
+
+			for (LOTRInvasions invasion : getRegisteredInvasions(biome.invasionSpawns)) {
+				for (LOTRInvasions.InvasionSpawnEntry invasionSpawnEntry : invasion.invasionMobs) {
+					Entity entity = ENTITY_CLASS_TO_ENTITY.get(invasionSpawnEntry.getEntityClass());
+					if (entity instanceof LOTREntityNPC) {
+						LOTRFaction faction = ((LOTREntityNPC) entity).getFaction();
+						data.get(biome).add(getFactionLink(faction));
+						break;
+					}
+				}
+			}
+		}
+
+		StringBuilder sb = new StringBuilder();
+
+		sb.append(TITLE).append(TEMPLATE).append("DB Biome-InvasionFactions");
+		sb.append(BEGIN);
+
+		for (Map.Entry<LOTRBiome, Set<String>> entry : data.entrySet()) {
+			sb.append(NL).append("| ");
+			sb.append(getBiomePagename(entry.getKey())).append(" = ");
+
+			appendPreamble(sb, entry.getValue(), Lang.BIOME_HAS_INVASION_FACTIONS, Lang.BIOME_NO_INVASION_FACTIONS);
+			appendSection(sb, entry.getValue());
+		}
+
+		sb.append(END);
+
+		return sb;
+	}
+
+	private static StringBuilder genTemplateBiomeMinerals() {
+		Map<LOTRBiome, Set<String>> data = new HashMap<>();
+
+		for (LOTRBiome biome : BIOMES) {
+			data.put(biome, new TreeSet<>());
+
+			Collection<Object> oreGenerants = new HashSet<>(getBiomeSoils(biome.decorator));
+			oreGenerants.addAll(getBiomeOres(biome.decorator));
+			oreGenerants.addAll(getBiomeGems(biome.decorator));
+
+			for (Object oreGenerant : oreGenerants) {
+				Block block = getOreGenBlock(getOreGen(oreGenerant));
+				int meta = getOreGenMeta(getOreGen(oreGenerant));
+
+				String blockLink;
+				if (block instanceof LOTRBlockOreGem || block instanceof BlockDirt || block instanceof LOTRBlockRock) {
+					blockLink = getMineralLink(block, meta);
+				} else {
+					blockLink = getMineralLink(block);
+				}
+
+				String stats = "(" + getOreChance(oreGenerant) + "%; Y: " + getMinHeight(oreGenerant) + '-' + getMaxHeight(oreGenerant) + ')';
+
+				data.get(biome).add(blockLink + ' ' + stats);
+			}
+		}
+
+		StringBuilder sb = new StringBuilder();
+
+		sb.append(TITLE).append(TEMPLATE).append("DB Biome-Minerals");
+		sb.append(BEGIN);
+
+		for (Map.Entry<LOTRBiome, Set<String>> entry : data.entrySet()) {
+			sb.append(NL).append("| ");
+			sb.append(getBiomePagename(entry.getKey())).append(" = ");
+
+			appendPreamble(sb, entry.getValue(), Lang.BIOME_HAS_MINERALS, Lang.BIOME_NO_MINERALS);
+			appendSection(sb, entry.getValue());
+		}
+
+		sb.append(END);
+
+		return sb;
+	}
+
+	private static StringBuilder genTemplateBiomeMusic() {
+		Map<LOTRBiome, String> data = new HashMap<>();
+
+		for (LOTRBiome biome : BIOMES) {
+			if (biome.getBiomeMusic() != null) {
+				data.put(biome, biome.getBiomeMusic().subregion);
+			}
+		}
+
+		StringBuilder sb = new StringBuilder();
+
+		sb.append(TITLE).append(TEMPLATE).append("DB Biome-Music");
+		sb.append(BEGIN);
+
+		appendDefault(sb, N_A);
+
+		for (Map.Entry<LOTRBiome, String> entry : data.entrySet()) {
+			sb.append(NL).append("| ");
+			sb.append(getBiomePagename(entry.getKey())).append(" = ");
+
+			appendSection(sb, entry.getValue());
+		}
+
+		sb.append(END);
+
+		return sb;
+	}
+
+	private static StringBuilder genTemplateBiomeName() {
+		Map<LOTRBiome, String> data = new HashMap<>();
+
+		for (LOTRBiome biome : BIOMES) {
+			data.put(biome, getBiomeName(biome));
+		}
+
+		StringBuilder sb = new StringBuilder();
+
+		sb.append(TITLE).append(TEMPLATE).append("DB Biome-Name");
+		sb.append(BEGIN);
+
+		for (Map.Entry<LOTRBiome, String> entry : data.entrySet()) {
+			sb.append(NL).append("| ");
+			sb.append(getBiomePagename(entry.getKey())).append(" = ");
+
+			appendSection(sb, entry.getValue());
+		}
+
+		sb.append(END);
+
+		return sb;
+	}
+
+	private static StringBuilder genTemplateBiomeNPCs() {
+		Map<LOTRBiome, Set<String>> data = new HashMap<>();
+
+		for (LOTRBiome biome : BIOMES) {
+			data.put(biome, new TreeSet<>());
+
+			for (LOTRBiomeSpawnList.FactionContainer factionContainer : getFactionContainers(biome.npcSpawnList)) {
+				if (getBaseWeight(factionContainer) > 0) {
+					for (LOTRBiomeSpawnList.SpawnListContainer spawnListContainer : getSpawnListContainers(factionContainer)) {
+						for (LOTRSpawnEntry spawnEntry : getSpawnEntries(getSpawnList(spawnListContainer))) {
+							data.get(biome).add(getEntityLink(spawnEntry.entityClass));
+						}
+					}
+				}
+			}
+		}
+
+		StringBuilder sb = new StringBuilder();
+
+		sb.append(TITLE).append(TEMPLATE).append("DB Biome-NPCs");
+		sb.append(BEGIN);
+
+		for (Map.Entry<LOTRBiome, Set<String>> entry : data.entrySet()) {
+			sb.append(NL).append("| ");
+			sb.append(getBiomePagename(entry.getKey())).append(" = ");
+
+			appendPreamble(sb, entry.getValue(), Lang.BIOME_HAS_NPCS, Lang.BIOME_NO_NPCS);
+			appendSection(sb, entry.getValue());
+		}
+
+		sb.append(END);
+
+		return sb;
+	}
+
+	private static StringBuilder genTemplateBiomeRainfall() {
+		Map<LOTRBiome, String> data = new HashMap<>();
+
+		for (LOTRBiome biome : BIOMES) {
+			data.put(biome, String.valueOf(biome.rainfall));
+		}
+
+		StringBuilder sb = new StringBuilder();
+
+		sb.append(TITLE).append(TEMPLATE).append("DB Biome-Rainfall");
+		sb.append(BEGIN);
+
+		for (Map.Entry<LOTRBiome, String> entry : data.entrySet()) {
+			sb.append(NL).append("| ");
+			sb.append(getBiomePagename(entry.getKey())).append(" = ");
+
+			appendSection(sb, entry.getValue());
+		}
+
+		sb.append(END);
+
+		return sb;
+	}
+
+	private static StringBuilder genTemplateBiomeStructures() {
+		Map<LOTRBiome, Set<String>> data = new HashMap<>();
+
+		for (LOTRBiome biome : BIOMES) {
+			data.put(biome, new TreeSet<>());
+
+			for (Object structure : getStructures(biome.decorator)) {
+				data.get(biome).add(getStructureLink(getStructureGen(structure).getClass()));
+			}
+
+			for (LOTRVillageGen settlement : getVillages(biome.decorator)) {
+				if (getSpawnChance(settlement) != 0.0f) {
+					Set<String> names = getSettlementNames(settlement.getClass());
+					data.get(biome).addAll(names);
+				}
+			}
+		}
+
+		StringBuilder sb = new StringBuilder();
+
+		sb.append(TITLE).append(TEMPLATE).append("DB Biome-Structures");
+		sb.append(BEGIN);
+
+		for (Map.Entry<LOTRBiome, Set<String>> entry : data.entrySet()) {
+			sb.append(NL).append("| ");
+			sb.append(getBiomePagename(entry.getKey())).append(" = ");
+
+			appendPreamble(sb, entry.getValue(), Lang.BIOME_HAS_STRUCTURES, Lang.BIOME_NO_STRUCTURES);
+			appendSection(sb, entry.getValue());
+		}
+
+		sb.append(END);
+
+		return sb;
+	}
+
+	private static StringBuilder genTemplateBiomeTemperature() {
+		Map<LOTRBiome, String> data = new HashMap<>();
+
+		for (LOTRBiome biome : BIOMES) {
+			data.put(biome, String.valueOf(biome.temperature));
+		}
+
+		StringBuilder sb = new StringBuilder();
+
+		sb.append(TITLE).append(TEMPLATE).append("DB Biome-Temperature");
+		sb.append(BEGIN);
+
+		for (Map.Entry<LOTRBiome, String> entry : data.entrySet()) {
+			sb.append(NL).append("| ");
+			sb.append(getBiomePagename(entry.getKey())).append(" = ");
+
+			appendSection(sb, entry.getValue());
+		}
+
+		sb.append(END);
+
+		return sb;
+	}
+
+	private static StringBuilder genTemplateBiomeTrees() {
+		Map<LOTRBiome, Set<String>> data = new HashMap<>();
+
+		for (LOTRBiome biome : BIOMES) {
+			data.put(biome, new TreeSet<>());
+
+			Collection<LOTRTreeType.WeightedTreeType> weightedTreeTypes = getTreeTypes(biome.decorator);
+
+			Collection<LOTRTreeType> excludedTreeTypes = EnumSet.noneOf(LOTRTreeType.class);
+
+			for (LOTRTreeType.WeightedTreeType weightedTreeType : weightedTreeTypes) {
+				LOTRTreeType treeType = weightedTreeType.treeType;
+
+				data.get(biome).add(getTreeLink(treeType));
+
+				excludedTreeTypes.add(treeType);
+			}
+
+			for (Object variantBucket : getVariantList(biome.getBiomeVariantsSmall())) {
+				for (LOTRTreeType.WeightedTreeType weightedTreeType : getVariant(variantBucket).treeTypes) {
+					LOTRTreeType treeType = weightedTreeType.treeType;
+
+					if (!excludedTreeTypes.contains(treeType)) {
+						data.get(biome).add(getTreeLink(treeType) + " (" + getBiomeVariantName(getVariant(variantBucket)).toLowerCase(Locale.ROOT) + ')');
+					}
+				}
+			}
+		}
+
+		StringBuilder sb = new StringBuilder();
+
+		sb.append(TITLE).append(TEMPLATE).append("DB Biome-Trees");
+		sb.append(BEGIN);
+
+		for (Map.Entry<LOTRBiome, Set<String>> entry : data.entrySet()) {
+			sb.append(NL).append("| ");
+			sb.append(getBiomePagename(entry.getKey())).append(" = ");
+
+			appendPreamble(sb, entry.getValue(), Lang.BIOME_HAS_TREES, Lang.BIOME_NO_TREES);
+			appendSection(sb, entry.getValue());
+		}
+
+		sb.append(END);
+
+		return sb;
+	}
+
+	private static StringBuilder genTemplateBiomeVariants() {
+		Map<LOTRBiome, Set<String>> data = new HashMap<>();
+
+		for (LOTRBiome biome : BIOMES) {
+			data.put(biome, new TreeSet<>());
+
+			for (Object variantBucket : getVariantList(biome.getBiomeVariantsSmall())) {
+				data.get(biome).add(getBiomeVariantName(getVariant(variantBucket)));
+			}
+		}
+
+		StringBuilder sb = new StringBuilder();
+
+		sb.append(TITLE).append(TEMPLATE).append("DB Biome-Variants");
+		sb.append(BEGIN);
+
+		for (Map.Entry<LOTRBiome, Set<String>> entry : data.entrySet()) {
+			sb.append(NL).append("| ");
+			sb.append(getBiomePagename(entry.getKey())).append(" = ");
+
+			appendPreamble(sb, entry.getValue(), Lang.BIOME_HAS_VARIANTS, Lang.BIOME_NO_VARIANTS);
+			appendSection(sb, entry.getValue());
+		}
+
+		sb.append(END);
+
+		return sb;
+	}
+
+	private static StringBuilder genTemplateBiomeVisitAchievement() {
+		Map<LOTRBiome, String> data = new HashMap<>();
+
+		for (LOTRBiome biome : BIOMES) {
+			LOTRAchievement achievement = biome.getBiomeAchievement();
+
+			if (achievement != null) {
+				data.put(biome, '«' + achievement.getTitle(null) + '»');
+			}
+		}
+
+		StringBuilder sb = new StringBuilder();
+
+		sb.append(TITLE).append(TEMPLATE).append("DB Biome-VisitAchievement");
+		sb.append(BEGIN);
+
+		appendDefault(sb, N_A);
+
+		for (Map.Entry<LOTRBiome, String> entry : data.entrySet()) {
+			sb.append(NL).append("| ");
+			sb.append(getBiomePagename(entry.getKey())).append(" = ");
+
+			appendSection(sb, entry.getValue());
+		}
+
+		sb.append(END);
+
+		return sb;
+	}
+
+	private static StringBuilder genTemplateBiomeWaypoints() {
+		Map<LOTRBiome, Set<String>> data = new HashMap<>();
+
+		for (LOTRBiome biome : BIOMES) {
+			data.put(biome, new TreeSet<>());
+
+			for (LOTRWaypoint wp : biome.getBiomeWaypoints().waypoints) {
+				data.get(biome).add(wp.getDisplayName() + " (" + getFactionLink(wp.faction) + ')');
+			}
+		}
+
+		StringBuilder sb = new StringBuilder();
+
+		sb.append(TITLE).append(TEMPLATE).append("DB Biome-Waypoints");
+		sb.append(BEGIN);
+
+		for (Map.Entry<LOTRBiome, Set<String>> entry : data.entrySet()) {
+			sb.append(NL).append("| ");
+			sb.append(getBiomePagename(entry.getKey())).append(" = ");
+
+			appendPreamble(sb, entry.getValue(), Lang.BIOME_HAS_WAYPOINTS, Lang.BIOME_NO_WAYPOINTS);
+			appendSection(sb, entry.getValue());
+		}
+
+		sb.append(END);
+
+		return sb;
+	}
+
+	private static StringBuilder genTemplateEntityBannerBearer() {
+		Map<Class<? extends Entity>, String> data = new HashMap<>();
+
+		for (Map.Entry<Class<? extends Entity>, Entity> entityEntry : ENTITY_CLASS_TO_ENTITY.entrySet()) {
+			if (entityEntry.getValue() instanceof LOTRBannerBearer) {
+				data.put(entityEntry.getKey(), TRUE);
+			}
+		}
+
+		StringBuilder sb = new StringBuilder();
+
+		sb.append(TITLE).append(TEMPLATE).append("DB Entity-BannerBearer");
+		sb.append(BEGIN);
+
+		appendDefault(sb, FALSE);
+
+		for (Map.Entry<Class<? extends Entity>, String> entry : data.entrySet()) {
+			sb.append(NL).append("| ");
+			sb.append(getEntityPagename(entry.getKey())).append(" = ");
+
+			appendSection(sb, entry.getValue());
+		}
+
+		sb.append(END);
+
+		return sb;
+	}
+
+	private static StringBuilder genTemplateEntityBiomes() {
+		Map<Class<? extends Entity>, Set<String>> data = new HashMap<>();
+
+		for (LOTRBiome biome : BIOMES) {
+			Collection<BiomeGenBase.SpawnListEntry> spawnListEntries = new HashSet<>();
+			Collection<Class<? extends Entity>> conquestEntityClasses = new HashSet<>();
+			Collection<Class<? extends Entity>> invasionEntityClasses = new HashSet<>();
+
+			spawnListEntries.addAll(biome.getSpawnableList(EnumCreatureType.ambient));
+			spawnListEntries.addAll(biome.getSpawnableList(EnumCreatureType.waterCreature));
+			spawnListEntries.addAll(biome.getSpawnableList(EnumCreatureType.creature));
+			spawnListEntries.addAll(biome.getSpawnableList(EnumCreatureType.monster));
+			spawnListEntries.addAll(biome.getSpawnableList(LOTRBiome.creatureType_LOTRAmbient));
+
+			for (LOTRBiomeSpawnList.FactionContainer factionContainer : getFactionContainers(biome.npcSpawnList)) {
+				if (getBaseWeight(factionContainer) > 0) {
+					for (LOTRBiomeSpawnList.SpawnListContainer spawnListContainer : getSpawnListContainers(factionContainer)) {
+						spawnListEntries.addAll(getSpawnEntries(getSpawnList(spawnListContainer)));
+					}
+				} else {
+					for (LOTRBiomeSpawnList.SpawnListContainer spawnListContainer : getSpawnListContainers(factionContainer)) {
+						for (BiomeGenBase.SpawnListEntry spawnListEntry : getSpawnEntries(getSpawnList(spawnListContainer))) {
+							conquestEntityClasses.add(spawnListEntry.entityClass);
+						}
+					}
+				}
+			}
+
+			for (LOTRInvasions invasion : getRegisteredInvasions(biome.invasionSpawns)) {
+				for (LOTRInvasions.InvasionSpawnEntry invasionSpawnEntry : invasion.invasionMobs) {
+					invasionEntityClasses.add(invasionSpawnEntry.getEntityClass());
+				}
+			}
+
+			Collection<Class<? extends Entity>> bothConquestInvasion = new HashSet<>(conquestEntityClasses);
+			bothConquestInvasion.retainAll(invasionEntityClasses);
+
+			conquestEntityClasses.removeAll(bothConquestInvasion);
+			invasionEntityClasses.removeAll(bothConquestInvasion);
+
+			for (BiomeGenBase.SpawnListEntry entry : spawnListEntries) {
+				data.computeIfAbsent(entry.entityClass, s -> new TreeSet<>());
+				data.get(entry.entityClass).add(getBiomeLink(biome));
+			}
+
+			for (Class<? extends Entity> entityClass : conquestEntityClasses) {
+				data.computeIfAbsent(entityClass, s -> new TreeSet<>());
+				data.get(entityClass).add(getBiomeLink(biome) + ' ' + Lang.ENTITY_CONQUEST);
+			}
+
+			for (Class<? extends Entity> entityClass : invasionEntityClasses) {
+				data.computeIfAbsent(entityClass, s -> new TreeSet<>());
+				data.get(entityClass).add(getBiomeLink(biome) + ' ' + Lang.ENTITY_INVASION);
+			}
+
+			for (Class<? extends Entity> entityClass : bothConquestInvasion) {
+				data.computeIfAbsent(entityClass, s -> new TreeSet<>());
+				data.get(entityClass).add(getBiomeLink(biome) + ' ' + Lang.ENTITY_CONQUEST_INVASION);
+			}
+		}
+
+		StringBuilder sb = new StringBuilder();
+
+		sb.append(TITLE).append(TEMPLATE).append("DB Entity-Biomes");
+		sb.append(BEGIN);
+
+		for (Map.Entry<Class<? extends Entity>, Set<String>> entry : data.entrySet()) {
+			sb.append(NL).append("| ");
+			sb.append(getEntityPagename(entry.getKey())).append(" = ");
+
+			appendPreamble(sb, entry.getValue(), Lang.ENTITY_HAS_BIOMES, Lang.ENTITY_NO_BIOMES);
+			appendSection(sb, entry.getValue());
+		}
+
+		sb.append(END);
+
+		return sb;
+	}
+
+	private static StringBuilder genTemplateEntityBuyPools() {
+		Map<Class<? extends Entity>, Set<String>> data = new HashMap<>();
+
+		for (Map.Entry<Class<? extends Entity>, Entity> entityEntry : ENTITY_CLASS_TO_ENTITY.entrySet()) {
+			if (entityEntry.getValue() instanceof LOTRTradeable) {
+				data.put(entityEntry.getKey(), new TreeSet<>());
+
+				LOTRTradeable tradeable = (LOTRTradeable) entityEntry.getValue();
+
+				for (LOTRTradeEntry entry : tradeable.getSellPool().tradeEntries) {
+					data.get(entityEntry.getKey()).add(entry.createTradeItem().getDisplayName() + ": {{Coins|" + entry.getCost() + "}};");
+				}
+			}
+		}
+
+		StringBuilder sb = new StringBuilder();
+
+		sb.append(TITLE).append(TEMPLATE).append("DB Entity-BuyPools");
+		sb.append(BEGIN);
+
+		for (Map.Entry<Class<? extends Entity>, Set<String>> entry : data.entrySet()) {
+			sb.append(NL).append("| ");
+			sb.append(getEntityPagename(entry.getKey())).append(" = ");
+
+			appendPreamble(sb, entry.getValue(), Lang.ENTITY_HAS_BUY_POOLS, Lang.ENTITY_NO_BUY_POOLS);
+			appendSection(sb, entry.getValue());
+		}
+
+		sb.append(END);
+
+		return sb;
+	}
+
+	private static StringBuilder genTemplateEntityFaction() {
+		Map<Class<? extends Entity>, String> data = new HashMap<>();
+
+		for (Map.Entry<Class<? extends Entity>, Entity> entityEntry : ENTITY_CLASS_TO_ENTITY.entrySet()) {
+			if (entityEntry.getValue() instanceof LOTREntityNPC) {
+				LOTREntityNPC npc = (LOTREntityNPC) entityEntry.getValue();
+				data.put(entityEntry.getKey(), getFactionLink(npc.getFaction()));
+			}
+		}
+
+		StringBuilder sb = new StringBuilder();
+
+		sb.append(TITLE).append(TEMPLATE).append("DB Entity-Faction");
+		sb.append(BEGIN);
+
+		for (Map.Entry<Class<? extends Entity>, String> entry : data.entrySet()) {
+			sb.append(NL).append("| ");
+			sb.append(getEntityPagename(entry.getKey())).append(" = ");
+
+			appendSection(sb, entry.getValue());
+		}
+
+		sb.append(END);
+
+		return sb;
+	}
+
+	private static StringBuilder genTemplateEntityFarmhand() {
+		Map<Class<? extends Entity>, String> data = new HashMap<>();
+
+		for (Map.Entry<Class<? extends Entity>, Entity> entityEntry : ENTITY_CLASS_TO_ENTITY.entrySet()) {
+			if (entityEntry.getValue() instanceof LOTRFarmhand) {
+				data.put(entityEntry.getKey(), TRUE);
+			}
+		}
+
+		StringBuilder sb = new StringBuilder();
+
+		sb.append(TITLE).append(TEMPLATE).append("DB Entity-Farmhand");
+		sb.append(BEGIN);
+
+		appendDefault(sb, FALSE);
+
+		for (Map.Entry<Class<? extends Entity>, String> entry : data.entrySet()) {
+			sb.append(NL).append("| ");
+			sb.append(getEntityPagename(entry.getKey())).append(" = ");
+
+			appendSection(sb, entry.getValue());
+		}
+
+		sb.append(END);
+
+		return sb;
+	}
+
+	private static StringBuilder genTemplateEntityHealth() {
+		Map<Class<? extends Entity>, String> data = new HashMap<>();
+
+		for (Map.Entry<Class<? extends Entity>, Entity> entityEntry : ENTITY_CLASS_TO_ENTITY.entrySet()) {
+			EntityLivingBase entity = (EntityLivingBase) entityEntry.getValue();
+			data.put(entityEntry.getKey(), String.valueOf((int) entity.getMaxHealth()));
+		}
+
+		StringBuilder sb = new StringBuilder();
+
+		sb.append(TITLE).append(TEMPLATE).append("DB Entity-Health");
+		sb.append(BEGIN);
+
+		for (Map.Entry<Class<? extends Entity>, String> entry : data.entrySet()) {
+			sb.append(NL).append("| ");
+			sb.append(getEntityPagename(entry.getKey())).append(" = ");
+
+			appendSection(sb, entry.getValue());
+		}
+
+		sb.append(END);
+
+		return sb;
+	}
+
+	private static StringBuilder genTemplateEntityHireable() {
+		Map<Class<? extends Entity>, String> data = new HashMap<>();
+
+		for (LOTRUnitTradeEntries entries : UNIT_TRADE_ENTRIES) {
+			for (LOTRUnitTradeEntry entry : entries.tradeEntries) {
+				data.put(entry.entityClass, TRUE);
+			}
+		}
+
+		StringBuilder sb = new StringBuilder();
+
+		sb.append(TITLE).append(TEMPLATE).append("DB Entity-Hireable");
+		sb.append(BEGIN);
+
+		appendDefault(sb, FALSE);
+
+		for (Map.Entry<Class<? extends Entity>, String> entry : data.entrySet()) {
+			sb.append(NL).append("| ");
+			sb.append(getEntityPagename(entry.getKey())).append(" = ");
+
+			appendSection(sb, entry.getValue());
+		}
+
+		sb.append(END);
+
+		return sb;
+	}
+
+	private static StringBuilder genTemplateEntityHireAlignment() {
+		Map<Class<? extends Entity>, String> data = new HashMap<>();
+
+		for (LOTRUnitTradeEntries entries : UNIT_TRADE_ENTRIES) {
+			for (LOTRUnitTradeEntry entry : entries.tradeEntries) {
+				int alignment = (int) entry.alignmentRequired;
+
+				if (entry.getPledgeType() == LOTRUnitTradeEntry.PledgeType.NONE) {
+					data.put(entry.entityClass, "+" + alignment);
+				} else {
+					data.put(entry.entityClass, "+" + Math.max(alignment, 100));
+				}
+			}
+		}
+
+		StringBuilder sb = new StringBuilder();
+
+		sb.append(TITLE).append(TEMPLATE).append("DB Entity-HireAlignment");
+		sb.append(BEGIN);
+
+		for (Map.Entry<Class<? extends Entity>, String> entry : data.entrySet()) {
+			sb.append(NL).append("| ");
+			sb.append(getEntityPagename(entry.getKey())).append(" = ");
+
+			appendSection(sb, entry.getValue());
+		}
+
+		sb.append(END);
+
+		return sb;
+	}
+
+	private static StringBuilder genTemplateEntityHirePrice() {
+		Map<Class<? extends Entity>, String> data = new HashMap<>();
+
+		for (LOTRUnitTradeEntries entries : UNIT_TRADE_ENTRIES) {
+			for (LOTRUnitTradeEntry entry : entries.tradeEntries) {
+				int cost = getInitialCost(entry);
+
+				if (entry.getPledgeType() == LOTRUnitTradeEntry.PledgeType.NONE) {
+					data.put(entry.entityClass, "{{Coins|" + cost * 2 + "}}");
+				} else {
+					data.put(entry.entityClass, N_A);
+				}
+			}
+		}
+
+		StringBuilder sb = new StringBuilder();
+
+		sb.append(TITLE).append(TEMPLATE).append("DB Entity-HirePrice");
+		sb.append(BEGIN);
+
+		for (Map.Entry<Class<? extends Entity>, String> entry : data.entrySet()) {
+			sb.append(NL).append("| ");
+			sb.append(getEntityPagename(entry.getKey())).append(" = ");
+
+			appendSection(sb, entry.getValue());
+		}
+
+		sb.append(END);
+
+		return sb;
+	}
+
+	private static StringBuilder genTemplateEntityHirePricePledge() {
+		Map<Class<? extends Entity>, String> data = new HashMap<>();
+
+		for (LOTRUnitTradeEntries entries : UNIT_TRADE_ENTRIES) {
+			for (LOTRUnitTradeEntry entry : entries.tradeEntries) {
+				int cost = getInitialCost(entry);
+
+				if (entry.getPledgeType() == LOTRUnitTradeEntry.PledgeType.NONE) {
+					data.put(entry.entityClass, "{{Coins|" + cost + "}}");
+				} else {
+					data.put(entry.entityClass, N_A);
+				}
+			}
+		}
+
+		StringBuilder sb = new StringBuilder();
+
+		sb.append(TITLE).append(TEMPLATE).append("DB Entity-HirePricePledge");
+		sb.append(BEGIN);
+
+		for (Map.Entry<Class<? extends Entity>, String> entry : data.entrySet()) {
+			sb.append(NL).append("| ");
+			sb.append(getEntityPagename(entry.getKey())).append(" = ");
+
+			appendSection(sb, entry.getValue());
+		}
+
+		sb.append(END);
+
+		return sb;
+	}
+
+	private static StringBuilder genTemplateEntityImmuneToFire() {
+		Map<Class<? extends Entity>, String> data = new HashMap<>();
+
+		for (Map.Entry<Class<? extends Entity>, Entity> entityEntry : ENTITY_CLASS_TO_ENTITY.entrySet()) {
+			if (entityEntry.getValue().isImmuneToFire()) {
+				data.put(entityEntry.getKey(), TRUE);
+			}
+		}
+
+		StringBuilder sb = new StringBuilder();
+
+		sb.append(TITLE).append(TEMPLATE).append("DB Entity-ImmuneToFire");
+		sb.append(BEGIN);
+
+		appendDefault(sb, FALSE);
+
+		for (Map.Entry<Class<? extends Entity>, String> entry : data.entrySet()) {
+			sb.append(NL).append("| ");
+			sb.append(getEntityPagename(entry.getKey())).append(" = ");
+
+			appendSection(sb, entry.getValue());
+		}
+
+		sb.append(END);
+
+		return sb;
+	}
+
+	private static StringBuilder genTemplateEntityImmuneToFrost() {
+		Map<Class<? extends Entity>, String> data = new HashMap<>();
+
+		for (Map.Entry<Class<? extends Entity>, Entity> entityEntry : ENTITY_CLASS_TO_ENTITY.entrySet()) {
+			if (entityEntry.getValue() instanceof LOTREntityNPC && ((LOTREntityNPC) entityEntry.getValue()).isImmuneToFrost) {
+				data.put(entityEntry.getKey(), TRUE);
+			}
+		}
+
+		StringBuilder sb = new StringBuilder();
+
+		sb.append(TITLE).append(TEMPLATE).append("DB Entity-ImmuneToFrost");
+		sb.append(BEGIN);
+
+		appendDefault(sb, FALSE);
+
+		for (Map.Entry<Class<? extends Entity>, String> entry : data.entrySet()) {
+			sb.append(NL).append("| ");
+			sb.append(getEntityPagename(entry.getKey())).append(" = ");
+
+			appendSection(sb, entry.getValue());
+		}
+
+		sb.append(END);
+
+		return sb;
+	}
+
+	private static StringBuilder genTemplateEntityImmuneToHeat() {
+		Map<Class<? extends Entity>, String> data = new HashMap<>();
+
+		for (Map.Entry<Class<? extends Entity>, Entity> entityEntry : ENTITY_CLASS_TO_ENTITY.entrySet()) {
+			if (entityEntry.getValue() instanceof LOTRBiomeGenNearHarad.ImmuneToHeat) {
+				data.put(entityEntry.getKey(), TRUE);
+			}
+		}
+
+		StringBuilder sb = new StringBuilder();
+
+		sb.append(TITLE).append(TEMPLATE).append("DB Entity-ImmuneToHeat");
+		sb.append(BEGIN);
+
+		appendDefault(sb, FALSE);
+
+		for (Map.Entry<Class<? extends Entity>, String> entry : data.entrySet()) {
+			sb.append(NL).append("| ");
+			sb.append(getEntityPagename(entry.getKey())).append(" = ");
+
+			appendSection(sb, entry.getValue());
+		}
+
+		sb.append(END);
+
+		return sb;
+	}
+
+	private static StringBuilder genTemplateEntityKillAchievement() {
+		Map<Class<? extends Entity>, String> data = new HashMap<>();
+
+		for (Map.Entry<Class<? extends Entity>, Entity> entityEntry : ENTITY_CLASS_TO_ENTITY.entrySet()) {
+			if (entityEntry.getValue() instanceof LOTREntityNPC) {
+				LOTREntityNPC npc = (LOTREntityNPC) entityEntry.getValue();
+				LOTRAchievement achievement = getKillAchievement(npc);
+				if (achievement != null) {
+					data.put(entityEntry.getKey(), '«' + achievement.getTitle(null) + '»');
+				}
+			}
+		}
+
+		StringBuilder sb = new StringBuilder();
+
+		sb.append(TITLE).append(TEMPLATE).append("DB Entity-KillAchievement");
+		sb.append(BEGIN);
+
+		appendDefault(sb, N_A);
+
+		for (Map.Entry<Class<? extends Entity>, String> entry : data.entrySet()) {
+			sb.append(NL).append("| ");
+			sb.append(getEntityPagename(entry.getKey())).append(" = ");
+
+			appendSection(sb, entry.getValue());
+		}
+
+		sb.append(END);
+
+		return sb;
+	}
+
+	private static StringBuilder genTemplateEntityKillAlignment() {
+		Map<Class<? extends Entity>, String> data = new HashMap<>();
+
+		for (Map.Entry<Class<? extends Entity>, Entity> entityEntry : ENTITY_CLASS_TO_ENTITY.entrySet()) {
+			if (entityEntry.getValue() instanceof LOTREntityNPC) {
+				LOTREntityNPC npc = (LOTREntityNPC) entityEntry.getValue();
+				data.put(entityEntry.getKey(), "+" + (int) npc.getAlignmentBonus());
+			}
+		}
+
+		StringBuilder sb = new StringBuilder();
+
+		sb.append(TITLE).append(TEMPLATE).append("DB Entity-KillAlignment");
+		sb.append(BEGIN);
+
+		for (Map.Entry<Class<? extends Entity>, String> entry : data.entrySet()) {
+			sb.append(NL).append("| ");
+			sb.append(getEntityPagename(entry.getKey())).append(" = ");
+
+			appendSection(sb, entry.getValue());
+		}
+
+		sb.append(END);
+
+		return sb;
+	}
+
+	private static StringBuilder genTemplateEntityMarriage() {
+		Map<Class<? extends Entity>, String> data = new HashMap<>();
+
+		for (Map.Entry<Class<? extends Entity>, Entity> entityEntry : ENTITY_CLASS_TO_ENTITY.entrySet()) {
+			if (entityEntry.getValue() instanceof LOTREntityDwarf || entityEntry.getValue() instanceof LOTREntityHobbit) {
+				data.put(entityEntry.getKey(), TRUE);
+			}
+		}
+
+		StringBuilder sb = new StringBuilder();
+
+		sb.append(TITLE).append(TEMPLATE).append("DB Entity-Marriage");
+		sb.append(BEGIN);
+
+		appendDefault(sb, FALSE);
+
+		for (Map.Entry<Class<? extends Entity>, String> entry : data.entrySet()) {
+			sb.append(NL).append("| ");
+			sb.append(getEntityPagename(entry.getKey())).append(" = ");
+
+			appendSection(sb, entry.getValue());
+		}
+
+		sb.append(END);
+
+		return sb;
+	}
+
+	private static StringBuilder genTemplateEntityMercenary() {
+		Map<Class<? extends Entity>, String> data = new HashMap<>();
+
+		for (Map.Entry<Class<? extends Entity>, Entity> entityEntry : ENTITY_CLASS_TO_ENTITY.entrySet()) {
+			if (entityEntry.getValue() instanceof LOTRMercenary) {
+				data.put(entityEntry.getKey(), TRUE);
+			}
+		}
+
+		StringBuilder sb = new StringBuilder();
+
+		sb.append(TITLE).append(TEMPLATE).append("DB Entity-Mercenary");
+		sb.append(BEGIN);
+
+		appendDefault(sb, FALSE);
+
+		for (Map.Entry<Class<? extends Entity>, String> entry : data.entrySet()) {
+			sb.append(NL).append("| ");
+			sb.append(getEntityPagename(entry.getKey())).append(" = ");
+
+			appendSection(sb, entry.getValue());
+		}
+
+		sb.append(END);
+
+		return sb;
+	}
+
+	private static StringBuilder genTemplateEntityOwners() {
+		Map<Class<? extends Entity>, Set<String>> data = new HashMap<>();
+
+		for (Map.Entry<Class<? extends Entity>, Entity> entityEntry : ENTITY_CLASS_TO_ENTITY.entrySet()) {
+			if (entityEntry.getValue() instanceof LOTRUnitTradeable) {
+				LOTRUnitTradeable tradeable = (LOTRUnitTradeable) entityEntry.getValue();
+				for (LOTRUnitTradeEntry entry : tradeable.getUnits().tradeEntries) {
+					data.computeIfAbsent(entry.entityClass, s -> new TreeSet<>());
+					data.get(entry.entityClass).add(getEntityLink(entityEntry.getKey()));
+				}
+			}
+		}
+
+		StringBuilder sb = new StringBuilder();
+
+		sb.append(TITLE).append("DB Entity-Owners");
+		sb.append(BEGIN);
+
+		for (Map.Entry<Class<? extends Entity>, Set<String>> entry : data.entrySet()) {
+			sb.append(NL).append("| ");
+			sb.append(getEntityPagename(entry.getKey())).append(" = ");
+
+			appendPreamble(sb, entry.getValue(), Lang.ENTITY_HAS_OWNERS, Lang.ENTITY_NO_OWNERS);
+			appendSection(sb, entry.getValue());
+		}
+
+		sb.append(END);
+
+		return sb;
+	}
+
+	private static StringBuilder genTemplateEntityRideableAnimal() {
+		Map<Class<? extends Entity>, String> data = new HashMap<>();
+
+		for (Map.Entry<Class<? extends Entity>, Entity> entityEntry : ENTITY_CLASS_TO_ENTITY.entrySet()) {
+			if (entityEntry.getValue() instanceof LOTRNPCMount) {
+				data.put(entityEntry.getKey(), TRUE);
+			}
+		}
+
+		StringBuilder sb = new StringBuilder();
+
+		sb.append(TITLE).append(TEMPLATE).append("DB Entity-RideableAnimal");
+		sb.append(BEGIN);
+
+		appendDefault(sb, FALSE);
+
+		for (Map.Entry<Class<? extends Entity>, String> entry : data.entrySet()) {
+			sb.append(NL).append("| ");
+			sb.append(getEntityPagename(entry.getKey())).append(" = ");
+
+			appendSection(sb, entry.getValue());
+		}
+
+		sb.append(END);
+
+		return sb;
+	}
+
+	private static StringBuilder genTemplateEntityRideableNPC() {
+		Map<Class<? extends Entity>, String> data = new HashMap<>();
+
+		for (Map.Entry<Class<? extends Entity>, Entity> entityEntry : ENTITY_CLASS_TO_ENTITY.entrySet()) {
+			if (entityEntry.getValue() instanceof LOTREntitySpiderBase) {
+				data.put(entityEntry.getKey(), TRUE);
+			}
+		}
+
+		StringBuilder sb = new StringBuilder();
+
+		sb.append(TITLE).append(TEMPLATE).append(" DB Entity-RideableNPC");
+		sb.append(BEGIN);
+
+		appendDefault(sb, FALSE);
+
+		for (Map.Entry<Class<? extends Entity>, String> entry : data.entrySet()) {
+			sb.append(NL).append("| ");
+			sb.append(getEntityPagename(entry.getKey())).append(" = ");
+
+			appendSection(sb, entry.getValue());
+		}
+
+		sb.append(END);
+
+		return sb;
+	}
+
+	private static StringBuilder genTemplateEntitySellPools() {
+		Map<Class<? extends Entity>, Set<String>> data = new HashMap<>();
+
+		for (Map.Entry<Class<? extends Entity>, Entity> entityEntry : ENTITY_CLASS_TO_ENTITY.entrySet()) {
+			if (entityEntry.getValue() instanceof LOTRTradeable) {
+				data.put(entityEntry.getKey(), new TreeSet<>());
+
+				LOTRTradeable tradeable = (LOTRTradeable) entityEntry.getValue();
+
+				for (LOTRTradeEntry entry : tradeable.getBuyPool().tradeEntries) {
+					data.get(entityEntry.getKey()).add(entry.createTradeItem().getDisplayName() + ": {{Coins|" + entry.getCost() + "}};");
+				}
+			}
+		}
+
+		StringBuilder sb = new StringBuilder();
+
+		sb.append(TITLE).append(TEMPLATE).append("DB Entity-SellPools");
+		sb.append(BEGIN);
+
+		for (Map.Entry<Class<? extends Entity>, Set<String>> entry : data.entrySet()) {
+			sb.append(NL).append("| ");
+			sb.append(getEntityPagename(entry.getKey())).append(" = ");
+
+			appendPreamble(sb, entry.getValue(), Lang.ENTITY_HAS_SELL_UNIT_POOLS, Lang.ENTITY_NO_SELL_UNIT_POOLS);
+			appendSection(sb, entry.getValue());
+		}
+
+		sb.append(END);
+
+		return sb;
+	}
+
+	private static StringBuilder genTemplateEntitySellUnitPools() {
+		Map<Class<? extends Entity>, List<String>> data = new HashMap<>();
+
+		for (Map.Entry<Class<? extends Entity>, Entity> entityEntry : ENTITY_CLASS_TO_ENTITY.entrySet()) {
+			if (entityEntry.getValue() instanceof LOTRUnitTradeable) {
+				data.put(entityEntry.getKey(), new ArrayList<>());
+
+				LOTRUnitTradeable tradeable = (LOTRUnitTradeable) entityEntry.getValue();
+
+				for (LOTRUnitTradeEntry entry : tradeable.getUnits().tradeEntries) {
+					StringBuilder sb = new StringBuilder();
+
+					sb.append(getEntityLink(entry.entityClass));
+					if (entry.mountClass != null) {
+						sb.append(Lang.RIDER);
+					}
+					sb.append(": ");
+
+					int cost = getInitialCost(entry);
+					int alignment = (int) entry.alignmentRequired;
+
+					if (entry.getPledgeType() == LOTRUnitTradeEntry.PledgeType.NONE) {
+						sb.append("{{Coins|").append(cost * 2).append("}} ").append(Lang.NO_PLEDGE).append(", ");
+						sb.append("{{Coins|").append(cost).append("}} ").append(Lang.NEED_PLEDGE).append("; ");
+						sb.append('+').append(alignment).append(' ').append(Lang.REPUTATION).append(';');
+					} else {
+						sb.append("N/A ").append(Lang.NO_PLEDGE).append(", ");
+						sb.append("{{Coins|").append(cost).append("}} ").append(Lang.NEED_PLEDGE).append("; ");
+						sb.append('+').append(Math.max(alignment, 100)).append(' ').append(Lang.REPUTATION).append(';');
+					}
+
+					data.get(entityEntry.getKey()).add(sb.toString());
+				}
+			}
+		}
+
+		StringBuilder sb = new StringBuilder();
+
+		sb.append(TITLE).append(TEMPLATE).append("DB Entity-SellUnitPools");
+		sb.append(BEGIN);
+
+		for (Map.Entry<Class<? extends Entity>, List<String>> entry : data.entrySet()) {
+			sb.append(NL).append("| ");
+			sb.append(getEntityPagename(entry.getKey())).append(" = ");
+
+			appendPreamble(sb, entry.getValue(), Lang.ENTITY_HAS_SELL_UNIT_POOLS, Lang.ENTITY_NO_SELL_UNIT_POOLS);
+			appendSection(sb, entry.getValue());
+		}
+
+		sb.append(END);
+
+		return sb;
+	}
+
+	private static StringBuilder genTemplateEntitySmith() {
+		Map<Class<? extends Entity>, String> data = new HashMap<>();
+
+		for (Map.Entry<Class<? extends Entity>, Entity> entityEntry : ENTITY_CLASS_TO_ENTITY.entrySet()) {
+			if (entityEntry.getValue() instanceof LOTRTradeable.Smith) {
+				data.put(entityEntry.getKey(), TRUE);
+			}
+		}
+
+		StringBuilder sb = new StringBuilder();
+
+		sb.append(TITLE).append(TEMPLATE).append("DB Entity-Smith");
+		sb.append(BEGIN);
+
+		appendDefault(sb, FALSE);
+
+		for (Map.Entry<Class<? extends Entity>, String> entry : data.entrySet()) {
+			sb.append(NL).append("| ");
+			sb.append(getEntityPagename(entry.getKey())).append(" = ");
+
+			appendSection(sb, entry.getValue());
+		}
+
+		sb.append(END);
+
+		return sb;
+	}
+
+	private static StringBuilder genTemplateEntitySpawnsInDarkness() {
+		Map<Class<? extends Entity>, String> data = new HashMap<>();
+
+		for (Map.Entry<Class<? extends Entity>, Entity> entityEntry : ENTITY_CLASS_TO_ENTITY.entrySet()) {
+			if (entityEntry.getValue() instanceof LOTREntityNPC && isSpawnsInDarkness((LOTREntityNPC) entityEntry.getValue())) {
+				data.put(entityEntry.getKey(), TRUE);
+			}
+		}
+
+		StringBuilder sb = new StringBuilder();
+
+		sb.append(TITLE).append(TEMPLATE).append("DB Entity-SpawnsInDarkness");
+		sb.append(BEGIN);
+
+		appendDefault(sb, FALSE);
+
+		for (Map.Entry<Class<? extends Entity>, String> entry : data.entrySet()) {
+			sb.append(NL).append("| ");
+			sb.append(getEntityPagename(entry.getKey())).append(" = ");
+
+			appendSection(sb, entry.getValue());
+		}
+
+		sb.append(END);
+
+		return sb;
+	}
+
+	private static StringBuilder genTemplateEntityTargetSeeker() {
+		Map<Class<? extends Entity>, String> data = new HashMap<>();
+
+		for (Map.Entry<Class<? extends Entity>, Entity> entityEntry : ENTITY_CLASS_TO_ENTITY.entrySet()) {
+			if (entityEntry.getValue() instanceof LOTREntityNPC && isTargetSeeker((LOTREntityNPC) entityEntry.getValue())) {
+				data.put(entityEntry.getKey(), TRUE);
+			}
+		}
+
+		StringBuilder sb = new StringBuilder();
+
+		sb.append(TITLE).append(TEMPLATE).append("DB Entity-TargetSeeker");
+		sb.append(BEGIN);
+
+		appendDefault(sb, FALSE);
+
+		for (Map.Entry<Class<? extends Entity>, String> entry : data.entrySet()) {
+			sb.append(NL).append("| ");
+			sb.append(getEntityPagename(entry.getKey())).append(" = ");
+
+			appendSection(sb, entry.getValue());
+		}
+
+		sb.append(END);
+
+		return sb;
+	}
+
+	private static StringBuilder genTemplateEntityTradeable() {
+		Map<Class<? extends Entity>, String> data = new HashMap<>();
+
+		for (Map.Entry<Class<? extends Entity>, Entity> entityEntry : ENTITY_CLASS_TO_ENTITY.entrySet()) {
+			if (entityEntry.getValue() instanceof LOTRTradeable) {
+				data.put(entityEntry.getKey(), TRUE);
+			}
+		}
+
+		StringBuilder sb = new StringBuilder();
+
+		sb.append(TITLE).append(TEMPLATE).append("DB Entity-Tradeable");
+		sb.append(BEGIN);
+
+		appendDefault(sb, FALSE);
+
+		for (Map.Entry<Class<? extends Entity>, String> entry : data.entrySet()) {
+			sb.append(NL).append("| ");
+			sb.append(getEntityPagename(entry.getKey())).append(" = ");
+
+			appendSection(sb, entry.getValue());
+		}
+
+		sb.append(END);
+
+		return sb;
+	}
+
+	private static StringBuilder genTemplateEntityUnitTradeable() {
+		Map<Class<? extends Entity>, String> data = new HashMap<>();
+
+		for (Map.Entry<Class<? extends Entity>, Entity> entityEntry : ENTITY_CLASS_TO_ENTITY.entrySet()) {
+			if (entityEntry.getValue() instanceof LOTRUnitTradeable) {
+				data.put(entityEntry.getKey(), TRUE);
+			}
+		}
+
+		StringBuilder sb = new StringBuilder();
+
+		sb.append(TITLE).append(TEMPLATE).append("DB Entity-UnitTradeable");
+		sb.append(BEGIN);
+
+		appendDefault(sb, FALSE);
+
+		for (Map.Entry<Class<? extends Entity>, String> entry : data.entrySet()) {
+			sb.append(NL).append("| ");
+			sb.append(getEntityPagename(entry.getKey())).append(" = ");
+
+			appendSection(sb, entry.getValue());
+		}
+
+		sb.append(END);
+
+		return sb;
+	}
+
+	private static StringBuilder genTemplateFactionBanners() {
+		Map<LOTRFaction, Set<String>> data = new EnumMap<>(LOTRFaction.class);
+
+		for (LOTRFaction faction : FACTIONS) {
+			data.put(faction, new TreeSet<>());
+
+			for (LOTRItemBanner.BannerType banner : faction.factionBanners) {
+				data.get(faction).add(getBannerName(banner));
+			}
+		}
+
+		StringBuilder sb = new StringBuilder();
+
+		sb.append(TITLE).append(TEMPLATE).append("DB Faction-Banners");
+		sb.append(BEGIN);
+
+		for (Map.Entry<LOTRFaction, Set<String>> entry : data.entrySet()) {
+			sb.append(NL).append("| ");
+			sb.append(getFactionPagename(entry.getKey())).append(" = ");
+
+			appendPreamble(sb, entry.getValue(), Lang.FACTION_HAS_BANNERS, Lang.FACTION_NO_BANNERS);
+			appendSection(sb, entry.getValue());
+		}
+
+		sb.append(END);
+
+		return sb;
+	}
+
+	private static StringBuilder genTemplateFactionCodename() {
+		Map<LOTRFaction, String> data = new EnumMap<>(LOTRFaction.class);
+
+		for (LOTRFaction faction : FACTIONS) {
+			data.put(faction, faction.codeName());
+		}
+
+		StringBuilder sb = new StringBuilder();
+
+		sb.append(TITLE).append(TEMPLATE).append("DB Faction-Codename");
+		sb.append(BEGIN);
+
+		for (Map.Entry<LOTRFaction, String> entry : data.entrySet()) {
+			sb.append(NL).append("| ");
+			sb.append(getFactionPagename(entry.getKey())).append(" = ");
+
+			appendSection(sb, entry.getValue());
+		}
+
+		sb.append(END);
+
+		return sb;
+	}
+
+	private static StringBuilder genTemplateFactionConquestBiomes() {
+		Map<LOTRFaction, Set<String>> data = new EnumMap<>(LOTRFaction.class);
+
+		for (LOTRBiome biome : BIOMES) {
+			for (LOTRBiomeSpawnList.FactionContainer factionContainer : getFactionContainers(biome.npcSpawnList)) {
+				if (getBaseWeight(factionContainer) <= 0) {
+					for (LOTRBiomeSpawnList.SpawnListContainer spawnListContainer : getSpawnListContainers(factionContainer)) {
+						for (LOTRSpawnEntry spawnEntry : getSpawnEntries(getSpawnList(spawnListContainer))) {
+							Entity entity = ENTITY_CLASS_TO_ENTITY.get(spawnEntry.entityClass);
+							if (entity instanceof LOTREntityNPC) {
+								LOTRFaction faction = ((LOTREntityNPC) entity).getFaction();
+								data.computeIfAbsent(faction, s -> new TreeSet<>());
+								data.get(faction).add(getBiomeLink(biome));
+								break;
+							}
+						}
+					}
+				}
+			}
+		}
+
+		StringBuilder sb = new StringBuilder();
+
+		sb.append(TITLE).append(TEMPLATE).append("DB Faction-ConquestBiomes");
+		sb.append(BEGIN);
+
+		for (Map.Entry<LOTRFaction, Set<String>> entry : data.entrySet()) {
+			sb.append(NL).append("| ");
+			sb.append(getFactionPagename(entry.getKey())).append(" = ");
+
+			appendPreamble(sb, entry.getValue(), Lang.FACTION_HAS_CONQUEST_BIOMES, Lang.FACTION_NO_CONQUEST_BIOMES);
+			appendSection(sb, entry.getValue());
+		}
+
+		sb.append(END);
+
+		return sb;
+	}
+
+	private static StringBuilder genTemplateFactionEnemies() {
+		Map<LOTRFaction, String> data = new EnumMap<>(LOTRFaction.class);
+
+		for (LOTRFaction faction : FACTIONS) {
+			StringJoiner sj = new StringJoiner(" • ");
+
+			for (LOTRFaction otherFaction : FACTIONS) {
+				if (faction.isBadRelation(otherFaction) && faction != otherFaction) {
+					sj.add(getFactionLink(otherFaction));
+				}
+			}
+
+			data.put(faction, sj.toString());
+		}
+
+		StringBuilder sb = new StringBuilder();
+
+		sb.append(TITLE).append(TEMPLATE).append("DB Faction-Enemies");
+		sb.append(BEGIN);
+
+		for (Map.Entry<LOTRFaction, String> entry : data.entrySet()) {
+			sb.append(NL).append("| ");
+			sb.append(getFactionPagename(entry.getKey())).append(" = ");
+
+			appendSection(sb, entry.getValue());
+		}
+		sb.append(END);
+
+		return sb;
+	}
+
+	private static StringBuilder genTemplateFactionFriends() {
+		Map<LOTRFaction, String> data = new EnumMap<>(LOTRFaction.class);
+
+		for (LOTRFaction faction : FACTIONS) {
+			StringJoiner sj = new StringJoiner(" • ");
+
+			for (LOTRFaction otherFaction : FACTIONS) {
+				if (faction.isGoodRelation(otherFaction) && faction != otherFaction) {
+					sj.add(getFactionLink(otherFaction));
+				}
+			}
+
+			data.put(faction, sj.toString());
+		}
+
+		StringBuilder sb = new StringBuilder();
+
+		sb.append(TITLE).append(TEMPLATE).append("DB Faction-Friends");
+		sb.append(BEGIN);
+
+		for (Map.Entry<LOTRFaction, String> entry : data.entrySet()) {
+			sb.append(NL).append("| ");
+			sb.append(getFactionPagename(entry.getKey())).append(" = ");
+
+			appendSection(sb, entry.getValue());
+		}
+		sb.append(END);
+
+		return sb;
+	}
+
+	private static StringBuilder genTemplateFactionInvasionBiomes() {
+		Map<LOTRFaction, Set<String>> data = new EnumMap<>(LOTRFaction.class);
+
+		for (LOTRBiome biome : BIOMES) {
+			for (LOTRInvasions invasion : getRegisteredInvasions(biome.invasionSpawns)) {
+				for (LOTRInvasions.InvasionSpawnEntry invasionSpawnEntry : invasion.invasionMobs) {
+					Entity entity = ENTITY_CLASS_TO_ENTITY.get(invasionSpawnEntry.getEntityClass());
+					if (entity instanceof LOTREntityNPC) {
+						LOTRFaction faction = ((LOTREntityNPC) entity).getFaction();
+						data.computeIfAbsent(faction, s -> new TreeSet<>());
+						data.get(faction).add(getBiomeLink(biome));
+						break;
+					}
+				}
+			}
+		}
+
+		StringBuilder sb = new StringBuilder();
+
+		sb.append(TITLE).append(TEMPLATE).append("DB Faction-InvasionBiomes");
+		sb.append(BEGIN);
+
+		for (Map.Entry<LOTRFaction, Set<String>> entry : data.entrySet()) {
+			sb.append(NL).append("| ");
+			sb.append(getFactionPagename(entry.getKey())).append(" = ");
+
+			appendPreamble(sb, entry.getValue(), Lang.FACTION_HAS_INVASION_BIOMES, Lang.FACTION_NO_INVASION_BIOMES);
+			appendSection(sb, entry.getValue());
+		}
+
+		sb.append(END);
+
+		return sb;
+	}
+
+	private static StringBuilder genTemplateFactionName() {
+		Map<LOTRFaction, String> data = new EnumMap<>(LOTRFaction.class);
+
+		for (LOTRFaction faction : FACTIONS) {
+			data.put(faction, getFactionName(faction));
+		}
+
+		StringBuilder sb = new StringBuilder();
+
+		sb.append(TITLE).append(TEMPLATE).append("DB Faction-Name");
+		sb.append(BEGIN);
+
+		for (Map.Entry<LOTRFaction, String> entry : data.entrySet()) {
+			sb.append(NL).append("| ");
+			sb.append(getFactionPagename(entry.getKey())).append(" = ");
+
+			appendSection(sb, entry.getValue());
+		}
+
+		sb.append(END);
+
+		return sb;
+	}
+
+	private static StringBuilder genTemplateFactionNPCs() {
+		Map<LOTRFaction, Set<String>> data = new EnumMap<>(LOTRFaction.class);
+
+		for (Map.Entry<Class<? extends Entity>, Entity> entityEntry : ENTITY_CLASS_TO_ENTITY.entrySet()) {
+			Entity entity = entityEntry.getValue();
+			if (entity instanceof LOTREntityNPC) {
+				LOTREntityNPC npc = (LOTREntityNPC) entity;
+				data.computeIfAbsent(npc.getFaction(), s -> new TreeSet<>());
+				data.get(npc.getFaction()).add(getEntityLink(entityEntry.getKey()));
+			}
+		}
+
+		StringBuilder sb = new StringBuilder();
+
+		sb.append(TITLE).append(TEMPLATE).append("DB Faction-NPCs");
+		sb.append(BEGIN);
+
+		for (Map.Entry<LOTRFaction, Set<String>> entry : data.entrySet()) {
+			sb.append(NL).append("| ");
+			sb.append(getFactionPagename(entry.getKey())).append(" = ");
+
+			appendPreamble(sb, entry.getValue(), Lang.FACTION_HAS_NPCS, Lang.FACTION_NO_NPCS);
+			appendSection(sb, entry.getValue());
+		}
+
+		sb.append(END);
+
+		return sb;
+	}
+
+	private static StringBuilder genTemplateFactionPledgeRank() {
+		Map<LOTRFaction, String> data = new EnumMap<>(LOTRFaction.class);
+
+		for (LOTRFaction faction : FACTIONS) {
+			LOTRFactionRank rank = faction.getPledgeRank();
+
+			if (rank != null) {
+				StringBuilder sb = new StringBuilder();
+
+				sb.append(rank.getDisplayName());
+
+				String femRank = rank.getDisplayNameFem();
+				if (!femRank.contains("lotr")) {
+					sb.append('/').append(femRank);
+				}
+
+				sb.append(" (+").append((int) faction.getPledgeAlignment()).append(')');
+
+				data.put(faction, sb.toString());
+			}
+		}
+
+		StringBuilder sb = new StringBuilder();
+
+		sb.append(TITLE).append(TEMPLATE).append("DB Faction-PledgeRank");
+		sb.append(BEGIN);
+
+		appendDefault(sb, N_A);
+
+		for (Map.Entry<LOTRFaction, String> entry : data.entrySet()) {
+			sb.append(NL).append("| ");
+			sb.append(getFactionPagename(entry.getKey())).append(" = ");
+
+			appendSection(sb, entry.getValue());
+		}
+
+		sb.append(END);
+
+		return sb;
+	}
+
+	private static StringBuilder genTemplateFactionRanks() {
+		Map<LOTRFaction, List<String>> data = new EnumMap<>(LOTRFaction.class);
+
+		for (LOTRFaction faction : FACTIONS) {
+			data.put(faction, new ArrayList<>());
+
+			for (LOTRFactionRank rank : getRanksSortedDescending(faction)) {
+				StringBuilder sb = new StringBuilder();
+
+				sb.append(rank.getDisplayFullName());
+
+				String femRank = rank.getDisplayFullNameFem();
+				if (!femRank.contains("lotr")) {
+					sb.append('/').append(femRank);
+				}
+
+				sb.append(" (+").append((int) rank.alignment).append(')');
+
+				data.get(faction).add(sb.toString());
+			}
+		}
+
+		StringBuilder sb = new StringBuilder();
+
+		sb.append(TITLE).append(TEMPLATE).append("DB Faction-Ranks");
+		sb.append(BEGIN);
+
+		for (Map.Entry<LOTRFaction, List<String>> entry : data.entrySet()) {
+			sb.append(NL).append("| ");
+			sb.append(getFactionPagename(entry.getKey())).append(" = ");
+
+			appendPreamble(sb, entry.getValue(), Lang.FACTION_HAS_RANKS, Lang.FACTION_NO_RANKS);
+			appendSection(sb, entry.getValue());
+		}
+
+		sb.append(END);
+
+		return sb;
+	}
+
+	private static StringBuilder genTemplateFactionRegion() {
+		Map<LOTRFaction, String> data = new EnumMap<>(LOTRFaction.class);
+
+		for (LOTRFaction faction : FACTIONS) {
+			if (faction.factionRegion != null) {
+				data.put(faction, faction.factionRegion.getRegionName());
+			}
+		}
+
+		StringBuilder sb = new StringBuilder();
+
+		sb.append(TITLE).append(TEMPLATE).append("DB Faction-Region");
+		sb.append(BEGIN);
+
+		appendDefault(sb, N_A);
+
+		for (Map.Entry<LOTRFaction, String> entry : data.entrySet()) {
+			sb.append(NL).append("| ");
+			sb.append(getFactionPagename(entry.getKey())).append(" = ");
+
+			appendSection(sb, entry.getValue());
+		}
+
+		sb.append(END);
+
+		return sb;
+	}
+
+	private static StringBuilder genTemplateFactionShieldsCapes() {
+		Map<LOTRFaction, String> data = new EnumMap<>(LOTRFaction.class);
+
+		for (LOTRFaction faction : FACTIONS) {
+			StringBuilder sb = new StringBuilder();
+
+			sb.append(NL).append("&lt;table class=\"wikitable shields-capes\"&gt;");
+
+			for (LOTRShields shield : SHIELDS) {
+				if (getAlignmentFaction(shield) == faction) {
+					sb.append(NL + "&lt;tr&gt;&lt;td&gt;").append(shield.getShieldName()).append("&lt;/td&gt;&lt;td&gt;").append(shield.getShieldDesc()).append("&lt;/td&gt;&lt;td&gt;").append(getShieldFilename(shield)).append("&lt;/td&gt;&lt;/tr&gt;");
+				}
+			}
+
+			sb.append(NL).append("&lt;table&gt;");
+
+			data.put(faction, sb.toString());
+		}
+
+		StringBuilder sb = new StringBuilder();
+
+		sb.append(TITLE).append(TEMPLATE).append("DB Faction-ShieldsCapes");
+		sb.append(BEGIN);
+
+		for (Map.Entry<LOTRFaction, String> entry : data.entrySet()) {
+			sb.append(NL).append("| ");
+			sb.append(getFactionPagename(entry.getKey())).append(" = ");
+
+			appendPreamble(sb, entry.getValue(), null, Lang.FACTION_NO_ATTRIBUTES);
+			appendSection(sb, entry.getValue());
+		}
+
+		sb.append(END);
+
+		return sb;
+	}
+
+	private static StringBuilder genTemplateFactionSpawnBiomes() {
+		Map<LOTRFaction, Set<String>> data = new EnumMap<>(LOTRFaction.class);
+
+		for (LOTRBiome biome : BIOMES) {
+			for (LOTRBiomeSpawnList.FactionContainer factionContainer : getFactionContainers(biome.npcSpawnList)) {
+				if (getBaseWeight(factionContainer) > 0) {
+					for (LOTRBiomeSpawnList.SpawnListContainer spawnListContainer : getSpawnListContainers(factionContainer)) {
+						for (LOTRSpawnEntry spawnEntry : getSpawnEntries(getSpawnList(spawnListContainer))) {
+							Entity entity = ENTITY_CLASS_TO_ENTITY.get(spawnEntry.entityClass);
+							if (entity instanceof LOTREntityNPC) {
+								LOTRFaction faction = ((LOTREntityNPC) entity).getFaction();
+								data.computeIfAbsent(faction, s -> new TreeSet<>());
+								data.get(faction).add(getBiomeLink(biome));
+								break;
+							}
+						}
+					}
+				}
+			}
+		}
+
+		StringBuilder sb = new StringBuilder();
+
+		sb.append(TITLE).append(TEMPLATE).append("DB Faction-Spawn");
+		sb.append(BEGIN);
+
+		for (Map.Entry<LOTRFaction, Set<String>> entry : data.entrySet()) {
+			sb.append(NL).append("| ");
+			sb.append(getFactionPagename(entry.getKey())).append(" = ");
+
+			appendPreamble(sb, entry.getValue(), Lang.FACTION_HAS_SPAWN_BIOMES, Lang.FACTION_NO_SPAWN_BIOMES);
+			appendSection(sb, entry.getValue());
+		}
+
+		sb.append(END);
+
+		return sb;
+	}
+
+	private static StringBuilder genTemplateFactionWarCrimes() {
+		Map<LOTRFaction, String> data = new EnumMap<>(LOTRFaction.class);
+
+		for (LOTRFaction faction : FACTIONS) {
+			if (!faction.approvesWarCrimes) {
+				data.put(faction, Lang.FACTION_NO_WAR_CRIMES.toString());
+			}
+		}
+
+		StringBuilder sb = new StringBuilder();
+
+		sb.append(TITLE).append(TEMPLATE).append("DB Faction-WarCrimes");
+		sb.append(BEGIN);
+
+		appendDefault(sb, Lang.FACTION_HAS_WAR_CRIMES.toString());
+
+		for (Map.Entry<LOTRFaction, String> entry : data.entrySet()) {
+			sb.append(NL).append("| ");
+			sb.append(getFactionPagename(entry.getKey())).append(" = ");
+
+			appendSection(sb, entry.getValue());
+		}
+
+		sb.append(END);
+
+		return sb;
+	}
+
+	private static StringBuilder genTemplateFactionWaypoints() {
+		Map<LOTRFaction, Set<String>> data = new EnumMap<>(LOTRFaction.class);
+
+		for (LOTRWaypoint wp : WAYPOINTS) {
+			data.computeIfAbsent(wp.faction, s -> new TreeSet<>());
+			data.get(wp.faction).add(wp.getDisplayName());
+		}
+
+		StringBuilder sb = new StringBuilder();
+
+		sb.append(TITLE).append(TEMPLATE).append("DB Faction-Waypoints");
+		sb.append(BEGIN);
+
+		for (Map.Entry<LOTRFaction, Set<String>> entry : data.entrySet()) {
+			sb.append(NL).append("| ");
+			sb.append(getFactionPagename(entry.getKey())).append(" = ");
+
+			appendPreamble(sb, entry.getValue(), Lang.FACTION_HAS_WAYPOINTS, Lang.FACTION_NO_WAYPOINTS);
+			appendSection(sb, entry.getValue());
+		}
+
+		sb.append(END);
+
+		return sb;
+	}
+
+	private static StringBuilder genTemplateMineralBiomes() {
+		Map<String, Set<String>> data = new HashMap<>();
+
+		for (LOTRBiome biome : BIOMES) {
+			Collection<Object> oreGenerants = new HashSet<>(getBiomeSoils(biome.decorator));
+			oreGenerants.addAll(getBiomeOres(biome.decorator));
+			oreGenerants.addAll(getBiomeGems(biome.decorator));
+
+			for (Object oreGenerant : oreGenerants) {
+				Block block = getOreGenBlock(getOreGen(oreGenerant));
+				int meta = getOreGenMeta(getOreGen(oreGenerant));
+
+				String blockLink;
+				if (block instanceof LOTRBlockOreGem || block instanceof BlockDirt || block instanceof LOTRBlockRock) {
+					blockLink = getMineralLink(block, meta);
+				} else {
+					blockLink = getMineralLink(block);
+				}
+
+				String stats = "(" + getOreChance(oreGenerant) + "%; Y: " + getMinHeight(oreGenerant) + '-' + getMaxHeight(oreGenerant) + ')';
+
+				data.computeIfAbsent(blockLink, s -> new TreeSet<>());
+				data.get(blockLink).add(getBiomeLink(biome) + stats);
+			}
+		}
+
+		StringBuilder sb = new StringBuilder();
+
+		sb.append(TITLE).append(TEMPLATE).append("DB Mineral-Biomes");
+		sb.append(BEGIN);
+
+		for (Map.Entry<String, Set<String>> entry : data.entrySet()) {
+			sb.append(NL).append("| ");
+			sb.append(entry.getKey()).append(" = ");
+
+			appendPreamble(sb, entry.getValue(), Lang.MINERAL_HAS_BIOMES, Lang.MINERAL_NO_BIOMES);
+			appendSection(sb, entry.getValue());
+		}
+
+		sb.append(END);
+
+		return sb;
+	}
+
+	private static StringBuilder genTemplateStructureBiomes() {
+		Map<Class<?>, Set<String>> data = new HashMap<>();
+
+		for (LOTRBiome biome : BIOMES) {
+			for (Object structure : getStructures(biome.decorator)) {
+				data.computeIfAbsent(getStructureGen(structure).getClass(), s -> new TreeSet<>());
+				data.get(getStructureGen(structure).getClass()).add(getBiomeLink(biome));
+			}
+		}
+
+		StringBuilder sb = new StringBuilder();
+
+		sb.append(TITLE).append(TEMPLATE).append("DB Structure-Biomes");
+		sb.append(BEGIN);
+
+		for (Map.Entry<Class<?>, Set<String>> entry : data.entrySet()) {
+			sb.append(NL).append("| ");
+			sb.append(getStructurePagename(entry.getKey())).append(" = ");
+
+			appendPreamble(sb, entry.getValue(), Lang.STRUCTURE_HAS_BIOMES, Lang.STRUCTURE_NO_BIOMES);
+			appendSection(sb, entry.getValue());
+		}
+
+		sb.append(END);
+
+		return sb;
+	}
+
+	private static StringBuilder genTemplateTreeBiomes() {
+		Map<LOTRTreeType, Set<String>> data = new EnumMap<>(LOTRTreeType.class);
+
+		for (LOTRBiome biome : BIOMES) {
+			Collection<LOTRTreeType.WeightedTreeType> weightedTreeTypes = getTreeTypes(biome.decorator);
+
+			Collection<LOTRTreeType> excludedTreeTypes = EnumSet.noneOf(LOTRTreeType.class);
+
+			for (LOTRTreeType.WeightedTreeType weightedTreeType : weightedTreeTypes) {
+				LOTRTreeType treeType = weightedTreeType.treeType;
+
+				data.computeIfAbsent(treeType, s -> new TreeSet<>());
+				data.get(treeType).add(getBiomeLink(biome));
+
+				excludedTreeTypes.add(treeType);
+			}
+
+			for (Object variantBucket : getVariantList(biome.getBiomeVariantsSmall())) {
+				for (LOTRTreeType.WeightedTreeType weightedTreeType : getVariant(variantBucket).treeTypes) {
+					LOTRTreeType treeType = weightedTreeType.treeType;
+
+					if (!excludedTreeTypes.contains(treeType)) {
+						data.computeIfAbsent(treeType, s -> new TreeSet<>());
+						data.get(treeType).add(getBiomeLink(biome) + " (" + getBiomeVariantName(getVariant(variantBucket)) + ')');
+					}
+				}
+			}
+		}
+
+		StringBuilder sb = new StringBuilder();
+
+		sb.append(TITLE).append(TEMPLATE).append("DB Tree-Biomes");
+		sb.append(BEGIN);
+
+		for (Map.Entry<LOTRTreeType, Set<String>> entry : data.entrySet()) {
+			sb.append(NL).append("| ");
+			sb.append(getTreePagename(entry.getKey())).append(" = ");
+
+			appendPreamble(sb, entry.getValue(), Lang.TREE_HAS_BIOMES, Lang.TREE_NO_BIOMES);
+			appendSection(sb, entry.getValue());
+		}
+
+		sb.append(END);
+
+		return sb;
 	}
 
 	private static StringBuilder addPagesBiomes(Collection<String> neededPages, Collection<String> existingPages) {
@@ -284,8 +2461,8 @@ public class WikiGenerator {
 			String pageName = getBiomePagename(biome);
 			neededPages.add(pageName);
 			if (!existingPages.contains(pageName)) {
-				String page = PAGE_LEFT + "{{Статья Биом}}" + PAGE_RIGHT;
-				sb.append(TITLE_SINGLE).append(pageName).append(page);
+				sb.append(TITLE_SINGLE).append(pageName);
+				sb.append(PAGE_LEFT).append("{{Статья Биом}}").append(PAGE_RIGHT);
 			}
 		}
 
@@ -295,12 +2472,12 @@ public class WikiGenerator {
 	private static StringBuilder addPagesEntities(Collection<String> neededPages, Collection<String> existingPages) {
 		StringBuilder sb = new StringBuilder();
 
-		for (Class<? extends Entity> entityClass : ENTITIES) {
+		for (Class<? extends Entity> entityClass : ENTITY_CLASSES) {
 			String pageName = getEntityPagename(entityClass);
 			neededPages.add(pageName);
 			if (!existingPages.contains(pageName)) {
-				String page = PAGE_LEFT + "{{Статья Моб}}" + PAGE_RIGHT;
-				sb.append(TITLE_SINGLE).append(pageName).append(page);
+				sb.append(TITLE_SINGLE).append(pageName);
+				sb.append(PAGE_LEFT).append("{{Статья Моб}}").append(PAGE_RIGHT);
 			}
 		}
 
@@ -314,8 +2491,8 @@ public class WikiGenerator {
 			String pageName = getFactionPagename(faction);
 			neededPages.add(pageName);
 			if (!existingPages.contains(pageName)) {
-				String page = PAGE_LEFT + "{{Статья Фракция}}" + PAGE_RIGHT;
-				sb.append(TITLE_SINGLE).append(pageName).append(page);
+				sb.append(TITLE_SINGLE).append(pageName);
+				sb.append(PAGE_LEFT).append("{{Статья Фракция}}").append(PAGE_RIGHT);
 			}
 		}
 
@@ -328,8 +2505,8 @@ public class WikiGenerator {
 		for (String pageName : MINERALS) {
 			neededPages.add(pageName);
 			if (!existingPages.contains(pageName)) {
-				String page = PAGE_LEFT + "{{Статья Ископаемое}}" + PAGE_RIGHT;
-				sb.append(TITLE_SINGLE).append(pageName).append(page);
+				sb.append(TITLE_SINGLE).append(pageName);
+				sb.append(PAGE_LEFT).append("{{Статья Ископаемое}}").append(PAGE_RIGHT);
 			}
 		}
 
@@ -339,12 +2516,12 @@ public class WikiGenerator {
 	private static StringBuilder addPagesStructures(Collection<String> neededPages, Collection<String> existingPages) {
 		StringBuilder sb = new StringBuilder();
 
-		for (Class<?> strClass : STRUCTURES) {
-			String pageName = getStructureName(strClass);
+		for (Class<? extends WorldGenerator> strClass : STRUCTURE_CLASSES) {
+			String pageName = getStructurePagename(strClass);
 			neededPages.add(pageName);
 			if (!existingPages.contains(pageName)) {
-				String page = PAGE_LEFT + "{{Статья Структура}}" + PAGE_RIGHT;
-				sb.append(TITLE_SINGLE).append(pageName).append(page);
+				sb.append(TITLE_SINGLE).append(pageName);
+				sb.append(PAGE_LEFT).append("{{Статья Структура}}").append(PAGE_RIGHT);
 			}
 		}
 
@@ -355,1779 +2532,13 @@ public class WikiGenerator {
 		StringBuilder sb = new StringBuilder();
 
 		for (LOTRTreeType tree : TREES) {
-			String pageName = getTreeName(tree);
+			String pageName = getTreePagename(tree);
 			neededPages.add(pageName);
 			if (!existingPages.contains(pageName)) {
-				String page = PAGE_LEFT + "{{Статья Дерево}}" + PAGE_RIGHT;
-				sb.append(TITLE_SINGLE).append(pageName).append(page);
+				sb.append(TITLE_SINGLE).append(pageName);
+				sb.append(PAGE_LEFT).append("{{Статья Дерево}}").append(PAGE_RIGHT);
 			}
 		}
-
-		return sb;
-	}
-
-	private static void genTableAchievements(EntityPlayer entityPlayer) {
-		try (PrintWriter printWriter = new PrintWriter("hummel/achievements.txt", UTF_8)) {
-			StringBuilder sb = new StringBuilder();
-
-			Collection<String> content = new TreeSet<>();
-
-			for (LOTRAchievement ach : ACHIEVEMENTS) {
-				if (!(ach instanceof LOTRAchievementRank)) {
-					content.add(NL + "| " + ach.getTitle(entityPlayer) + " || " + ach.getDescription(entityPlayer) + NL + "|-");
-				}
-			}
-
-			appendSortedSet(sb, content);
-
-			printWriter.write(sb.toString());
-		} catch (Exception e) {
-			e.printStackTrace();
-		}
-	}
-
-	private static void genTableArmor() {
-		try (PrintWriter printWriter = new PrintWriter("hummel/armor.txt", UTF_8)) {
-			StringBuilder sb = new StringBuilder();
-
-			for (Item item : ITEMS) {
-				if (item instanceof ItemArmor) {
-					float damage = ((ItemArmor) item).damageReduceAmount;
-					ItemArmor.ArmorMaterial material = ((ItemArmor) item).getArmorMaterial();
-
-					sb.append(NL).append("| ");
-					sb.append(getItemName(item)).append(" || ").append(getItemFilename(item)).append(" || ").append(item.getMaxDamage()).append(" || ").append(damage).append(" || ");
-					if (material == null || material.customCraftingMaterial == null) {
-						sb.append("N/A");
-					} else {
-						sb.append(getItemName(material.customCraftingMaterial));
-					}
-					sb.append(NL).append("|-");
-				}
-			}
-			printWriter.write(sb.toString());
-		} catch (Exception e) {
-			e.printStackTrace();
-		}
-	}
-
-	@SuppressWarnings("deprecation")
-	private static void genTableFood() {
-		try (PrintWriter printWriter = new PrintWriter("hummel/food.txt", UTF_8)) {
-			StringBuilder sb = new StringBuilder();
-
-			Collection<String> content = new TreeSet<>();
-
-			for (Item item : ITEMS) {
-				if (item instanceof ItemFood) {
-					StringBuilder localSb = new StringBuilder();
-
-					int heal = ((ItemFood) item).func_150905_g(null);
-					float saturation = ((ItemFood) item).func_150906_h(null);
-					localSb.append(NL).append("| ");
-					localSb.append(getItemName(item));
-					localSb.append(" || ").append(getItemFilename(item));
-					localSb.append(" || ").append("{{Bar|bread|").append(new DecimalFormat("#.##").format(saturation * heal * 2)).append("}}");
-					localSb.append(" || ").append("{{Bar|food|").append(heal).append("}}");
-					localSb.append(" || ").append(item.getItemStackLimit());
-					localSb.append(NL).append("|-");
-
-					content.add(localSb.toString());
-				}
-			}
-
-			appendSortedSet(sb, content);
-
-			printWriter.write(sb.toString());
-		} catch (Exception e) {
-			e.printStackTrace();
-		}
-	}
-
-	private static void genTableShields() {
-		try (PrintWriter printWriter = new PrintWriter("hummel/shields.txt", UTF_8)) {
-			StringBuilder sb = new StringBuilder();
-
-			for (LOTRShields shield : SHIELDS) {
-				sb.append(NL).append("| ");
-				sb.append(shield.getShieldName()).append(" || ").append(shield.getShieldDesc()).append(" || ").append(getShieldFilename(shield)).append(NL).append("|-");
-			}
-			printWriter.write(sb.toString());
-		} catch (Exception e) {
-			e.printStackTrace();
-		}
-	}
-
-	private static void genTableUnits() {
-		try (PrintWriter printWriter = new PrintWriter("hummel/units.txt", UTF_8)) {
-			StringBuilder sb = new StringBuilder();
-
-			for (LOTRUnitTradeEntries unitTradeEntries : UNIT_TRADE_ENTRIES) {
-				for (LOTRUnitTradeEntry entry : unitTradeEntries.tradeEntries) {
-					if (entry != null) {
-						sb.append(NL).append("| ");
-						sb.append(getEntityLink(entry.entityClass));
-						if (entry.mountClass != null) {
-							sb.append(Lang.RIDER);
-						}
-
-						int cost = getInitialCost(entry);
-						int alignment = (int) entry.alignmentRequired;
-
-						if (entry.getPledgeType() == LOTRUnitTradeEntry.PledgeType.NONE) {
-							sb.append(" || ").append("{{Coins|").append(cost * 2).append("}}");
-							sb.append(" || ").append("{{Coins|").append(cost).append("}}");
-							sb.append(" || ").append('+').append(alignment);
-							sb.append(" || ").append('-');
-						} else {
-							sb.append(" || ").append("N/A");
-							sb.append(" || ").append("{{Coins|").append(cost).append("}}");
-							sb.append(" || ").append('+').append(Math.max(alignment, 100));
-							sb.append(" || ").append('+');
-						}
-						sb.append(NL).append("|-");
-					}
-				}
-			}
-			printWriter.write(sb.toString());
-		} catch (Exception e) {
-			e.printStackTrace();
-		}
-	}
-
-	private static void genTableWaypoints(EntityPlayer entityPlayer) {
-		try (PrintWriter printWriter = new PrintWriter("hummel/waypoints.txt", UTF_8)) {
-			StringBuilder sb = new StringBuilder();
-
-			Collection<String> content = new TreeSet<>();
-
-			for (LOTRWaypoint wp : WAYPOINTS) {
-				content.add(NL + "| " + wp.getDisplayName() + " || " + wp.getLoreText(entityPlayer) + NL + "|-");
-			}
-
-			appendSortedSet(sb, content);
-
-			printWriter.write(sb.toString());
-		} catch (Exception e) {
-			e.printStackTrace();
-		}
-	}
-
-	private static void genTableWeapons() {
-		try (PrintWriter printWriter = new PrintWriter("hummel/weapon.txt", UTF_8)) {
-			StringBuilder sb = new StringBuilder();
-
-			Collection<String> content = new TreeSet<>();
-
-			for (Item item : ITEMS) {
-				if (item instanceof ItemSword) {
-					StringBuilder localSb = new StringBuilder();
-
-					float damage = getDamageAmount(item);
-					Item.ToolMaterial material = getToolMaterial(item);
-
-					localSb.append(NL).append("| ");
-					localSb.append(getItemName(item)).append(" || ").append(getItemFilename(item)).append(" || ").append(item.getMaxDamage()).append(" || ").append(damage).append(" || ");
-					if (material == null || material.getRepairItemStack() == null) {
-						localSb.append("N/A");
-					} else {
-						localSb.append(getItemName(material.getRepairItemStack().getItem()));
-					}
-					localSb.append(NL).append("|-");
-
-					content.add(localSb.toString());
-				}
-			}
-
-			appendSortedSet(sb, content);
-
-			printWriter.write(sb.toString());
-		} catch (Exception e) {
-			e.printStackTrace();
-		}
-	}
-
-	private static StringBuilder genTemplateBiomeBandits() {
-		StringBuilder sb = new StringBuilder();
-
-		sb.append(TITLE).append(TEMPLATE).append("DB Biome-Bandits");
-		sb.append(BEGIN);
-		for (LOTRBiome biome : BIOMES) {
-			sb.append(NL).append("| ").append(getBiomePagename(biome)).append(" = ").append(biome.getBanditChance());
-		}
-		sb.append(END);
-
-		return sb;
-	}
-
-	private static StringBuilder genTemplateBiomeConquestFactions() {
-		StringBuilder sb = new StringBuilder();
-
-		sb.append(TITLE).append(TEMPLATE).append("DB Biome-ConquestNPC");
-		sb.append(BEGIN);
-		for (LOTRBiome biome : BIOMES) {
-			Collection<String> content = new TreeSet<>();
-
-			List<LOTRBiomeSpawnList.FactionContainer> facContainers = getFactionContainers(biome.npcSpawnList);
-			if (facContainers.isEmpty()) {
-				sb.append(NL).append("| ");
-				sb.append(getBiomePagename(biome)).append(" = ").append(Lang.BIOME_NO_CONQUEST);
-			} else {
-				Collection<LOTRBiomeSpawnList.FactionContainer> conqestContainers = new HashSet<>();
-				for (LOTRBiomeSpawnList.FactionContainer facContainer : facContainers) {
-					if (getBaseWeight(facContainer) <= 0) {
-						conqestContainers.add(facContainer);
-					}
-				}
-				sb.append(NL).append("| ");
-				sb.append(getBiomePagename(biome)).append(" = ");
-				if (conqestContainers.isEmpty()) {
-					sb.append(Lang.BIOME_SPAWN_ONLY);
-				} else {
-					sb.append(Lang.BIOME_HAS_CONQUEST);
-					Collection<LOTRFaction> conquestFactions = EnumSet.noneOf(LOTRFaction.class);
-					for (LOTRBiomeSpawnList.FactionContainer facContainer : conqestContainers) {
-						next:
-						for (LOTRBiomeSpawnList.SpawnListContainer container : getSpawnLists(facContainer)) {
-							for (LOTRSpawnEntry entry : getSpawnEntries(getSpawnList(container))) {
-								Entity entity = CLASS_TO_ENTITY.get(entry.entityClass);
-								if (entity instanceof LOTREntityNPC) {
-									LOTRFaction fac = ((LOTREntityNPC) entity).getFaction();
-									conquestFactions.add(fac);
-									continue next;
-								}
-							}
-						}
-					}
-					for (LOTRFaction fac : conquestFactions) {
-						content.add(NL + "* " + getFactionLink(fac) + ';');
-					}
-				}
-			}
-
-			appendSortedSet(sb, content);
-		}
-		sb.append(END);
-
-		return sb;
-	}
-
-	private static StringBuilder genTemplateBiomeInvasionFactions() {
-		StringBuilder sb = new StringBuilder();
-
-		sb.append(TITLE).append(TEMPLATE).append("DB Biome-Invasions");
-		sb.append(BEGIN);
-		for (LOTRBiome biome : BIOMES) {
-			Collection<String> content = new TreeSet<>();
-
-			sb.append(NL).append("| ");
-			sb.append(getBiomePagename(biome)).append(" = ");
-			if (getRegisteredInvasions(biome.invasionSpawns).isEmpty()) {
-				sb.append(Lang.BIOME_NO_INVASIONS);
-			} else {
-				sb.append(Lang.BIOME_HAS_INVASIONS);
-				Collection<LOTRFaction> invasionFactions = EnumSet.noneOf(LOTRFaction.class);
-				next:
-				for (LOTRInvasions invasion : getRegisteredInvasions(biome.invasionSpawns)) {
-					for (LOTRInvasions.InvasionSpawnEntry entry : invasion.invasionMobs) {
-						Entity entity = CLASS_TO_ENTITY.get(entry.getEntityClass());
-						if (entity instanceof LOTREntityNPC) {
-							LOTRFaction fac = ((LOTREntityNPC) entity).getFaction();
-							invasionFactions.add(fac);
-							continue next;
-						}
-					}
-				}
-				for (LOTRFaction fac : invasionFactions) {
-					content.add(NL + "* " + getFactionLink(fac) + ';');
-				}
-			}
-
-			appendSortedSet(sb, content);
-		}
-		sb.append(END);
-
-		return sb;
-	}
-
-	private static StringBuilder genTemplateBiomeMinerals() {
-		StringBuilder sb = new StringBuilder();
-
-		sb.append(TITLE).append(TEMPLATE).append("DB Biome-Minerals");
-		sb.append(BEGIN);
-		for (LOTRBiome biome : BIOMES) {
-			Collection<String> content = new TreeSet<>();
-
-			sb.append(NL).append("| ");
-			sb.append(getBiomePagename(biome)).append(" = ").append(Lang.BIOME_HAS_MINERALS);
-			Collection<Object> oreGenerants = new HashSet<>(getBiomeSoils(biome.decorator));
-			oreGenerants.addAll(getBiomeOres(biome.decorator));
-			oreGenerants.addAll(getBiomeGems(biome.decorator));
-			for (Object oreGenerant : oreGenerants) {
-				Block block = getOreGenBlock(getOreGen(oreGenerant));
-				int meta = getOreGenMeta(getOreGen(oreGenerant));
-
-				String stats = " (" + getOreChance(oreGenerant) + "%; Y: " + getMinHeight(oreGenerant) + '-' + getMaxHeight(oreGenerant) + ");";
-
-				if (block instanceof LOTRBlockOreGem || block instanceof BlockDirt || block instanceof LOTRBlockRock) {
-					content.add(NL + "* [[" + getBlockMetaName(block, meta) + "]]" + stats);
-				} else {
-					content.add(NL + "* [[" + getBlockName(block) + "]]" + stats);
-				}
-			}
-
-			appendSortedSet(sb, content);
-		}
-		sb.append(END);
-
-		return sb;
-	}
-
-	private static StringBuilder genTemplateBiomeMobs() {
-		StringBuilder sb = new StringBuilder();
-
-		sb.append(TITLE).append(TEMPLATE).append("DB Biome-Mobs");
-		sb.append(BEGIN);
-		for (LOTRBiome biome : BIOMES) {
-			Collection<String> content = new TreeSet<>();
-
-			Collection<BiomeGenBase.SpawnListEntry> entries = new HashSet<BiomeGenBase.SpawnListEntry>(biome.getSpawnableList(EnumCreatureType.ambient));
-			entries.addAll(biome.getSpawnableList(EnumCreatureType.waterCreature));
-			entries.addAll(biome.getSpawnableList(EnumCreatureType.creature));
-			entries.addAll(biome.getSpawnableList(EnumCreatureType.monster));
-			entries.addAll(biome.getSpawnableList(LOTRBiome.creatureType_LOTRAmbient));
-			sb.append(NL).append("| ");
-			sb.append(getBiomePagename(biome)).append(" = ");
-			if (entries.isEmpty()) {
-				sb.append(Lang.BIOME_NO_ANIMALS);
-			} else {
-				sb.append(Lang.BIOME_HAS_ANIMALS);
-				for (BiomeGenBase.SpawnListEntry entry : entries) {
-					if (CLASS_TO_ENTITY_NAME.containsKey(entry.entityClass)) {
-						content.add(NL + "* " + getEntityLink(entry.entityClass) + ';');
-					} else {
-						content.add(NL + "* " + getEntityVanillaName(entry.entityClass) + ';');
-					}
-				}
-			}
-
-			appendSortedSet(sb, content);
-		}
-		sb.append(END);
-
-		return sb;
-	}
-
-	private static StringBuilder genTemplateBiomeMusic() {
-		StringBuilder sb = new StringBuilder();
-
-		sb.append(TITLE).append(TEMPLATE).append("DB Biome-Music");
-		sb.append(BEGIN);
-		for (LOTRBiome biome : BIOMES) {
-			sb.append(NL).append("| ");
-			sb.append(getBiomePagename(biome)).append(" = ");
-			if (biome.getBiomeMusic() == null) {
-				sb.append("N/A");
-			} else {
-				sb.append(biome.getBiomeMusic().subregion);
-			}
-		}
-		sb.append(END);
-
-		return sb;
-	}
-
-	private static StringBuilder genTemplateBiomeName() {
-		StringBuilder sb = new StringBuilder();
-
-		sb.append(TITLE).append(TEMPLATE).append("DB Biome-Name");
-		sb.append(BEGIN);
-		for (LOTRBiome biome : BIOMES) {
-			sb.append(NL).append("| ");
-			sb.append(getBiomePagename(biome)).append(" = ").append(getBiomeName(biome));
-		}
-		sb.append(END);
-
-		return sb;
-	}
-
-	private static StringBuilder genTemplateBiomeRainfall() {
-		StringBuilder sb = new StringBuilder();
-
-		sb.append(TITLE).append(TEMPLATE).append("DB Biome-Rainfall");
-		sb.append(BEGIN);
-
-
-		for (LOTRBiome biome : BIOMES) {
-			sb.append("\n| ").append(getBiomePagename(biome)).append(" = ").append(biome.rainfall);
-		}
-
-		sb.append(END);
-
-		return sb;
-	}
-
-	private static StringBuilder genTemplateBiomeSpawnNPCs() {
-		StringBuilder sb = new StringBuilder();
-
-		sb.append(TITLE).append(TEMPLATE).append("DB Biome-SpawnNPC");
-		sb.append(BEGIN);
-		for (LOTRBiome biome : BIOMES) {
-			Collection<String> content = new TreeSet<>();
-
-			List<LOTRBiomeSpawnList.FactionContainer> facContainers = getFactionContainers(biome.npcSpawnList);
-			if (facContainers.isEmpty()) {
-				sb.append(NL).append("| ");
-				sb.append(getBiomePagename(biome)).append(" = ").append(Lang.BIOME_NO_SPAWN);
-			} else {
-				Collection<LOTRBiomeSpawnList.FactionContainer> spawnContainers = new HashSet<>();
-				for (LOTRBiomeSpawnList.FactionContainer facContainer : facContainers) {
-					if (getBaseWeight(facContainer) > 0) {
-						spawnContainers.add(facContainer);
-					}
-				}
-				sb.append(NL).append("| ");
-				sb.append(getBiomePagename(biome)).append(" = ");
-				if (spawnContainers.isEmpty()) {
-					sb.append(Lang.BIOME_CONQUEST_ONLY);
-				} else {
-					sb.append(Lang.BIOME_HAS_SPAWN);
-					for (LOTRBiomeSpawnList.FactionContainer facContainer : spawnContainers) {
-						for (LOTRBiomeSpawnList.SpawnListContainer container : getSpawnLists(facContainer)) {
-							for (LOTRSpawnEntry entry : getSpawnEntries(getSpawnList(container))) {
-								content.add(NL + "* " + getEntityLink(entry.entityClass) + ';');
-							}
-						}
-					}
-				}
-			}
-
-			appendSortedSet(sb, content);
-		}
-		sb.append(END);
-
-		return sb;
-	}
-
-	private static StringBuilder genTemplateBiomeStructuresSettlements() {
-		StringBuilder sb = new StringBuilder();
-
-		sb.append(TITLE).append(TEMPLATE).append("DB Biome-Structures");
-		sb.append(BEGIN);
-		for (LOTRBiome biome : BIOMES) {
-			Collection<String> content = new TreeSet<>();
-
-			sb.append(NL).append("| ");
-			sb.append(getBiomePagename(biome)).append(" = ");
-			if (getStructures(biome.decorator).isEmpty()) {
-				sb.append(Lang.BIOME_NO_STRUCTURES);
-			} else {
-				sb.append(Lang.BIOME_HAS_STRUCTURES);
-
-				for (Object structure : getStructures(biome.decorator)) {
-					content.add(NL + "* [[" + getStructureName(getStructureGen(structure).getClass()) + "]];");
-				}
-
-				appendSortedSet(sb, content);
-
-				for (LOTRVillageGen settlement : getVillages(biome.decorator)) {
-					if (getSpawnChance(settlement) != 0.0f) {
-						Set<String> names = CLASS_TO_VILLAGE_NAMES.get(settlement.getClass());
-						if (names != null) {
-							for (String name : names) {
-								content.add(NL + "* " + getSettlementName(name) + ';');
-							}
-						}
-					}
-				}
-
-				appendSortedSet(sb, content);
-			}
-		}
-		sb.append(END);
-
-		return sb;
-	}
-
-	private static StringBuilder genTemplateBiomeTemperature() {
-		StringBuilder sb = new StringBuilder();
-
-		sb.append(TITLE).append(TEMPLATE).append("DB Biome-Temperature");
-		sb.append(BEGIN);
-
-		for (LOTRBiome biome : BIOMES) {
-			sb.append("\n| ").append(getBiomePagename(biome)).append(" = ").append(biome.temperature);
-		}
-
-		sb.append(END);
-
-		return sb;
-	}
-
-	private static StringBuilder genTemplateBiomeTrees() {
-		StringBuilder sb = new StringBuilder();
-
-		sb.append(TITLE).append(TEMPLATE).append("DB Biome-Trees");
-		sb.append(BEGIN);
-		for (LOTRBiome biome : BIOMES) {
-			Collection<String> content = new TreeSet<>();
-
-			Collection<LOTRTreeType> trees = EnumSet.noneOf(LOTRTreeType.class);
-			Map<LOTRTreeType, LOTRBiomeVariant> additionalTrees = new EnumMap<>(LOTRTreeType.class);
-			for (LOTRTreeType.WeightedTreeType weightedTreeType : getTreeTypes(biome.decorator)) {
-				trees.add(weightedTreeType.treeType);
-			}
-			for (Object variantBucket : getVariantList(biome.getBiomeVariantsSmall())) {
-				for (LOTRTreeType.WeightedTreeType weightedTreeType : getVariant(variantBucket).treeTypes) {
-					if (!trees.contains(weightedTreeType.treeType)) {
-						additionalTrees.put(weightedTreeType.treeType, getVariant(variantBucket));
-					}
-				}
-			}
-			sb.append(NL).append("| ");
-			sb.append(getBiomePagename(biome)).append(" = ");
-			if (trees.isEmpty() && additionalTrees.isEmpty()) {
-				sb.append(Lang.BIOME_NO_TREES);
-			} else {
-				if (additionalTrees.isEmpty()) {
-					sb.append(Lang.BIOME_HAS_TREES_BIOME_ONLY);
-				} else {
-					sb.append(Lang.BIOME_HAS_TREES);
-				}
-				for (LOTRTreeType tree : trees) {
-					content.add(NL + "* [[" + getTreeName(tree) + "]];");
-				}
-
-				appendSortedSet(sb, content);
-
-				for (Map.Entry<LOTRTreeType, LOTRBiomeVariant> tree : additionalTrees.entrySet()) {
-					content.add(NL + "* [[" + getTreeName(tree.getKey()) + "]] (" + getBiomeVariantName(tree.getValue()).toLowerCase(Locale.ROOT) + ");");
-				}
-
-				appendSortedSet(sb, content);
-			}
-		}
-		sb.append(END);
-
-		return sb;
-	}
-
-	private static StringBuilder genTemplateBiomeVariants() {
-		StringBuilder sb = new StringBuilder();
-
-		sb.append(TITLE).append(TEMPLATE).append("DB Biome-Variants");
-		sb.append(BEGIN);
-		for (LOTRBiome biome : BIOMES) {
-			Collection<String> content = new TreeSet<>();
-
-			sb.append(NL).append("| ");
-			sb.append(getBiomePagename(biome)).append(" = ");
-			if (getVariantList(biome.getBiomeVariantsSmall()).isEmpty()) {
-				sb.append(Lang.BIOME_NO_VARIANTS);
-			} else {
-				for (Object variantBucket : getVariantList(biome.getBiomeVariantsSmall())) {
-					content.add(NL + "* " + getBiomeVariantName(getVariant(variantBucket)) + ';');
-				}
-			}
-
-			appendSortedSet(sb, content);
-		}
-		sb.append(END);
-
-		return sb;
-	}
-
-	private static StringBuilder genTemplateBiomeVisitAchievement(EntityPlayer entityPlayer) {
-		StringBuilder sb = new StringBuilder();
-
-		sb.append(TITLE).append(TEMPLATE).append("DB Biome-Achievement");
-		sb.append(BEGIN);
-		for (LOTRBiome biome : BIOMES) {
-			LOTRAchievement ach = biome.getBiomeAchievement();
-			sb.append(NL).append("| ");
-			sb.append(getBiomePagename(biome)).append(" = ");
-			if (ach == null) {
-				sb.append(Lang.BIOME_NO_ACHIEVEMENT);
-			} else {
-				sb.append('«').append(ach.getTitle(entityPlayer)).append('»');
-			}
-		}
-		sb.append(END);
-
-		return sb;
-	}
-
-	private static StringBuilder genTemplateBiomeWaypoints() {
-		StringBuilder sb = new StringBuilder();
-
-		sb.append(TITLE).append(TEMPLATE).append("DB Biome-Waypoints");
-		sb.append(BEGIN);
-		for (LOTRBiome biome : BIOMES) {
-			Collection<String> content = new TreeSet<>();
-
-			LOTRWaypoint.Region region = biome.getBiomeWaypoints();
-			sb.append(NL).append("| ");
-			sb.append(getBiomePagename(biome)).append(" = ");
-			if (region == null) {
-				sb.append(Lang.BIOME_NO_WAYPOINTS);
-			} else {
-				sb.append(Lang.BIOME_HAS_WAYPOINTS);
-				for (LOTRWaypoint wp : WAYPOINTS) {
-					if (getRegion(wp).contains(region)) {
-						content.add(NL + "* " + wp.getDisplayName() + " (" + getFactionLink(wp.faction) + ");");
-					}
-				}
-			}
-
-			appendSortedSet(sb, content);
-		}
-		sb.append(END);
-
-		return sb;
-	}
-
-	private static StringBuilder genTemplateEntityBannerBearer() {
-		StringBuilder sb = new StringBuilder();
-
-		sb.append(TITLE).append(TEMPLATE).append("DB Mob-BannerBearer");
-		sb.append(BEGIN);
-		for (Map.Entry<Class<? extends Entity>, Entity> entityEntry : CLASS_TO_ENTITY.entrySet()) {
-			if (entityEntry.getValue() instanceof LOTRBannerBearer) {
-				sb.append(NL).append("| ");
-				sb.append(getEntityPagename(entityEntry.getKey())).append(" = ").append(TRUE);
-			}
-		}
-		sb.append(END);
-
-		return sb;
-	}
-
-	private static StringBuilder genTemplateEntityBuys() {
-		StringBuilder sb = new StringBuilder();
-
-		sb.append(TITLE).append(TEMPLATE).append("DB Mob-Buys");
-		sb.append(BEGIN);
-		for (Map.Entry<Class<? extends Entity>, Entity> entityEntry : CLASS_TO_ENTITY.entrySet()) {
-			if (entityEntry.getValue() instanceof LOTRTradeable) {
-				Collection<String> content = new TreeSet<>();
-
-				LOTRTradeEntries entries = ((LOTRTradeable) entityEntry.getValue()).getSellPool();
-				sb.append(NL).append("| ");
-				sb.append(getEntityPagename(entityEntry.getKey())).append(" = ");
-				for (LOTRTradeEntry entry : entries.tradeEntries) {
-					content.add(NL + "* " + entry.createTradeItem().getDisplayName() + ": {{Coins|" + entry.getCost() + "}};");
-				}
-
-				appendSortedSet(sb, content);
-			}
-		}
-		sb.append(END);
-
-		return sb;
-	}
-
-	private static StringBuilder genTemplateEntityFaction() {
-		StringBuilder sb = new StringBuilder();
-
-		sb.append(TITLE).append(TEMPLATE).append("DB Mob-Faction");
-		sb.append(BEGIN);
-		for (Map.Entry<Class<? extends Entity>, Entity> entityEntry : CLASS_TO_ENTITY.entrySet()) {
-			if (entityEntry.getValue() instanceof LOTREntityNPC) {
-				LOTRFaction fac = ((LOTREntityNPC) entityEntry.getValue()).getFaction();
-				sb.append(NL).append("| ");
-				sb.append(getEntityPagename(entityEntry.getKey())).append(" = ").append(getFactionLink(fac));
-			}
-		}
-		sb.append(END);
-
-		return sb;
-	}
-
-	private static StringBuilder genTemplateEntityFarmhand() {
-		StringBuilder sb = new StringBuilder();
-
-		sb.append(TITLE).append(TEMPLATE).append("DB Mob-Farmhand");
-		sb.append(BEGIN);
-		for (Map.Entry<Class<? extends Entity>, Entity> entityEntry : CLASS_TO_ENTITY.entrySet()) {
-			if (entityEntry.getValue() instanceof LOTRFarmhand) {
-				sb.append(NL).append("| ");
-				sb.append(getEntityPagename(entityEntry.getKey())).append(" = ").append(TRUE);
-			}
-		}
-		sb.append(END);
-
-		return sb;
-	}
-
-	private static StringBuilder genTemplateEntityHealth() {
-		StringBuilder sb = new StringBuilder();
-
-		sb.append(TITLE).append(TEMPLATE).append("DB Mob-Health");
-		sb.append(BEGIN);
-		for (Map.Entry<Class<? extends Entity>, Entity> entityEntry : CLASS_TO_ENTITY.entrySet()) {
-			EntityLivingBase entity = (EntityLivingBase) entityEntry.getValue();
-			sb.append(NL).append("| ");
-			sb.append(getEntityPagename(entityEntry.getKey())).append(" = ").append((int) entity.getMaxHealth());
-		}
-		sb.append(END);
-
-		return sb;
-	}
-
-	private static StringBuilder genTemplateEntityHireAlignment() {
-		StringBuilder sb = new StringBuilder();
-
-		sb.append(TITLE).append(TEMPLATE).append("DB Mob-Alignment");
-		sb.append(BEGIN);
-		next:
-		for (Class<? extends Entity> entityClass : HIREABLE) {
-			for (LOTRUnitTradeEntries entries : UNIT_TRADE_ENTRIES) {
-				for (LOTRUnitTradeEntry entry : entries.tradeEntries) {
-					if (entry.entityClass == entityClass) {
-						sb.append(NL).append("| ");
-						sb.append(getEntityPagename(entityClass)).append(" = ");
-
-						int alignment = (int) entry.alignmentRequired;
-
-						if (entry.getPledgeType() == LOTRUnitTradeEntry.PledgeType.NONE) {
-							sb.append('+').append(alignment);
-						} else {
-							sb.append('+').append(Math.max(alignment, 100));
-						}
-						continue next;
-					}
-				}
-			}
-		}
-		sb.append(END);
-
-		return sb;
-	}
-
-	private static StringBuilder genTemplateEntityHirePrice() {
-		StringBuilder sb = new StringBuilder();
-
-		sb.append(TITLE).append(TEMPLATE).append("DB Mob-Price");
-		sb.append(BEGIN);
-		for (LOTRUnitTradeEntries entries : UNIT_TRADE_ENTRIES) {
-			for (LOTRUnitTradeEntry entry : entries.tradeEntries) {
-				sb.append(NL).append("| ");
-				sb.append(getEntityPagename(entry.entityClass)).append(" = ");
-
-				int cost = getInitialCost(entry);
-
-				if (entry.getPledgeType() == LOTRUnitTradeEntry.PledgeType.NONE) {
-					sb.append("{{Coins|").append(cost * 2).append("}}");
-				} else {
-					sb.append("N/A");
-				}
-			}
-		}
-		sb.append(END);
-
-		return sb;
-	}
-
-	private static StringBuilder genTemplateEntityHirePricePledge() {
-		StringBuilder sb = new StringBuilder();
-
-		sb.append(TITLE).append(TEMPLATE).append("DB Mob-PricePledge");
-		sb.append(BEGIN);
-		for (LOTRUnitTradeEntries entries : UNIT_TRADE_ENTRIES) {
-			for (LOTRUnitTradeEntry entry : entries.tradeEntries) {
-				sb.append(NL).append("| ");
-				sb.append(getEntityPagename(entry.entityClass)).append(" = ");
-
-				int cost = getInitialCost(entry);
-
-				sb.append("{{Coins|").append(cost).append("}}");
-			}
-		}
-		sb.append(END);
-
-		return sb;
-	}
-
-	private static StringBuilder genTemplateEntityImmuneToFire() {
-		StringBuilder sb = new StringBuilder();
-
-		sb.append(TITLE).append(TEMPLATE).append("DB Mob-ImmuneToFire");
-		sb.append(BEGIN);
-		for (Map.Entry<Class<? extends Entity>, Entity> entityEntry : CLASS_TO_ENTITY.entrySet()) {
-			if (entityEntry.getValue().isImmuneToFire()) {
-				sb.append(NL).append("| ");
-				sb.append(getEntityPagename(entityEntry.getKey())).append(" = ").append(TRUE);
-			}
-		}
-		sb.append(END);
-
-		return sb;
-	}
-
-	private static StringBuilder genTemplateEntityImmuneToFrost() {
-		StringBuilder sb = new StringBuilder();
-
-		sb.append(TITLE).append(TEMPLATE).append("DB Mob-ImmuneToFrost");
-		sb.append(BEGIN);
-		for (Map.Entry<Class<? extends Entity>, Entity> entityEntry : CLASS_TO_ENTITY.entrySet()) {
-			if (entityEntry.getValue() instanceof LOTREntityNPC && ((LOTREntityNPC) entityEntry.getValue()).isImmuneToFrost) {
-				sb.append(NL).append("| ");
-				sb.append(getEntityPagename(entityEntry.getKey())).append(" = ").append(TRUE);
-			}
-		}
-		sb.append(END);
-
-		return sb;
-	}
-
-	private static StringBuilder genTemplateEntityImmuneToHeat() {
-		StringBuilder sb = new StringBuilder();
-
-		sb.append(TITLE).append(TEMPLATE).append("DB Mob-ImmuneToHeat");
-		sb.append(BEGIN);
-		for (Map.Entry<Class<? extends Entity>, Entity> entityEntry : CLASS_TO_ENTITY.entrySet()) {
-			if (entityEntry.getValue() instanceof LOTRBiomeGenNearHarad.ImmuneToHeat) {
-				sb.append(NL).append("| ");
-				sb.append(getEntityPagename(entityEntry.getKey())).append(" = ").append(TRUE);
-			}
-		}
-		sb.append(END);
-
-		return sb;
-	}
-
-	private static StringBuilder genTemplateEntityKillAchievement(EntityPlayer entityPlayer) {
-		StringBuilder sb = new StringBuilder();
-
-		sb.append(TITLE).append(TEMPLATE).append("DB Mob-Achievement");
-		sb.append(BEGIN);
-		for (Map.Entry<Class<? extends Entity>, Entity> entityEntry : CLASS_TO_ENTITY.entrySet()) {
-			if (entityEntry.getValue() instanceof LOTREntityNPC) {
-				LOTRAchievement ach = getKillAchievement((LOTREntityNPC) entityEntry.getValue());
-				sb.append(NL).append("| ");
-				sb.append(getEntityPagename(entityEntry.getKey())).append(" = ");
-				if (ach == null) {
-					sb.append("N/A");
-				} else {
-					sb.append('«').append(ach.getTitle(entityPlayer)).append('»');
-				}
-			}
-		}
-		sb.append(END);
-
-		return sb;
-	}
-
-	private static StringBuilder genTemplateEntityKillAlignment() {
-		StringBuilder sb = new StringBuilder();
-
-		sb.append(TITLE).append(TEMPLATE).append("DB Mob-Bonus");
-		sb.append(BEGIN);
-		for (Map.Entry<Class<? extends Entity>, Entity> entityEntry : CLASS_TO_ENTITY.entrySet()) {
-			if (entityEntry.getValue() instanceof LOTREntityNPC) {
-				int bonus = (int) ((LOTREntityNPC) entityEntry.getValue()).getAlignmentBonus();
-				sb.append(NL).append("| ");
-				sb.append(getEntityPagename(entityEntry.getKey())).append(" = ").append('+').append(bonus);
-			}
-		}
-		sb.append(END);
-
-		return sb;
-	}
-
-	private static StringBuilder genTemplateEntityMarriage() {
-		StringBuilder sb = new StringBuilder();
-
-		sb.append(TITLE).append(TEMPLATE).append("DB Mob-Marriage");
-		sb.append(BEGIN);
-		for (Map.Entry<Class<? extends Entity>, Entity> entityEntry : CLASS_TO_ENTITY.entrySet()) {
-			if (entityEntry.getValue().getClass() == LOTREntityDwarf.class || entityEntry.getValue().getClass() == LOTREntityHobbit.class) {
-				sb.append(NL).append("| ");
-				sb.append(getEntityPagename(entityEntry.getKey())).append(" = ").append(TRUE);
-			}
-		}
-		sb.append(END);
-
-		return sb;
-	}
-
-	private static StringBuilder genTemplateEntityMercenary() {
-		StringBuilder sb = new StringBuilder();
-
-		sb.append(TITLE).append(TEMPLATE).append("DB Mob-Mercenary");
-		sb.append(BEGIN);
-		for (Map.Entry<Class<? extends Entity>, Entity> entityEntry : CLASS_TO_ENTITY.entrySet()) {
-			if (entityEntry.getValue() instanceof LOTRMercenary) {
-				sb.append(NL).append("| ");
-				sb.append(getEntityPagename(entityEntry.getKey())).append(" = ").append(TRUE);
-			}
-		}
-		sb.append(END);
-
-		return sb;
-	}
-
-	private static StringBuilder genTemplateEntityOwner() {
-		StringBuilder sb = new StringBuilder();
-
-		sb.append(TITLE).append("DB Mob-Owner");
-		sb.append(BEGIN);
-		for (Class<? extends Entity> entityClass : HIREABLE) {
-			Map<Class<? extends Entity>, Class<? extends Entity>> owners = new HashMap<>();
-			loop:
-			for (Map.Entry<Class<? extends Entity>, Entity> ownerEntry : CLASS_TO_ENTITY.entrySet()) {
-				if (ownerEntry.getValue() instanceof LOTRUnitTradeable) {
-					LOTRUnitTradeEntries entries = ((LOTRUnitTradeable) ownerEntry.getValue()).getUnits();
-					for (LOTRUnitTradeEntry entry : entries.tradeEntries) {
-						if (entry.entityClass == entityClass) {
-							owners.put(entityClass, ownerEntry.getKey());
-							break loop;
-						}
-					}
-				}
-			}
-			if (!owners.isEmpty()) {
-				sb.append(NL).append("| ");
-				sb.append(getEntityPagename(entityClass)).append(" = ").append(getEntityLink(owners.get(entityClass)));
-			}
-		}
-		sb.append(END);
-
-		return sb;
-	}
-
-	private static StringBuilder genTemplateEntityRideableMob() {
-		StringBuilder sb = new StringBuilder();
-
-		sb.append(TITLE).append(TEMPLATE).append("DB Mob-Rideable2");
-		sb.append(BEGIN);
-		for (Map.Entry<Class<? extends Entity>, Entity> entityEntry : CLASS_TO_ENTITY.entrySet()) {
-			if (entityEntry.getValue() instanceof LOTRNPCMount) {
-				sb.append(NL).append("| ");
-				sb.append(getEntityPagename(entityEntry.getKey())).append(" = ").append(TRUE);
-			}
-		}
-		sb.append(END);
-
-		return sb;
-	}
-
-	private static StringBuilder genTemplateEntityRideableNPC() {
-		StringBuilder sb = new StringBuilder();
-
-		sb.append(TITLE).append(TEMPLATE).append(" DB Mob-Rideable1");
-		sb.append(BEGIN);
-		for (Map.Entry<Class<? extends Entity>, Entity> entityEntry : CLASS_TO_ENTITY.entrySet()) {
-			if (entityEntry.getValue() instanceof LOTREntitySpiderBase) {
-				sb.append(NL).append("| ");
-				sb.append(getEntityPagename(entityEntry.getKey())).append(" = ").append(TRUE);
-			}
-		}
-		sb.append(END);
-
-		return sb;
-	}
-
-	private static StringBuilder genTemplateEntitySells() {
-		StringBuilder sb = new StringBuilder();
-
-		sb.append(TITLE).append(TEMPLATE).append("DB Mob-Sells");
-		sb.append(BEGIN);
-		for (Map.Entry<Class<? extends Entity>, Entity> entityEntry : CLASS_TO_ENTITY.entrySet()) {
-			if (entityEntry.getValue() instanceof LOTRTradeable) {
-				Collection<String> content = new TreeSet<>();
-
-				LOTRTradeEntries entries = ((LOTRTradeable) entityEntry.getValue()).getBuyPool();
-				sb.append(NL).append("| ");
-				sb.append(getEntityPagename(entityEntry.getKey())).append(" = ");
-				for (LOTRTradeEntry entry : entries.tradeEntries) {
-					content.add(NL + "* " + entry.createTradeItem().getDisplayName() + ": {{Coins|" + entry.getCost() + "}};");
-				}
-
-				appendSortedSet(sb, content);
-			}
-		}
-		sb.append(END);
-
-		return sb;
-	}
-
-	private static StringBuilder genTemplateEntitySellsUnits() {
-		StringBuilder sb = new StringBuilder();
-
-		sb.append(TITLE).append(TEMPLATE).append("DB Mob-Units");
-		sb.append(BEGIN);
-		for (Map.Entry<Class<? extends Entity>, Entity> ownerEntry : CLASS_TO_ENTITY.entrySet()) {
-			if (ownerEntry.getValue() instanceof LOTRUnitTradeable) {
-				LOTRUnitTradeEntries entries = ((LOTRUnitTradeable) ownerEntry.getValue()).getUnits();
-				sb.append(NL).append("| ");
-				sb.append(getEntityPagename(ownerEntry.getKey())).append(" = ");
-				for (LOTRUnitTradeEntry entry : entries.tradeEntries) {
-					sb.append(NL).append("* ").append(getEntityLink(entry.entityClass));
-					if (entry.mountClass != null) {
-						sb.append(Lang.RIDER);
-					}
-					sb.append(": ");
-
-					int cost = getInitialCost(entry);
-					int alignment = (int) entry.alignmentRequired;
-
-					if (entry.getPledgeType() == LOTRUnitTradeEntry.PledgeType.NONE) {
-						sb.append("{{Coins|").append(cost * 2).append("}} ").append(Lang.NO_PLEDGE).append(", ");
-						sb.append("{{Coins|").append(cost).append("}} ").append(Lang.NEED_PLEDGE).append("; ");
-						sb.append('+').append(alignment).append(Lang.REPUTATION).append(';');
-					} else {
-						sb.append("N/A ").append(Lang.NO_PLEDGE).append(", ");
-						sb.append("{{Coins|").append(cost).append("}} ").append(Lang.NEED_PLEDGE).append("; ");
-						sb.append('+').append(Math.max(alignment, 100)).append(Lang.REPUTATION).append(';');
-					}
-				}
-			}
-		}
-		sb.append(END);
-
-		return sb;
-	}
-
-	private static StringBuilder genTemplateEntitySmith() {
-		StringBuilder sb = new StringBuilder();
-
-		sb.append(TITLE).append(TEMPLATE).append("DB Mob-Smith");
-		sb.append(BEGIN);
-		for (Map.Entry<Class<? extends Entity>, Entity> entityEntry : CLASS_TO_ENTITY.entrySet()) {
-			if (entityEntry.getValue() instanceof LOTRTradeable.Smith) {
-				sb.append(NL).append("| ");
-				sb.append(getEntityPagename(entityEntry.getKey())).append(" = ").append(TRUE);
-			}
-		}
-		sb.append(END);
-
-		return sb;
-	}
-
-	private static StringBuilder genTemplateEntitySpawn() {
-		StringBuilder sb = new StringBuilder();
-
-		sb.append(TITLE).append(TEMPLATE).append("DB Mob-Spawn");
-		sb.append(BEGIN);
-		for (Class<? extends Entity> entityClass : ENTITIES) {
-			Collection<String> content = new TreeSet<>();
-
-			Collection<LOTRBiome> spawnBiomes = new HashSet<>();
-			Collection<LOTRBiome> conquestBiomes = new HashSet<>();
-			Collection<LOTRBiome> invasionBiomes = new HashSet<>();
-			Collection<LOTRBiome> conquestIvasionBiomes = new HashSet<>();
-			next:
-			for (LOTRBiome biome : BIOMES) {
-				Collection<BiomeGenBase.SpawnListEntry> spawnEntries = new HashSet<>();
-				Collection<BiomeGenBase.SpawnListEntry> conquestEntries = new HashSet<>();
-				Collection<LOTRInvasions.InvasionSpawnEntry> invasionEntries = new HashSet<>();
-				spawnEntries.addAll(biome.getSpawnableList(EnumCreatureType.ambient));
-				spawnEntries.addAll(biome.getSpawnableList(EnumCreatureType.waterCreature));
-				spawnEntries.addAll(biome.getSpawnableList(EnumCreatureType.creature));
-				spawnEntries.addAll(biome.getSpawnableList(EnumCreatureType.monster));
-				spawnEntries.addAll(biome.getSpawnableList(LOTRBiome.creatureType_LOTRAmbient));
-				for (LOTRBiomeSpawnList.FactionContainer facContainer : getFactionContainers(biome.npcSpawnList)) {
-					if (getBaseWeight(facContainer) > 0) {
-						for (LOTRBiomeSpawnList.SpawnListContainer container : getSpawnLists(facContainer)) {
-							spawnEntries.addAll(getSpawnEntries(getSpawnList(container)));
-						}
-					} else {
-						for (LOTRBiomeSpawnList.SpawnListContainer container : getSpawnLists(facContainer)) {
-							conquestEntries.addAll(getSpawnEntries(getSpawnList(container)));
-						}
-					}
-				}
-				for (LOTRInvasions invasion : getRegisteredInvasions(biome.invasionSpawns)) {
-					invasionEntries.addAll(invasion.invasionMobs);
-				}
-				for (BiomeGenBase.SpawnListEntry entry : spawnEntries) {
-					if (entry.entityClass == entityClass) {
-						spawnBiomes.add(biome);
-						continue next;
-					}
-				}
-				for (BiomeGenBase.SpawnListEntry entry : conquestEntries) {
-					if (entry.entityClass == entityClass) {
-						conquestBiomes.add(biome);
-						conquestIvasionBiomes.add(biome);
-						break;
-					}
-				}
-				for (LOTRInvasions.InvasionSpawnEntry entry : invasionEntries) {
-					if (entry.getEntityClass() == entityClass) {
-						invasionBiomes.add(biome);
-						conquestIvasionBiomes.add(biome);
-						break;
-					}
-				}
-			}
-			sb.append(NL).append("| ");
-			sb.append(getEntityPagename(entityClass)).append(" = ");
-
-			if (Stream.of(spawnBiomes, conquestBiomes, invasionBiomes).allMatch(Collection::isEmpty)) {
-				sb.append(Lang.ENTITY_NO_BIOMES);
-			} else {
-				sb.append(Lang.ENTITY_HAS_BIOMES);
-				for (LOTRBiome biome : spawnBiomes) {
-					content.add(NL + "* " + getBiomeLink(biome) + ';');
-				}
-
-				appendSortedSet(sb, content);
-
-				for (LOTRBiome biome : conquestBiomes) {
-					if (!invasionBiomes.contains(biome)) {
-						content.add(NL + "* " + getBiomeLink(biome) + ' ' + Lang.ENTITY_CONQUEST + ';');
-					}
-				}
-
-				appendSortedSet(sb, content);
-
-				for (LOTRBiome biome : invasionBiomes) {
-					if (!conquestBiomes.contains(biome)) {
-						content.add(NL + "* " + getBiomeLink(biome) + ' ' + Lang.ENTITY_INVASION + ';');
-					}
-				}
-
-				appendSortedSet(sb, content);
-
-				for (LOTRBiome biome : conquestIvasionBiomes) {
-					if (conquestBiomes.contains(biome) && invasionBiomes.contains(biome)) {
-						content.add(NL + "* " + getBiomeLink(biome) + ' ' + Lang.ENTITY_CONQUEST_INVASION + ';');
-					}
-				}
-
-				appendSortedSet(sb, content);
-			}
-		}
-		sb.append(END);
-
-		return sb;
-	}
-
-	private static StringBuilder genTemplateEntitySpawnsInDarkness() {
-		StringBuilder sb = new StringBuilder();
-
-		sb.append(TITLE).append(TEMPLATE).append("DB Mob-SpawnsInDarkness");
-		sb.append(BEGIN);
-		for (Map.Entry<Class<? extends Entity>, Entity> entityEntry : CLASS_TO_ENTITY.entrySet()) {
-			if (entityEntry.getValue() instanceof LOTREntityNPC && isSpawnsInDarkness((LOTREntityNPC) entityEntry.getValue())) {
-				sb.append(NL).append("| ");
-				sb.append(getEntityPagename(entityEntry.getKey())).append(" = ").append(TRUE);
-			}
-		}
-		sb.append(END);
-
-		return sb;
-	}
-
-	private static StringBuilder genTemplateEntityTargetSeeker() {
-		StringBuilder sb = new StringBuilder();
-
-		sb.append(TITLE).append(TEMPLATE).append("DB Mob-TargetSeeker");
-		sb.append(BEGIN);
-		for (Map.Entry<Class<? extends Entity>, Entity> entityEntry : CLASS_TO_ENTITY.entrySet()) {
-			if (entityEntry.getValue() instanceof LOTREntityNPC && isTargetSeeker((LOTREntityNPC) entityEntry.getValue())) {
-				sb.append(NL).append("| ");
-				sb.append(getEntityPagename(entityEntry.getKey())).append(" = ").append(TRUE);
-			}
-		}
-		sb.append(END);
-
-		return sb;
-	}
-
-	private static StringBuilder genTemplateEntityTradeable() {
-		StringBuilder sb = new StringBuilder();
-
-		sb.append(TITLE).append(TEMPLATE).append("DB Mob-Tradeable");
-		sb.append(BEGIN);
-		for (Map.Entry<Class<? extends Entity>, Entity> entityEntry : CLASS_TO_ENTITY.entrySet()) {
-			if (entityEntry.getValue() instanceof LOTRTradeable) {
-				sb.append(NL).append("| ");
-				sb.append(getEntityPagename(entityEntry.getKey())).append(" = ").append(TRUE);
-			}
-		}
-		sb.append(END);
-
-		return sb;
-	}
-
-	private static StringBuilder genTemplateEntityUnitTradeable() {
-		StringBuilder sb = new StringBuilder();
-
-		sb.append(TITLE).append(TEMPLATE).append("DB Mob-UnitTradeable");
-		sb.append(BEGIN);
-		for (Map.Entry<Class<? extends Entity>, Entity> entityEntry : CLASS_TO_ENTITY.entrySet()) {
-			if (entityEntry.getValue() instanceof LOTRUnitTradeable) {
-				sb.append(NL).append("| ");
-				sb.append(getEntityPagename(entityEntry.getKey())).append(" = ").append(TRUE);
-			}
-		}
-		sb.append(END);
-
-		return sb;
-	}
-
-	private static StringBuilder genTemplateFactionBanners() {
-		StringBuilder sb = new StringBuilder();
-
-		sb.append(TITLE).append(TEMPLATE).append("DB Faction-Banners");
-		sb.append(BEGIN);
-		for (LOTRFaction fac : FACTIONS) {
-			Collection<String> content = new TreeSet<>();
-
-			sb.append(NL).append("| ");
-			sb.append(getFactionPagename(fac)).append(" = ");
-			if (fac.factionBanners.isEmpty()) {
-				sb.append(Lang.FACTION_NO_BANNERS);
-			} else {
-				sb.append(Lang.FACTION_HAS_BANNERS);
-				for (LOTRItemBanner.BannerType banner : fac.factionBanners) {
-					content.add(NL + "* " + getBannerName(banner) + ';');
-				}
-			}
-
-			appendSortedSet(sb, content);
-		}
-		sb.append(END);
-
-		return sb;
-	}
-
-	private static StringBuilder genTemplateFactionCodename() {
-		StringBuilder sb = new StringBuilder();
-
-		sb.append(TITLE).append(TEMPLATE).append("DB Faction-Codename");
-		sb.append(BEGIN);
-		for (LOTRFaction fac : FACTIONS) {
-			sb.append(NL).append("| ");
-			sb.append(getFactionPagename(fac)).append(" = ").append(fac.codeName());
-		}
-		sb.append(END);
-
-		return sb;
-	}
-
-	private static StringBuilder genTemplateFactionConquestBiomes() {
-		StringBuilder sb = new StringBuilder();
-
-		sb.append(TITLE).append(TEMPLATE).append("DB Faction-Conquest");
-		sb.append(BEGIN);
-		for (LOTRFaction fac : FACTIONS) {
-			Collection<String> content = new TreeSet<>();
-
-			Collection<LOTRBiome> conquestBiomes = new HashSet<>();
-			next:
-			for (LOTRBiome biome : BIOMES) {
-				List<LOTRBiomeSpawnList.FactionContainer> facContainers = getFactionContainers(biome.npcSpawnList);
-				if (!facContainers.isEmpty()) {
-					Collection<LOTRBiomeSpawnList.FactionContainer> conquestContainers = new HashSet<>();
-					for (LOTRBiomeSpawnList.FactionContainer facContainer : facContainers) {
-						if (getBaseWeight(facContainer) <= 0) {
-							conquestContainers.add(facContainer);
-						}
-					}
-					if (!conquestContainers.isEmpty()) {
-						for (LOTRBiomeSpawnList.FactionContainer facContainer : conquestContainers) {
-							for (LOTRBiomeSpawnList.SpawnListContainer container : getSpawnLists(facContainer)) {
-								for (LOTRSpawnEntry entry : getSpawnEntries(getSpawnList(container))) {
-									Entity entity = CLASS_TO_ENTITY.get(entry.entityClass);
-									if (entity instanceof LOTREntityNPC && ((LOTREntityNPC) entity).getFaction() == fac) {
-										conquestBiomes.add(biome);
-										continue next;
-									}
-								}
-							}
-						}
-					}
-				}
-			}
-			sb.append(NL).append("| ");
-			sb.append(getFactionPagename(fac)).append(" = ");
-			if (conquestBiomes.isEmpty()) {
-				sb.append(Lang.FACTION_NO_CONQUEST);
-			} else {
-				sb.append(Lang.FACTION_HAS_CONQUEST);
-				for (LOTRBiome biome : conquestBiomes) {
-					content.add(NL + "* " + getBiomeLink(biome) + ';');
-				}
-			}
-
-			appendSortedSet(sb, content);
-		}
-		sb.append(END);
-
-		return sb;
-	}
-
-	private static StringBuilder genTemplateFactionEnemies() {
-		StringBuilder sb = new StringBuilder();
-
-		sb.append(TITLE).append(TEMPLATE).append("DB Faction-Enemies");
-		sb.append(BEGIN);
-		for (LOTRFaction fac1 : FACTIONS) {
-			Collection<String> content = new TreeSet<>();
-
-			Collection<LOTRFaction> facEnemies = EnumSet.noneOf(LOTRFaction.class);
-			for (LOTRFaction fac2 : FACTIONS) {
-				if (fac1.isBadRelation(fac2) && fac1 != fac2) {
-					facEnemies.add(fac2);
-				}
-			}
-			sb.append(NL).append("| ");
-			sb.append(getFactionPagename(fac1)).append(" = ");
-			if (facEnemies.isEmpty()) {
-				sb.append(Lang.FACTION_NO_ENEMIES);
-			} else {
-				for (LOTRFaction fac : facEnemies) {
-					content.add(getFactionLink(fac));
-				}
-
-				StringJoiner sj = new StringJoiner(" • ");
-				for (String item : content) {
-					sj.add(item);
-				}
-
-				sb.append(sj);
-			}
-		}
-		sb.append(END);
-
-		return sb;
-	}
-
-	private static StringBuilder genTemplateFactionFriends() {
-		StringBuilder sb = new StringBuilder();
-
-		sb.append(TITLE).append(TEMPLATE).append("DB Faction-Friends");
-		sb.append(BEGIN);
-		for (LOTRFaction fac1 : FACTIONS) {
-			Collection<String> content = new TreeSet<>();
-
-			Collection<LOTRFaction> facFriends = EnumSet.noneOf(LOTRFaction.class);
-			for (LOTRFaction fac2 : FACTIONS) {
-				if (fac1.isGoodRelation(fac2) && fac1 != fac2) {
-					facFriends.add(fac2);
-				}
-			}
-			sb.append(NL).append("| ");
-			sb.append(getFactionPagename(fac1)).append(" = ");
-			if (facFriends.isEmpty()) {
-				sb.append(Lang.FACTION_NO_FRIENDS);
-			} else {
-				for (LOTRFaction fac : facFriends) {
-					content.add(getFactionLink(fac));
-				}
-
-				StringJoiner sj = new StringJoiner(" • ");
-				for (String item : content) {
-					sj.add(item);
-				}
-
-				sb.append(sj);
-			}
-		}
-		sb.append(END);
-
-		return sb;
-	}
-
-	private static StringBuilder genTemplateFactionInvasionBiomes() {
-		StringBuilder sb = new StringBuilder();
-
-		sb.append(TITLE).append(TEMPLATE).append("DB Faction-Invasions");
-		sb.append(BEGIN);
-		for (LOTRFaction fac : FACTIONS) {
-			Collection<String> content = new TreeSet<>();
-
-			Collection<LOTRBiome> invasionBiomes = new HashSet<>();
-			next:
-			for (LOTRBiome biome : BIOMES) {
-				for (LOTRInvasions invasion : getRegisteredInvasions(biome.invasionSpawns)) {
-					for (LOTRInvasions.InvasionSpawnEntry entry : invasion.invasionMobs) {
-						Entity entity = CLASS_TO_ENTITY.get(entry.getEntityClass());
-						if (entity instanceof LOTREntityNPC && fac == ((LOTREntityNPC) entity).getFaction()) {
-							invasionBiomes.add(biome);
-							continue next;
-						}
-					}
-				}
-			}
-			sb.append(NL).append("| ");
-			sb.append(getFactionPagename(fac)).append(" = ");
-			if (invasionBiomes.isEmpty()) {
-				sb.append(Lang.FACTION_NO_INVASIONS);
-			} else {
-				sb.append(Lang.FACTION_HAS_INVASION);
-				for (LOTRBiome biome : invasionBiomes) {
-					content.add(NL + "* " + getBiomeLink(biome) + ';');
-				}
-			}
-
-			appendSortedSet(sb, content);
-		}
-		sb.append(END);
-
-		return sb;
-	}
-
-	private static StringBuilder genTemplateFactionName() {
-		StringBuilder sb = new StringBuilder();
-
-		sb.append(TITLE).append(TEMPLATE).append("DB Faction-Name");
-		sb.append(BEGIN);
-		for (LOTRFaction fac : FACTIONS) {
-			sb.append(NL).append("| ");
-			sb.append(getFactionPagename(fac)).append(" = ").append(getFactionName(fac));
-		}
-		sb.append(END);
-
-		return sb;
-	}
-
-	private static StringBuilder genTemplateFactionNPCs() {
-		StringBuilder sb = new StringBuilder();
-
-		sb.append(TITLE).append(TEMPLATE).append("DB Faction-NPC");
-		sb.append(BEGIN);
-		for (LOTRFaction fac : FACTIONS) {
-			Collection<String> content = new TreeSet<>();
-
-			sb.append(NL).append("| ");
-			sb.append(getFactionPagename(fac)).append(" = ");
-			for (Map.Entry<Class<? extends Entity>, Entity> entityEntry : CLASS_TO_ENTITY.entrySet()) {
-				Entity entity = entityEntry.getValue();
-				if (entity instanceof LOTREntityNPC && ((LOTREntityNPC) entity).getFaction() == fac) {
-					content.add(NL + "* " + getEntityLink(entityEntry.getKey()) + ';');
-				}
-			}
-
-			appendSortedSet(sb, content);
-		}
-		sb.append(END);
-
-		return sb;
-	}
-
-	private static StringBuilder genTemplateFactionPledgeRank() {
-		StringBuilder sb = new StringBuilder();
-
-		sb.append(TITLE).append(TEMPLATE).append("DB Faction-Pledge");
-		sb.append(BEGIN);
-		for (LOTRFaction fac : FACTIONS) {
-			LOTRFactionRank rank = fac.getPledgeRank();
-			if (rank != null) {
-				sb.append(NL).append("| ");
-				sb.append(getFactionPagename(fac)).append(" = ").append(rank.getDisplayName());
-
-				String femRank = rank.getDisplayFullNameFem();
-				if (!femRank.contains("lotr")) {
-					sb.append('/').append(femRank);
-				}
-
-				sb.append(" (+").append((int) fac.getPledgeAlignment()).append(')');
-			}
-		}
-		sb.append(END);
-
-		return sb;
-	}
-
-	private static StringBuilder genTemplateFactionRanks() {
-		StringBuilder sb = new StringBuilder();
-
-		sb.append(TITLE).append(TEMPLATE).append("DB Faction-Ranks");
-		sb.append(BEGIN);
-		for (LOTRFaction fac : FACTIONS) {
-			sb.append(NL).append("| ");
-			sb.append(getFactionPagename(fac)).append(" = ");
-			if (getRanksSortedDescending(fac).isEmpty()) {
-				sb.append(Lang.FACTION_NO_RANKS);
-			} else {
-				sb.append(Lang.FACTION_HAS_RANKS);
-				for (LOTRFactionRank rank : getRanksSortedDescending(fac)) {
-					sb.append(NL).append("* ").append(rank.getDisplayFullName());
-
-					String femRank = rank.getDisplayFullNameFem();
-					if (!femRank.contains("lotr")) {
-						sb.append('/').append(femRank);
-					}
-
-					sb.append(" (+").append((int) rank.alignment).append(");");
-				}
-			}
-		}
-		sb.append(END);
-
-		return sb;
-	}
-
-	private static StringBuilder genTemplateFactionRegion() {
-		StringBuilder sb = new StringBuilder();
-
-		sb.append(TITLE).append(TEMPLATE).append("DB Faction-Region");
-		sb.append(BEGIN);
-		for (LOTRFaction fac : FACTIONS) {
-			sb.append(NL).append("| ");
-			sb.append(getFactionPagename(fac)).append(" = ");
-			if (fac.factionRegion == null) {
-				sb.append("N/A");
-			} else {
-				sb.append(fac.factionRegion.getRegionName());
-			}
-		}
-		sb.append(END);
-
-		return sb;
-	}
-
-	private static StringBuilder genTemplateFactionShields() {
-		StringBuilder sb = new StringBuilder();
-
-		sb.append(TITLE).append(TEMPLATE).append("DB Faction-Shields");
-		sb.append(BEGIN);
-		for (LOTRFaction fac : FACTIONS) {
-			Collection<String> content = new TreeSet<>();
-
-			Collection<LOTRShields> facShields = EnumSet.noneOf(LOTRShields.class);
-			for (LOTRShields shield : SHIELDS) {
-				if (getAlignmentFaction(shield) == fac) {
-					facShields.add(shield);
-				}
-			}
-
-			sb.append(NL).append("| ");
-			sb.append(getFactionPagename(fac)).append(" = ");
-			if (facShields.isEmpty()) {
-				sb.append(Lang.FACTION_NO_ATTRIBUTES);
-			} else {
-				sb.append(NL).append("&lt;table class=\"wikitable shields\"&gt;");
-
-				for (LOTRShields shield : facShields) {
-					content.add(NL + "&lt;tr&gt;&lt;td&gt;" + shield.getShieldName() + "&lt;/td&gt;&lt;td&gt;" + shield.getShieldDesc() + "&lt;/td&gt;&lt;td&gt;" + getShieldFilename(shield) + "&lt;/td&gt;&lt;/tr&gt;");
-				}
-
-				appendSortedSet(sb, content);
-
-				sb.append(NL).append("&lt;table&gt;");
-			}
-		}
-		sb.append(END);
-
-		return sb;
-	}
-
-	private static StringBuilder genTemplateFactionSpawnBiomes() {
-		StringBuilder sb = new StringBuilder();
-
-		sb.append(TITLE).append(TEMPLATE).append("DB Faction-Spawn");
-		sb.append(BEGIN);
-		for (LOTRFaction fac : FACTIONS) {
-			Collection<String> content = new TreeSet<>();
-
-			Collection<LOTRBiome> spawnBiomes = new HashSet<>();
-			next:
-			for (LOTRBiome biome : BIOMES) {
-				List<LOTRBiomeSpawnList.FactionContainer> facContainers = getFactionContainers(biome.npcSpawnList);
-				if (!facContainers.isEmpty()) {
-					Collection<LOTRBiomeSpawnList.FactionContainer> spawnContainers = new HashSet<>();
-					for (LOTRBiomeSpawnList.FactionContainer facContainer : facContainers) {
-						if (getBaseWeight(facContainer) > 0) {
-							spawnContainers.add(facContainer);
-						}
-					}
-					if (!spawnContainers.isEmpty()) {
-						for (LOTRBiomeSpawnList.FactionContainer facContainer : spawnContainers) {
-							for (LOTRBiomeSpawnList.SpawnListContainer container : getSpawnLists(facContainer)) {
-								for (LOTRSpawnEntry entry : getSpawnEntries(getSpawnList(container))) {
-									Entity entity = CLASS_TO_ENTITY.get(entry.entityClass);
-									if (entity instanceof LOTREntityNPC && ((LOTREntityNPC) entity).getFaction() == fac) {
-										spawnBiomes.add(biome);
-										continue next;
-									}
-								}
-							}
-						}
-					}
-				}
-			}
-			sb.append(NL).append("| ");
-			sb.append(getFactionPagename(fac)).append(" = ");
-			if (spawnBiomes.isEmpty()) {
-				sb.append(Lang.FACTION_NO_SPAWN);
-			} else {
-				sb.append(Lang.FACTION_HAS_SPAWN);
-				for (LOTRBiome biome : spawnBiomes) {
-					content.add(NL + "* " + getBiomeLink(biome) + ';');
-				}
-			}
-
-			appendSortedSet(sb, content);
-		}
-		sb.append(END);
-
-		return sb;
-	}
-
-	private static StringBuilder genTemplateFactionWarCrimes() {
-		StringBuilder sb = new StringBuilder();
-
-		sb.append(TITLE).append(TEMPLATE).append("DB Faction-WarCrimes");
-		sb.append(BEGIN);
-		sb.append(NL).append("| #default = ").append(Lang.FACTION_NO_WAR_CRIMES);
-		for (LOTRFaction fac : FACTIONS) {
-			if (fac.approvesWarCrimes) {
-				sb.append(NL).append("| ");
-				sb.append(getFactionPagename(fac)).append(" = ").append(Lang.FACTION_HAS_WAR_CRIMES);
-			}
-		}
-		sb.append(END);
-
-		return sb;
-	}
-
-	private static StringBuilder genTemplateFactionWaypoints() {
-		StringBuilder sb = new StringBuilder();
-
-		sb.append(TITLE).append(TEMPLATE).append("DB Faction-Waypoints");
-		sb.append(BEGIN);
-		for (LOTRFaction fac : FACTIONS) {
-			Collection<String> content = new TreeSet<>();
-
-			Collection<LOTRWaypoint> waypoints = EnumSet.noneOf(LOTRWaypoint.class);
-			for (LOTRWaypoint wp : WAYPOINTS) {
-				if (wp.faction == fac) {
-					waypoints.add(wp);
-				}
-			}
-			sb.append(NL).append("| ");
-			sb.append(getFactionPagename(fac)).append(" = ");
-			if (waypoints.isEmpty()) {
-				sb.append(Lang.FACTION_NO_WAYPOINTS);
-			} else {
-				sb.append(Lang.FACTION_HAS_WAYPOINTS);
-				for (LOTRWaypoint wp : waypoints) {
-					content.add(NL + "* " + wp.getDisplayName() + ';');
-				}
-			}
-
-			appendSortedSet(sb, content);
-		}
-		sb.append(END);
-
-		return sb;
-	}
-
-	private static StringBuilder genTemplateMineralBiomes() {
-		StringBuilder sb = new StringBuilder();
-
-		sb.append(TITLE).append(TEMPLATE).append("DB Mineral-Biomes");
-		sb.append(BEGIN);
-
-		for (String mineral : MINERALS) {
-			Collection<String> content = new TreeSet<>();
-
-			sb.append(NL).append("| ");
-			sb.append(mineral).append(" = ").append(Lang.MINERAL_BIOMES);
-			for (LOTRBiome biome : BIOMES) {
-				Collection<Object> oreGenerants = new HashSet<>(getBiomeSoils(biome.decorator));
-				oreGenerants.addAll(getBiomeOres(biome.decorator));
-				oreGenerants.addAll(getBiomeGems(biome.decorator));
-				for (Object oreGenerant : oreGenerants) {
-					Block block = getOreGenBlock(getOreGen(oreGenerant));
-					int meta = getOreGenMeta(getOreGen(oreGenerant));
-					if (getBlockMetaName(block, meta).equals(mineral) || getBlockName(block).equals(mineral)) {
-						content.add(NL + "* " + getBiomeLink(biome) + " (" + getOreChance(oreGenerant) + "%; Y: " + getMinHeight(oreGenerant) + '-' + getMaxHeight(oreGenerant) + ");");
-						break;
-					}
-				}
-			}
-
-			appendSortedSet(sb, content);
-		}
-
-		sb.append(END);
-
-		return sb;
-	}
-
-	private static StringBuilder genTemplateStructureBiomes() {
-		StringBuilder sb = new StringBuilder();
-
-		sb.append(TITLE).append(TEMPLATE).append("DB Structure-Biomes");
-		sb.append(BEGIN);
-
-		for (Class<?> strClass : STRUCTURES) {
-			Collection<String> content = new TreeSet<>();
-
-			sb.append(NL).append("| ");
-			sb.append(getStructureName(strClass)).append(" = ").append(Lang.STRUCTURE_BIOMES);
-			for (LOTRBiome biome : BIOMES) {
-				for (Object structure : getStructures(biome.decorator)) {
-					if (getStructureGen(structure).getClass() == strClass) {
-						content.add(NL + "* " + getBiomeLink(biome) + ';');
-						break;
-					}
-				}
-			}
-
-			appendSortedSet(sb, content);
-		}
-
-		sb.append(END);
-
-		return sb;
-	}
-
-	private static StringBuilder genTemplateTreeBiomes() {
-		StringBuilder sb = new StringBuilder();
-
-		sb.append(TITLE).append(TEMPLATE).append("DB Tree-Biomes");
-		sb.append(BEGIN);
-
-		for (LOTRTreeType tree : TREES) {
-			Collection<String> content = new TreeSet<>();
-
-			Collection<LOTRBiome> biomesTree = new HashSet<>();
-			Collection<LOTRBiome> biomesVariantTree = new HashSet<>();
-			next:
-			for (LOTRBiome biome : BIOMES) {
-				for (LOTRTreeType.WeightedTreeType weightedTreeType : getTreeTypes(biome.decorator)) {
-					if (weightedTreeType.treeType == tree) {
-						biomesTree.add(biome);
-						continue next;
-					}
-				}
-				for (Object variantBucket : getVariantList(biome.getBiomeVariantsSmall())) {
-					for (LOTRTreeType.WeightedTreeType weightedTreeType : getVariant(variantBucket).treeTypes) {
-						if (weightedTreeType.treeType == tree) {
-							biomesVariantTree.add(biome);
-							continue next;
-						}
-					}
-				}
-			}
-			sb.append(NL).append("| ");
-			sb.append(getTreeName(tree)).append(" = ");
-			if (biomesTree.isEmpty() && biomesVariantTree.isEmpty()) {
-				sb.append(Lang.TREE_NO_BIOMES);
-			} else {
-				sb.append(Lang.TREE_HAS_BIOMES);
-			}
-			for (LOTRBiome biome : biomesTree) {
-				content.add(NL + "* " + getBiomeLink(biome) + ';');
-			}
-
-			appendSortedSet(sb, content);
-
-			for (LOTRBiome biome : biomesVariantTree) {
-				content.add(NL + "* " + getBiomeLink(biome) + " (" + Lang.TREE_VARIANT_ONLY + ");");
-			}
-
-			appendSortedSet(sb, content);
-		}
-		sb.append(END);
 
 		return sb;
 	}
@@ -2167,99 +2578,234 @@ public class WikiGenerator {
 	}
 
 	private static void searchForEntities(World world) {
-		for (Class<? extends Entity> entityClass : ENTITIES) {
-			CLASS_TO_ENTITY.put(entityClass, newEntity(entityClass, world));
+		for (Class<? extends Entity> entityClass : ENTITY_CLASSES) {
+			ENTITY_CLASS_TO_ENTITY.put(entityClass, newEntity(entityClass, world));
 		}
 	}
 
-	private static void searchForHireable(Collection<Class<? extends Entity>> hireable, Iterable<LOTRUnitTradeEntries> units) {
-		for (LOTRUnitTradeEntries entries : units) {
-			for (LOTRUnitTradeEntry entry : entries.tradeEntries) {
-				hireable.add(entry.entityClass);
-			}
-		}
-	}
-
-	private static void searchForMinerals(Iterable<LOTRBiome> biomes, Collection<String> minerals) {
-		for (LOTRBiome biome : biomes) {
+	private static void searchForMinerals() {
+		for (LOTRBiome biome : BIOMES) {
 			Collection<Object> oreGenerants = new HashSet<>(getBiomeSoils(biome.decorator));
 			oreGenerants.addAll(getBiomeOres(biome.decorator));
 			oreGenerants.addAll(getBiomeGems(biome.decorator));
+
 			for (Object oreGenerant : oreGenerants) {
-				WorldGenMinable gen = getOreGen(oreGenerant);
-				Block block = getOreGenBlock(gen);
-				int meta = getOreGenMeta(gen);
+				Block block = getOreGenBlock(getOreGen(oreGenerant));
+				int meta = getOreGenMeta(getOreGen(oreGenerant));
+
 				if (block instanceof LOTRBlockOreGem || block instanceof BlockDirt || block instanceof LOTRBlockRock) {
-					minerals.add(getBlockMetaName(block, meta));
+					MINERALS.add(getMineralName(block, meta));
 				} else {
-					minerals.add(getBlockName(block));
+					MINERALS.add(getMineralName(block));
 				}
 			}
 		}
 	}
 
-	private static void searchForPagenamesBiome(Iterable<LOTRBiome> biomes, Iterable<LOTRFaction> factions) {
+	private static void searchForPagenamesBiome() {
 		next:
-		for (LOTRBiome biome : biomes) {
+		for (LOTRBiome biome : BIOMES) {
 			String preName = getBiomeName(biome);
-			for (LOTRFaction fac : factions) {
-				if (preName.equals(getFactionName(fac))) {
-					BIOME_TO_PAGE.put(preName, preName + " (" + Lang.PAGE_BIOME + ')');
+			for (LOTRFaction faction : FACTIONS) {
+				if (preName.equals(getFactionName(faction))) {
+					BIOME_TO_PAGENAME.put(biome, preName + " (" + Lang.PAGE_BIOME + ')');
 					continue next;
 				}
 			}
-			for (Class<? extends Entity> entityClass : ENTITIES) {
+			for (Class<? extends Entity> entityClass : ENTITY_CLASSES) {
 				if (preName.equals(getEntityName(entityClass))) {
-					BIOME_TO_PAGE.put(preName, preName + " (" + Lang.PAGE_BIOME + ')');
+					BIOME_TO_PAGENAME.put(biome, preName + " (" + Lang.PAGE_BIOME + ')');
 					continue next;
 				}
 			}
-			BIOME_TO_PAGE.put(preName, preName);
+			BIOME_TO_PAGENAME.put(biome, preName);
 		}
 	}
 
-	private static void searchForPagenamesEntity(Iterable<LOTRBiome> biomes, Iterable<LOTRFaction> factions) {
+	private static void searchForPagenamesEntity() {
 		next:
-		for (Class<? extends Entity> entityClass : ENTITIES) {
+		for (Class<? extends Entity> entityClass : ENTITY_CLASSES) {
 			String preName = getEntityName(entityClass);
-			for (LOTRBiome biome : biomes) {
+			for (LOTRBiome biome : BIOMES) {
 				if (preName.equals(getBiomeName(biome))) {
-					ENTITY_TO_PAGE.put(preName, preName + " (" + Lang.PAGE_ENTITY + ')');
+					ENTITY_CLASS_TO_PAGENAME.put(entityClass, preName + " (" + Lang.PAGE_ENTITY + ')');
 					continue next;
 				}
 			}
-			for (LOTRFaction fac : factions) {
-				if (preName.equals(getFactionName(fac))) {
-					ENTITY_TO_PAGE.put(preName, preName + " (" + Lang.PAGE_ENTITY + ')');
+			for (LOTRFaction faction : FACTIONS) {
+				if (preName.equals(getFactionName(faction))) {
+					ENTITY_CLASS_TO_PAGENAME.put(entityClass, preName + " (" + Lang.PAGE_ENTITY + ')');
 					continue next;
 				}
 			}
-			ENTITY_TO_PAGE.put(preName, preName);
+			ENTITY_CLASS_TO_PAGENAME.put(entityClass, preName);
 		}
 	}
 
-	private static void searchForPagenamesFaction(Iterable<LOTRBiome> biomes, Iterable<LOTRFaction> factions) {
+	private static void searchForPagenamesFaction() {
 		next:
-		for (LOTRFaction fac : factions) {
-			String preName = getFactionName(fac);
-			for (LOTRBiome biome : biomes) {
+		for (LOTRFaction faction : FACTIONS) {
+			String preName = getFactionName(faction);
+			for (LOTRBiome biome : BIOMES) {
 				if (preName.equals(getBiomeName(biome))) {
-					FACTION_TO_PAGE.put(preName, preName + " (" + Lang.PAGE_FACTION + ')');
+					FACTION_TO_PAGENAME.put(faction, preName + " (" + Lang.PAGE_FACTION + ')');
 					continue next;
 				}
 			}
-			for (Class<? extends Entity> entityClass : ENTITIES) {
+			for (Class<? extends Entity> entityClass : ENTITY_CLASSES) {
 				if (preName.equals(getEntityName(entityClass))) {
-					FACTION_TO_PAGE.put(preName, preName + " (" + Lang.PAGE_FACTION + ')');
+					FACTION_TO_PAGENAME.put(faction, preName + " (" + Lang.PAGE_FACTION + ')');
 					continue next;
 				}
 			}
-			FACTION_TO_PAGE.put(preName, preName);
+			FACTION_TO_PAGENAME.put(faction, preName);
 		}
+	}
+
+	private static String getBannerName(LOTRItemBanner.BannerType banner) {
+		return StatCollector.translateToLocal("item.lotr:banner." + banner.bannerName + ".name");
+	}
+
+	private static String getBiomeLink(LOTRBiome biome) {
+		String biomeName = getBiomeName(biome);
+		String biomePagename = getBiomePagename(biome);
+		if (biomeName.equals(biomePagename)) {
+			return "[[" + biomeName + "]]";
+		}
+		return "[[" + biomePagename + '|' + biomeName + "]]";
+	}
+
+	private static String getBiomeName(LOTRBiome biome) {
+		return StatCollector.translateToLocal("lotr.biome." + biome.biomeName + ".name");
+	}
+
+	private static String getBiomePagename(LOTRBiome biome) {
+		return BIOME_TO_PAGENAME.get(biome);
+	}
+
+	private static String getBiomeVariantName(LOTRBiomeVariant variant) {
+		return StatCollector.translateToLocal("lotr.variant." + variant.variantName + ".name");
+	}
+
+	private static String getMineralLink(Block block, int meta) {
+		return "[[" + StatCollector.translateToLocal(block.getUnlocalizedName() + '.' + meta + ".name") + "]]";
+	}
+
+	private static String getMineralLink(Block block) {
+		return "[[" + StatCollector.translateToLocal(block.getUnlocalizedName() + ".name") + "]]";
+	}
+
+	private static String getMineralName(Block block, int meta) {
+		return StatCollector.translateToLocal(block.getUnlocalizedName() + '.' + meta + ".name");
+	}
+
+	private static String getMineralName(Block block) {
+		return StatCollector.translateToLocal(block.getUnlocalizedName() + ".name");
+	}
+
+	private static String getEntityLink(Class<? extends Entity> entityClass) {
+		String entityName = getEntityName(entityClass);
+		if (entityName.contains("null")) {
+			return StatCollector.translateToLocal("entity." + EntityList.classToStringMapping.get(entityClass) + ".name");
+		}
+
+		String entityPagename = getEntityPagename(entityClass);
+		if (entityName.equals(entityPagename)) {
+			return "[[" + entityPagename + "]]";
+		}
+		return "[[" + entityPagename + '|' + entityName + "]]";
+	}
+
+	private static String getEntityName(Class<? extends Entity> entityClass) {
+		return StatCollector.translateToLocal("entity.lotr." + Config.ENTITY_CLASS_TO_NAME.get(entityClass) + ".name");
+	}
+
+	private static String getEntityPagename(Class<? extends Entity> entityClass) {
+		return ENTITY_CLASS_TO_PAGENAME.get(entityClass);
+	}
+
+	private static String getFactionLink(LOTRFaction fac) {
+		String facName = getFactionName(fac);
+		String facPagename = getFactionPagename(fac);
+		if (facName.equals(facPagename)) {
+			return "[[" + facPagename + "]]";
+		}
+		return "[[" + facPagename + '|' + facName + "]]";
+	}
+
+	private static String getFactionName(LOTRFaction fac) {
+		return StatCollector.translateToLocal("lotr.faction." + fac.codeName() + ".name");
+	}
+
+	private static String getFactionPagename(LOTRFaction fac) {
+		return FACTION_TO_PAGENAME.get(fac);
+	}
+
+	private static String getItemFilename(Item item) {
+		return "[[File:" + item.getUnlocalizedName().substring("item.lotr:".length()) + ".png|32px|link=]]";
+	}
+
+	private static String getItemName(Item item) {
+		return StatCollector.translateToLocal(item.getUnlocalizedName() + ".name");
+	}
+
+	private static String getShieldFilename(LOTRShields shield) {
+		return "[[File:Shield " + shield.name().toLowerCase(Locale.ROOT) + ".png]]";
+	}
+
+	private static String getStructureLink(Class<?> structureClass) {
+		return "[[" + StatCollector.translateToLocal("lotr.structure." + Config.STRUCTURE_CLASS_TO_NAME.get(structureClass) + ".name") + "]]";
+	}
+
+	private static String getStructurePagename(Class<?> structureClass) {
+		return StatCollector.translateToLocal("lotr.structure." + Config.STRUCTURE_CLASS_TO_NAME.get(structureClass) + ".name");
+	}
+
+	@SuppressWarnings("StreamToLoop")
+	private static Set<String> getSettlementNames(Class<? extends LOTRVillageGen> clazz) {
+		Set<String> names = Config.SETTLEMENT_CLASS_TO_NAMES.get(clazz);
+		if (names == null) {
+			return Collections.emptySet();
+		}
+		return Config.SETTLEMENT_CLASS_TO_NAMES.get(clazz).stream().map(it -> StatCollector.translateToLocal("lotr.structure." + it + ".name")).collect(Collectors.toSet());
+	}
+
+	private static String getTreePagename(LOTRTreeType tree) {
+		return StatCollector.translateToLocal("lotr.tree." + tree.name().toLowerCase(Locale.ROOT) + ".name");
+	}
+
+	private static String getTreeLink(LOTRTreeType tree) {
+		return "[[" + StatCollector.translateToLocal("lotr.tree." + tree.name().toLowerCase(Locale.ROOT) + ".name") + "]]";
+	}
+
+	private static void appendPreamble(StringBuilder sb, Collection<String> section, Lang full, Lang empty) {
+		sb.append(section.isEmpty() ? empty : full);
+	}
+
+	private static void appendPreamble(StringBuilder sb, String value, Lang full, Lang empty) {
+		if (full != null) {
+			sb.append(value.isEmpty() ? empty : full);
+		}
+	}
+
+	private static void appendSection(StringBuilder sb, Collection<String> section) {
+		for (String item : section) {
+			sb.append(NL).append("* ").append(item).append(';');
+		}
+
+		section.clear();
+	}
+
+	private static void appendSection(StringBuilder sb, String value) {
+		sb.append(value);
+	}
+
+	private static void appendDefault(StringBuilder sb, String value) {
+		sb.append(NL).append("| #default = ").append(value);
 	}
 
 	public enum Lang {
-		MOB_NO_LEGENDARY_DROP, PAGE_BIOME, PAGE_FACTION, PAGE_ENTITY, BIOME_HAS_ANIMALS, BIOME_HAS_CONQUEST, BIOME_HAS_INVASIONS, BIOME_HAS_SPAWN, BIOME_HAS_STRUCTURES, BIOME_HAS_TREES, BIOME_HAS_TREES_BIOME_ONLY, BIOME_HAS_WAYPOINTS, BIOME_NO_ACHIEVEMENT, BIOME_NO_ANIMALS, BIOME_NO_CONQUEST, BIOME_NO_INVASIONS, BIOME_NO_SPAWN, BIOME_NO_STRUCTURES, BIOME_NO_TREES, BIOME_NO_VARIANTS, BIOME_NO_WAYPOINTS, BIOME_HAS_MINERALS, BIOME_CONQUEST_ONLY, BIOME_SPAWN_ONLY, FACTION_HAS_BANNERS, FACTION_HAS_CHARS, FACTION_HAS_CONQUEST, FACTION_HAS_INVASION, FACTION_HAS_RANKS, FACTION_HAS_SPAWN, FACTION_HAS_WAR_CRIMES, FACTION_HAS_WAYPOINTS, FACTION_NO_ATTRIBUTES, FACTION_NO_BANNERS, FACTION_NO_CHARS, FACTION_NO_CONQUEST, FACTION_NO_ENEMIES, FACTION_NO_FRIENDS, FACTION_NO_INVASIONS, FACTION_NO_RANKS, FACTION_NO_SPAWN, FACTION_NO_STRUCTURES, FACTION_NO_WAR_CRIMES, FACTION_NO_WAYPOINTS, TREE_HAS_BIOMES, TREE_NO_BIOMES, TREE_VARIANT_ONLY, RIDER, NO_PLEDGE, NEED_PLEDGE, REPUTATION, MINERAL_BIOMES, STRUCTURE_BIOMES, ENTITY_NO_BIOMES, ENTITY_HAS_BIOMES, ENTITY_CONQUEST, ENTITY_INVASION, ENTITY_CONQUEST_INVASION, CATEGORY, CLIMATE_COLD, CLIMATE_COLD_AZ, CLIMATE_NORMAL, CLIMATE_NORMAL_AZ, CLIMATE_SUMMER, CLIMATE_SUMMER_AZ, CLIMATE_WINTER, CLIMATE_NULL, SEASON_WINTER, SEASON_AUTUMN, SEASON_SUMMER, SEASON_SPRING;
+		BIOME_HAS_ANIMALS, BIOME_HAS_CONQUEST_FACTIONS, BIOME_HAS_INVASION_FACTIONS, BIOME_HAS_MINERALS, BIOME_HAS_NPCS, BIOME_HAS_STRUCTURES, BIOME_HAS_TREES, BIOME_HAS_VARIANTS, BIOME_HAS_WAYPOINTS, BIOME_NO_ANIMALS, BIOME_NO_CONQUEST_FACTIONS, BIOME_NO_INVASION_FACTIONS, BIOME_NO_MINERALS, BIOME_NO_NPCS, BIOME_NO_STRUCTURES, BIOME_NO_TREES, BIOME_NO_VARIANTS, BIOME_NO_WAYPOINTS, CATEGORY, CLIMATE_COLD, CLIMATE_COLD_AZ, CLIMATE_NORMAL, CLIMATE_NORMAL_AZ, CLIMATE_NULL, CLIMATE_SUMMER, CLIMATE_SUMMER_AZ, CLIMATE_WINTER, ENTITY_CONQUEST, ENTITY_CONQUEST_INVASION, ENTITY_HAS_BIOMES, ENTITY_HAS_BUY_POOLS, ENTITY_HAS_LEGENDARY_DROP, ENTITY_HAS_OWNERS, ENTITY_HAS_SELL_UNIT_POOLS, ENTITY_HAS_STRUCTURES, ENTITY_INVASION, ENTITY_NO_BIOMES, ENTITY_NO_BUY_POOLS, ENTITY_NO_LEGENDARY_DROP, ENTITY_NO_OWNERS, ENTITY_NO_SELL_UNIT_POOLS, ENTITY_NO_STRUCTURES, FACTION_HAS_BANNERS, FACTION_HAS_CHARACTERS, FACTION_HAS_CONQUEST_BIOMES, FACTION_HAS_INVASION_BIOMES, FACTION_HAS_NPCS, FACTION_HAS_RANKS, FACTION_HAS_SPAWN_BIOMES, FACTION_HAS_WAR_CRIMES, FACTION_HAS_WAYPOINTS, FACTION_NO_ATTRIBUTES, FACTION_NO_BANNERS, FACTION_NO_CHARACTERS, FACTION_NO_CONQUEST_BIOMES, FACTION_NO_INVASION_BIOMES, FACTION_NO_NPCS, FACTION_NO_RANKS, FACTION_NO_SPAWN_BIOMES, FACTION_NO_WAR_CRIMES, FACTION_NO_WAYPOINTS, MINERAL_HAS_BIOMES, MINERAL_NO_BIOMES, NEED_PLEDGE, NO_PLEDGE, PAGE_BIOME, PAGE_ENTITY, PAGE_FACTION, REPUTATION, RIDER, SEASON_AUTUMN, SEASON_SPRING, SEASON_SUMMER, SEASON_WINTER, STRUCTURE_HAS_BIOMES, STRUCTURE_HAS_ENTITIES, STRUCTURE_NO_BIOMES, STRUCTURE_NO_ENTITIES, TREE_HAS_BIOMES, TREE_NO_BIOMES;
 
 		@Override
 		public String toString() {
@@ -2291,115 +2837,6 @@ public class WikiGenerator {
 				names.add(db.codeName);
 			}
 			return names;
-		}
-	}
-
-	@SuppressWarnings({"ProtectedInnerClass", "WeakerAccess"})
-	protected static class Utils {
-		private Utils() {
-		}
-
-		protected static void appendSortedSet(StringBuilder sb, Collection<String> content) {
-			for (String item : content) {
-				sb.append(item);
-			}
-
-			content.clear();
-		}
-
-		protected static String getBannerName(LOTRItemBanner.BannerType banner) {
-			return StatCollector.translateToLocal("item.lotr:banner." + banner.bannerName + ".name");
-		}
-
-		protected static String getBiomeLink(LOTRBiome biome) {
-			String biomeName = getBiomeName(biome);
-			String biomePagename = getBiomePagename(biome);
-			if (biomeName.equals(biomePagename)) {
-				return "[[" + biomeName + "]]";
-			}
-			return "[[" + biomePagename + '|' + biomeName + "]]";
-		}
-
-		protected static String getBiomeName(LOTRBiome biome) {
-			return StatCollector.translateToLocal("lotr.biome." + biome.biomeName + ".name");
-		}
-
-		protected static String getBiomePagename(LOTRBiome biome) {
-			return BIOME_TO_PAGE.get(getBiomeName(biome));
-		}
-
-		protected static String getBiomeVariantName(LOTRBiomeVariant variant) {
-			return StatCollector.translateToLocal("lotr.variant." + variant.variantName + ".name");
-		}
-
-		protected static String getBlockMetaName(Block block, int meta) {
-			return StatCollector.translateToLocal(block.getUnlocalizedName() + '.' + meta + ".name");
-		}
-
-		protected static String getBlockName(Block block) {
-			return StatCollector.translateToLocal(block.getUnlocalizedName() + ".name");
-		}
-
-		protected static String getEntityLink(Class<? extends Entity> entityClass) {
-			String entityName = getEntityName(entityClass);
-			String entityPagename = getEntityPagename(entityClass);
-			if (entityName.equals(entityPagename)) {
-				return "[[" + entityPagename + "]]";
-			}
-			return "[[" + entityPagename + '|' + entityName + "]]";
-		}
-
-		protected static String getEntityName(Class<? extends Entity> entityClass) {
-			return StatCollector.translateToLocal("entity.lotr." + CLASS_TO_ENTITY_NAME.get(entityClass) + ".name");
-		}
-
-		protected static String getEntityPagename(Class<? extends Entity> entityClass) {
-			return ENTITY_TO_PAGE.get(getEntityName(entityClass));
-		}
-
-		protected static String getEntityVanillaName(Class<? extends Entity> entityClass) {
-			return StatCollector.translateToLocal("entity." + EntityList.classToStringMapping.get(entityClass) + ".name");
-		}
-
-		protected static String getFactionLink(LOTRFaction fac) {
-			String facName = getFactionName(fac);
-			String facPagename = getFactionPagename(fac);
-			if (facName.equals(facPagename)) {
-				return "[[" + facPagename + "]]";
-			}
-			return "[[" + facPagename + '|' + facName + "]]";
-		}
-
-		protected static String getFactionName(LOTRFaction fac) {
-			return StatCollector.translateToLocal("lotr.faction." + fac.codeName() + ".name");
-		}
-
-		protected static String getFactionPagename(LOTRFaction fac) {
-			return FACTION_TO_PAGE.get(getFactionName(fac));
-		}
-
-		protected static String getItemFilename(Item item) {
-			return "[[File:" + item.getUnlocalizedName().substring("item.lotr:".length()) + ".png|32px|link=]]";
-		}
-
-		protected static String getItemName(Item item) {
-			return StatCollector.translateToLocal(item.getUnlocalizedName() + ".name");
-		}
-
-		protected static String getSettlementName(String nameAlias) {
-			return StatCollector.translateToLocal("lotr.structure." + nameAlias + ".name");
-		}
-
-		protected static String getShieldFilename(LOTRShields shield) {
-			return "[[File:Shield " + shield.name().toLowerCase(Locale.ROOT) + ".png]]";
-		}
-
-		protected static String getStructureName(Class<?> structureClass) {
-			return StatCollector.translateToLocal("lotr.structure." + CLASS_TO_STRUCTURE_NAME.get(structureClass) + ".name");
-		}
-
-		protected static String getTreeName(LOTRTreeType tree) {
-			return StatCollector.translateToLocal("lotr.tree." + tree.name().toLowerCase(Locale.ROOT) + ".name");
 		}
 	}
 }

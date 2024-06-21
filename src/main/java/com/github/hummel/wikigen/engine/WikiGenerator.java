@@ -51,12 +51,12 @@ import static com.github.hummel.wikigen.util.ReflectionHelper.*;
 public class WikiGenerator {
 	public static final Map<Class<? extends Entity>, Entity> ENTITY_CLASS_TO_ENTITY = new HashMap<>();
 
+	public static final Collection<Class<? extends Entity>> ENTITY_CLASSES = new HashSet<>();
+	public static final Collection<Class<? extends WorldGenerator>> STRUCTURE_CLASSES = new HashSet<>();
+
 	private static final Map<LOTRFaction, String> FACTION_TO_PAGENAME = new EnumMap<>(LOTRFaction.class);
 	private static final Map<Class<? extends Entity>, String> ENTITY_CLASS_TO_PAGENAME = new HashMap<>();
 	private static final Map<LOTRBiome, String> BIOME_TO_PAGENAME = new HashMap<>();
-
-	public static final Collection<Class<? extends Entity>> ENTITY_CLASSES = new HashSet<>();
-	public static final Collection<Class<? extends WorldGenerator>> STRUCTURE_CLASSES = new HashSet<>();
 
 	private static final Collection<Item> ITEMS = new ArrayList<>(getObjectFieldsOfType(LOTRMod.class, Item.class));
 	private static final Collection<LOTRUnitTradeEntries> UNIT_TRADE_ENTRIES = new ArrayList<>(getObjectFieldsOfType(LOTRUnitTradeEntries.class, LOTRUnitTradeEntries.class));

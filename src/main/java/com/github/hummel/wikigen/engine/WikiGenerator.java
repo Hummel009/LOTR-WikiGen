@@ -973,8 +973,12 @@ public class WikiGenerator {
 		for (LOTRBiome biome : BIOMES) {
 			data.put(biome, new TreeSet<>());
 
-			for (LOTRWaypoint wp : biome.getBiomeWaypoints().waypoints) {
-				data.get(biome).add(wp.getDisplayName() + " (" + getFactionLink(wp.faction) + ')');
+			LOTRWaypoint.Region region = biome.getBiomeWaypoints();
+
+			if (region != null) {
+				for (LOTRWaypoint wp : region.waypoints) {
+					data.get(biome).add(wp.getDisplayName() + " (" + getFactionLink(wp.faction) + ')');
+				}
 			}
 		}
 

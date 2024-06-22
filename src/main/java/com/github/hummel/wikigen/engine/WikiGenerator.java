@@ -649,7 +649,7 @@ public class WikiGenerator {
 	}
 
 	private static StringBuilder genTemplateBiomeMinerals() {
-		Map<LOTRBiome, Set<String>> data = new HashMap<>();
+		Map<LOTRBiome, Set<MineralInfo>> data = new HashMap<>();
 
 		for (LOTRBiome biome : BIOMES) {
 			Collection<Object> oreGenerants = new HashSet<>(getBiomeSoils(biome.decorator));
@@ -670,7 +670,7 @@ public class WikiGenerator {
 				String stats = "(" + getOreChance(oreGenerant) + "%; Y: " + getMinHeight(oreGenerant) + '-' + getMaxHeight(oreGenerant) + ')';
 
 				data.computeIfAbsent(biome, s -> new TreeSet<>());
-				data.get(biome).add(blockLink + ' ' + stats);
+				data.get(biome).add(new MineralInfo(blockLink, ' ' + stats));
 			}
 		}
 
@@ -681,12 +681,12 @@ public class WikiGenerator {
 
 		appendDefault(sb, Lang.BIOME_NO_MINERALS.toString());
 
-		for (Map.Entry<LOTRBiome, Set<String>> entry : data.entrySet()) {
+		for (Map.Entry<LOTRBiome, Set<MineralInfo>> entry : data.entrySet()) {
 			sb.append(NL).append("| ");
 			sb.append(getBiomePagename(entry.getKey())).append(" = ");
 			sb.append(Lang.BIOME_HAS_MINERALS);
 
-			appendSection(sb, entry.getValue());
+			appendSection(sb, MineralInfo.toStringSet(entry.getValue()));
 		}
 
 		sb.append(END);
@@ -2384,7 +2384,7 @@ public class WikiGenerator {
 	}
 
 	private static StringBuilder genTemplateMineralBiomes() {
-		Map<String, Set<String>> data = new HashMap<>();
+		Map<String, Set<MineralInfo>> data = new HashMap<>();
 
 		for (LOTRBiome biome : BIOMES) {
 			Collection<Object> oreGenerants = new HashSet<>(getBiomeSoils(biome.decorator));
@@ -2405,7 +2405,7 @@ public class WikiGenerator {
 				String stats = "(" + getOreChance(oreGenerant) + "%; Y: " + getMinHeight(oreGenerant) + '-' + getMaxHeight(oreGenerant) + ')';
 
 				data.computeIfAbsent(blockLink, s -> new TreeSet<>());
-				data.get(blockLink).add(getBiomeLink(biome) + ' ' + stats);
+				data.get(blockLink).add(new MineralInfo(getBiomeLink(biome), ' ' + stats));
 			}
 		}
 
@@ -2416,12 +2416,12 @@ public class WikiGenerator {
 
 		appendDefault(sb, Lang.MINERAL_NO_BIOMES.toString());
 
-		for (Map.Entry<String, Set<String>> entry : data.entrySet()) {
+		for (Map.Entry<String, Set<MineralInfo>> entry : data.entrySet()) {
 			sb.append(NL).append("| ");
 			sb.append(entry.getKey()).append(" = ");
 			sb.append(Lang.MINERAL_HAS_BIOMES);
 
-			appendSection(sb, entry.getValue());
+			appendSection(sb, MineralInfo.toStringSet(entry.getValue()));
 		}
 
 		sb.append(END);
@@ -2846,6 +2846,51 @@ public class WikiGenerator {
 
 	private static void appendDefault(StringBuilder sb, String value) {
 		sb.append(NL).append("| #default = ").append(value);
+	}
+
+	private static class MineralInfo implements Comparable<MineralInfo> {
+		private final String valuableData;
+		private final String skippableData;
+
+		private MineralInfo(String valuableData, String skippableData) {
+			this.valuableData = valuableData;
+			this.skippableData = skippableData;
+		}
+
+		public static Collection<String> toStringSet(Iterable<MineralInfo> value) {
+			Collection<String> set = new TreeSet<>();
+			for (MineralInfo mineralInfo : value) {
+				set.add(mineralInfo.toString());
+			}
+			return set;
+		}
+
+		@Override
+		public boolean equals(Object o) {
+			if (this == o) {
+				return true;
+			}
+			if (o == null || getClass() != o.getClass()) {
+				return false;
+			}
+			MineralInfo that = (MineralInfo) o;
+			return Objects.equals(valuableData, that.valuableData);
+		}
+
+		@Override
+		public int hashCode() {
+			return Objects.hash(valuableData);
+		}
+
+		@Override
+		public String toString() {
+			return valuableData + skippableData;
+		}
+
+		@Override
+		public int compareTo(MineralInfo o) {
+			return valuableData.compareTo(o.valuableData);
+		}
 	}
 
 	public enum Lang {

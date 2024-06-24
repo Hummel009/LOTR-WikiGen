@@ -817,9 +817,7 @@ public class WikiGenerator {
 
 			for (LOTRVillageGen settlement : getVillages(biome.decorator)) {
 				if (getSpawnChance(settlement) != 0.0f) {
-					Set<String> names = getSettlementNames(settlement.getClass());
-					data.computeIfAbsent(biome, s -> new TreeSet<>());
-					data.get(biome).addAll(names);
+					data.get(biome).add(getSettlementName(settlement.getClass()));
 				}
 			}
 		}
@@ -2815,13 +2813,8 @@ public class WikiGenerator {
 		return StatCollector.translateToLocal("lotr.structure." + Config.STRUCTURE_CLASS_TO_NAME.get(structureClass) + ".name");
 	}
 
-	@SuppressWarnings("StreamToLoop")
-	private static Set<String> getSettlementNames(Class<? extends LOTRVillageGen> clazz) {
-		Set<String> names = Config.SETTLEMENT_CLASS_TO_NAMES.get(clazz);
-		if (names == null) {
-			return Collections.emptySet();
-		}
-		return Config.SETTLEMENT_CLASS_TO_NAMES.get(clazz).stream().map(it -> StatCollector.translateToLocal("lotr.structure." + it + ".name")).collect(Collectors.toSet());
+	private static String getSettlementName(Class<? extends LOTRVillageGen> clazz) {
+		return StatCollector.translateToLocal("lotr.structure." + clazz.getSimpleName().replace("LOTR", "").replace("Gen", "") + ".name");
 	}
 
 	private static String getTreePagename(LOTRTreeType tree) {

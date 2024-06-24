@@ -110,6 +110,18 @@ tile.dirt.1.name=Песчаная грязь
 tile.lotr:oreMorgulIron.name=Моргульская руда железа
 tile.lotr:oreGulduril.name=Руда гулдурила
 
+lotr.structure.VillageTauredain.name=Поселение Таурэтрим
+lotr.structure.VillageGulfHarad.name=Поселение Копазула
+lotr.structure.VillageGondor.name=Поселение Гондора
+lotr.structure.VillageUmbar.name=Поселение Умбара
+lotr.structure.VillageRohan.name=Поселение Рохана
+lotr.structure.VillageHaradNomad.name=Поселение кочевников
+lotr.structure.VillageHarnedor.name=Поселение Харнедора
+lotr.structure.VillageDunedain.name=Поселение дунэдайн
+lotr.structure.VillageSouthron.name=Поселение Ближнего Харада
+lotr.structure.VillageRhun.name=Поселение Рудэля
+lotr.structure.VillageBree.name=Поселение Бри
+
 lotr.tree.acacia.name=Акация
 lotr.tree.acacia_dead.name=Мёртвая акация
 lotr.tree.almond.name=Миндальное дерево

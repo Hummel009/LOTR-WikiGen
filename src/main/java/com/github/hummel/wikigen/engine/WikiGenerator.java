@@ -47,7 +47,6 @@ import java.util.stream.Stream;
 
 import static com.github.hummel.wikigen.util.ReflectionHelper.*;
 
-@SuppressWarnings("StreamToLoop")
 public class WikiGenerator {
 	public static final Map<Class<? extends Entity>, Entity> ENTITY_CLASS_TO_ENTITY = new HashMap<>();
 

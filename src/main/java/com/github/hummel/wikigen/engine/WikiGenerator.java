@@ -1578,6 +1578,7 @@ public class WikiGenerator {
 		for (Map.Entry<Class<? extends Entity>, Set<String>> entry : data.entrySet()) {
 			sb.append(NL).append("| ");
 			sb.append(getEntityPagename(entry.getKey())).append(" = ");
+			sb.append(Lang.ENTITY_HAS_OWNERS);
 
 			appendSection(sb, entry.getValue());
 		}

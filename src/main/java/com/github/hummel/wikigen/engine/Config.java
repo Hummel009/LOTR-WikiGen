@@ -845,7 +845,6 @@ public class Config {
 
 	private static void genStructureInfo(Class<? extends WorldGenerator> clazz, String name) {
 		STRUCTURE_CLASS_TO_NAME.put(clazz, name);
-		WikiGenerator.STRUCTURE_CLASSES.add(clazz);
 	}
 
 	private static void genStructureInfo(int i, Class<? extends WorldGenerator> clazz, String name, int egg1, int egg2) {

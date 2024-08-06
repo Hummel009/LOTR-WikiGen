@@ -51,7 +51,6 @@ public class WikiGenerator {
 	public static final Map<Class<? extends Entity>, Entity> ENTITY_CLASS_TO_ENTITY = new HashMap<>();
 
 	public static final Collection<Class<? extends Entity>> ENTITY_CLASSES = new HashSet<>();
-	public static final Collection<Class<? extends WorldGenerator>> STRUCTURE_CLASSES = new HashSet<>();
 
 	private static final Map<LOTRFaction, String> FACTION_TO_PAGENAME = new EnumMap<>(LOTRFaction.class);
 	private static final Map<Class<? extends Entity>, String> ENTITY_CLASS_TO_PAGENAME = new HashMap<>();
@@ -70,6 +69,7 @@ public class WikiGenerator {
 	private static final Iterable<LOTRShields> SHIELDS = EnumSet.allOf(LOTRShields.class);
 
 	private static final Collection<String> MINERALS = new HashSet<>();
+	private static final Collection<Class<? extends WorldGenerator>> STRUCTURE_CLASSES = new HashSet<>();
 
 	private static final String BEGIN = "</title>\n<ns>10</ns>\n<revision>\n<text>&lt;includeonly&gt;{{#switch: {{{1}}}";
 	private static final String END = "\n}}&lt;/includeonly&gt;&lt;noinclude&gt;[[" + Lang.CATEGORY + "]]&lt;/noinclude&gt;</text>\n</revision>\n</page>\n";
@@ -142,6 +142,7 @@ public class WikiGenerator {
 					Collection<Runnable> runnables = new HashSet<>();
 
 					runnables.add(WikiGenerator::searchForMinerals);
+					runnables.add(WikiGenerator::searchForStructures);
 					runnables.add(WikiGenerator::searchForPagenamesEntity);
 					runnables.add(WikiGenerator::searchForPagenamesBiome);
 					runnables.add(WikiGenerator::searchForPagenamesFaction);
@@ -1732,6 +1733,7 @@ public class WikiGenerator {
 		return sb;
 	}
 
+	@SuppressWarnings("InstanceofIncompatibleInterface")
 	private static StringBuilder genTemplateEntitySmith() {
 		Map<Class<? extends Entity>, String> data = new HashMap<>();
 
@@ -2654,6 +2656,14 @@ public class WikiGenerator {
 		}
 	}
 
+	private static void searchForStructures() {
+		for (LOTRBiome biome : BIOMES) {
+			for (Object structure : getStructures(biome.decorator)) {
+				STRUCTURE_CLASSES.add((Class<? extends WorldGenerator>) getStructureGen(structure).getClass());
+			}
+		}
+	}
+
 	private static void searchForPagenamesBiome() {
 		next:
 		for (LOTRBiome biome : BIOMES) {
@@ -2850,7 +2860,7 @@ public class WikiGenerator {
 			this.skippableData = skippableData;
 		}
 
-		public static Collection<String> toStringSet(Iterable<MineralInfo> value) {
+		private static Collection<String> toStringSet(Iterable<MineralInfo> value) {
 			Collection<String> set = new TreeSet<>();
 			for (MineralInfo mineralInfo : value) {
 				set.add(mineralInfo.toString());

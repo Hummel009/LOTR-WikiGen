@@ -817,6 +817,7 @@ public class WikiGenerator {
 
 			for (LOTRVillageGen settlement : getVillages(biome.decorator)) {
 				if (getSpawnChance(settlement) != 0.0f) {
+					data.computeIfAbsent(biome, s -> new TreeSet<>());
 					data.get(biome).add(getSettlementName(settlement.getClass()));
 				}
 			}

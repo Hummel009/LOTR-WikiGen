@@ -1730,7 +1730,7 @@ public class WikiGenerator {
 
 		StringBuilder sb = new StringBuilder();
 
-		sb.append(TITLE).append(TEMPLATE).append("DB Entity-SellUnitPools");
+		sb.append(TITLE).append(TEMPLATE).append("DB Entity-SellsUnitPool");
 		sb.append(BEGIN);
 
 		appendDefault(sb, Lang.ENTITY_NO_SELLS_UNIT_POOL.toString());

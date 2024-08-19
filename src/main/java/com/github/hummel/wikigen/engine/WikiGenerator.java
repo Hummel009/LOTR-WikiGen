@@ -103,6 +103,7 @@ public class WikiGenerator {
 	private WikiGenerator() {
 	}
 
+	@SuppressWarnings("JoinDeclarationAndAssignmentJava")
 	public static void generate(Type type, World world, EntityPlayer entityPlayer) {
 		long time = System.nanoTime();
 
@@ -151,6 +152,7 @@ public class WikiGenerator {
 					runnables.parallelStream().forEach(Runnable::run);
 
 					Collection<Supplier<StringBuilder>> suppliers = new HashSet<>();
+					List<StringBuilder> results;
 
 					Set<String> existingPages = getExistingPages();
 					Collection<String> neededPages = new HashSet<>();
@@ -162,8 +164,14 @@ public class WikiGenerator {
 					suppliers.add(() -> addPagesTrees(neededPages, existingPages));
 					suppliers.add(() -> addPagesStructures(neededPages, existingPages));
 
-					suppliers.parallelStream().map(Supplier::get).forEach(sb::append);
+					results = suppliers.parallelStream().map(Supplier::get).collect(Collectors.toList());
 					suppliers.clear();
+
+					for (StringBuilder stringBuilder : results) {
+						sb.append(stringBuilder);
+					}
+
+					results.clear();
 
 					markPagesForRemoval(neededPages, existingPages);
 
@@ -206,7 +214,7 @@ public class WikiGenerator {
 
 					suppliers.add(WikiGenerator::genTemplateEntityBannerBearer);
 					suppliers.add(WikiGenerator::genTemplateEntityBiomes);
-					suppliers.add(WikiGenerator::genTemplateEntityBuyPools);
+					suppliers.add(WikiGenerator::genTemplateEntityBuysPool);
 					suppliers.add(WikiGenerator::genTemplateEntityFaction);
 					suppliers.add(WikiGenerator::genTemplateEntityFarmhand);
 					suppliers.add(WikiGenerator::genTemplateEntityHealth);
@@ -224,16 +232,22 @@ public class WikiGenerator {
 					suppliers.add(WikiGenerator::genTemplateEntityOwners);
 					suppliers.add(WikiGenerator::genTemplateEntityRideableAnimal);
 					suppliers.add(WikiGenerator::genTemplateEntityRideableNPC);
-					suppliers.add(WikiGenerator::genTemplateEntitySellPools);
-					suppliers.add(WikiGenerator::genTemplateEntitySellUnitPools);
+					suppliers.add(WikiGenerator::genTemplateEntitySellsPool);
+					suppliers.add(WikiGenerator::genTemplateEntitySellsUnitPool);
 					suppliers.add(WikiGenerator::genTemplateEntitySmith);
 					suppliers.add(WikiGenerator::genTemplateEntitySpawnsInDarkness);
 					suppliers.add(WikiGenerator::genTemplateEntityTargetSeeker);
 					suppliers.add(WikiGenerator::genTemplateEntityTradeable);
 					suppliers.add(WikiGenerator::genTemplateEntityUnitTradeable);
 
-					suppliers.parallelStream().map(Supplier::get).forEach(sb::append);
+					results = suppliers.parallelStream().map(Supplier::get).collect(Collectors.toList());
 					suppliers.clear();
+
+					for (StringBuilder stringBuilder : results) {
+						sb.append(stringBuilder);
+					}
+
+					results.clear();
 
 					sb.append("</mediawiki>");
 
@@ -558,6 +572,8 @@ public class WikiGenerator {
 		sb.append(TITLE).append(TEMPLATE).append("DB Biome-Bandits");
 		sb.append(BEGIN);
 
+		appendDefault(sb, "UNKNOWN");
+
 		for (Map.Entry<LOTRBiome, String> entry : data.entrySet()) {
 			sb.append(NL).append("| ");
 			sb.append(getBiomePagename(entry.getKey())).append(" = ");
@@ -733,6 +749,8 @@ public class WikiGenerator {
 
 		sb.append(TITLE).append(TEMPLATE).append("DB Biome-Name");
 		sb.append(BEGIN);
+
+		appendDefault(sb, "UNKNOWN");
 
 		for (Map.Entry<LOTRBiome, String> entry : data.entrySet()) {
 			sb.append(NL).append("| ");
@@ -1119,7 +1137,7 @@ public class WikiGenerator {
 		return sb;
 	}
 
-	private static StringBuilder genTemplateEntityBuyPools() {
+	private static StringBuilder genTemplateEntityBuysPool() {
 		Map<Class<? extends Entity>, Set<String>> data = new HashMap<>();
 
 		for (Map.Entry<Class<? extends Entity>, Entity> entityEntry : ENTITY_CLASS_TO_ENTITY.entrySet()) {
@@ -1128,22 +1146,22 @@ public class WikiGenerator {
 
 				for (LOTRTradeEntry entry : tradeable.getSellPool().tradeEntries) {
 					data.computeIfAbsent(entityEntry.getKey(), s -> new TreeSet<>());
-					data.get(entityEntry.getKey()).add(entry.createTradeItem().getDisplayName() + ": {{Coins|" + entry.getCost() + "}};");
+					data.get(entityEntry.getKey()).add(entry.createTradeItem().getDisplayName() + ": {{Coins|" + entry.getCost() + "}}");
 				}
 			}
 		}
 
 		StringBuilder sb = new StringBuilder();
 
-		sb.append(TITLE).append(TEMPLATE).append("DB Entity-BuyPools");
+		sb.append(TITLE).append(TEMPLATE).append("DB Entity-BuysPool");
 		sb.append(BEGIN);
 
-		appendDefault(sb, Lang.ENTITY_NO_BUY_POOLS.toString());
+		appendDefault(sb, Lang.ENTITY_NO_BUYS_POOL.toString());
 
 		for (Map.Entry<Class<? extends Entity>, Set<String>> entry : data.entrySet()) {
 			sb.append(NL).append("| ");
 			sb.append(getEntityPagename(entry.getKey())).append(" = ");
-			sb.append(Lang.ENTITY_HAS_BUY_POOLS);
+			sb.append(Lang.ENTITY_HAS_BUYS_POOL);
 
 			appendSection(sb, entry.getValue());
 		}
@@ -1332,11 +1350,7 @@ public class WikiGenerator {
 			for (LOTRUnitTradeEntry entry : entries.tradeEntries) {
 				int cost = getInitialCost(entry);
 
-				if (entry.getPledgeType() == LOTRUnitTradeEntry.PledgeType.NONE) {
-					data.put(entry.entityClass, "{{Coins|" + cost + "}}");
-				} else {
-					data.put(entry.entityClass, N_A);
-				}
+				data.put(entry.entityClass, "{{Coins|" + cost + "}}");
 			}
 		}
 
@@ -1645,7 +1659,7 @@ public class WikiGenerator {
 		return sb;
 	}
 
-	private static StringBuilder genTemplateEntitySellPools() {
+	private static StringBuilder genTemplateEntitySellsPool() {
 		Map<Class<? extends Entity>, Set<String>> data = new HashMap<>();
 
 		for (Map.Entry<Class<? extends Entity>, Entity> entityEntry : ENTITY_CLASS_TO_ENTITY.entrySet()) {
@@ -1654,22 +1668,22 @@ public class WikiGenerator {
 
 				for (LOTRTradeEntry entry : tradeable.getBuyPool().tradeEntries) {
 					data.computeIfAbsent(entityEntry.getKey(), s -> new TreeSet<>());
-					data.get(entityEntry.getKey()).add(entry.createTradeItem().getDisplayName() + ": {{Coins|" + entry.getCost() + "}};");
+					data.get(entityEntry.getKey()).add(entry.createTradeItem().getDisplayName() + ": {{Coins|" + entry.getCost() + "}}");
 				}
 			}
 		}
 
 		StringBuilder sb = new StringBuilder();
 
-		sb.append(TITLE).append(TEMPLATE).append("DB Entity-SellPools");
+		sb.append(TITLE).append(TEMPLATE).append("DB Entity-SellsPool");
 		sb.append(BEGIN);
 
-		appendDefault(sb, Lang.ENTITY_NO_SELL_POOLS.toString());
+		appendDefault(sb, Lang.ENTITY_NO_SELLS_POOL.toString());
 
 		for (Map.Entry<Class<? extends Entity>, Set<String>> entry : data.entrySet()) {
 			sb.append(NL).append("| ");
 			sb.append(getEntityPagename(entry.getKey())).append(" = ");
-			sb.append(Lang.ENTITY_HAS_SELL_POOLS);
+			sb.append(Lang.ENTITY_HAS_SELLS_POOL);
 
 			appendSection(sb, entry.getValue());
 		}
@@ -1679,7 +1693,7 @@ public class WikiGenerator {
 		return sb;
 	}
 
-	private static StringBuilder genTemplateEntitySellUnitPools() {
+	private static StringBuilder genTemplateEntitySellsUnitPool() {
 		Map<Class<? extends Entity>, List<String>> data = new HashMap<>();
 
 		for (Map.Entry<Class<? extends Entity>, Entity> entityEntry : ENTITY_CLASS_TO_ENTITY.entrySet()) {
@@ -1701,11 +1715,11 @@ public class WikiGenerator {
 					if (entry.getPledgeType() == LOTRUnitTradeEntry.PledgeType.NONE) {
 						sb.append("{{Coins|").append(cost * 2).append("}} ").append(Lang.NO_PLEDGE).append(", ");
 						sb.append("{{Coins|").append(cost).append("}} ").append(Lang.NEED_PLEDGE).append("; ");
-						sb.append('+').append(alignment).append(' ').append(Lang.REPUTATION).append(';');
+						sb.append('+').append(alignment).append(' ').append(Lang.REPUTATION);
 					} else {
 						sb.append("N/A ").append(Lang.NO_PLEDGE).append(", ");
 						sb.append("{{Coins|").append(cost).append("}} ").append(Lang.NEED_PLEDGE).append("; ");
-						sb.append('+').append(Math.max(alignment, 100)).append(' ').append(Lang.REPUTATION).append(';');
+						sb.append('+').append(Math.max(alignment, 100)).append(' ').append(Lang.REPUTATION);
 					}
 
 					data.computeIfAbsent(entityEntry.getKey(), s -> new ArrayList<>());
@@ -1719,12 +1733,12 @@ public class WikiGenerator {
 		sb.append(TITLE).append(TEMPLATE).append("DB Entity-SellUnitPools");
 		sb.append(BEGIN);
 
-		appendDefault(sb, Lang.ENTITY_NO_SELL_UNIT_POOLS.toString());
+		appendDefault(sb, Lang.ENTITY_NO_SELLS_UNIT_POOL.toString());
 
 		for (Map.Entry<Class<? extends Entity>, List<String>> entry : data.entrySet()) {
 			sb.append(NL).append("| ");
 			sb.append(getEntityPagename(entry.getKey())).append(" = ");
-			sb.append(Lang.ENTITY_HAS_SELL_UNIT_POOLS);
+			sb.append(Lang.ENTITY_HAS_SELLS_UNIT_POOL);
 
 			appendSection(sb, entry.getValue());
 		}
@@ -1823,7 +1837,7 @@ public class WikiGenerator {
 		Map<Class<? extends Entity>, String> data = new HashMap<>();
 
 		for (Map.Entry<Class<? extends Entity>, Entity> entityEntry : ENTITY_CLASS_TO_ENTITY.entrySet()) {
-			if (entityEntry.getValue() instanceof LOTRTradeable) {
+			if (entityEntry.getValue() instanceof LOTRTradeable && !(entityEntry.getValue() instanceof LOTRTradeable.Smith)) {
 				data.put(entityEntry.getKey(), TRUE);
 			}
 		}
@@ -2088,6 +2102,8 @@ public class WikiGenerator {
 
 		sb.append(TITLE).append(TEMPLATE).append("DB Faction-Name");
 		sb.append(BEGIN);
+
+		appendDefault(sb, "UNKNOWN");
 
 		for (Map.Entry<LOTRFaction, String> entry : data.entrySet()) {
 			sb.append(NL).append("| ");
@@ -2898,7 +2914,7 @@ public class WikiGenerator {
 	}
 
 	public enum Lang {
-		BIOME_HAS_ANIMALS, BIOME_HAS_CONQUEST_FACTIONS, BIOME_HAS_INVASION_FACTIONS, BIOME_HAS_MINERALS, BIOME_HAS_NPCS, BIOME_HAS_STRUCTURES, BIOME_HAS_TREES, BIOME_HAS_VARIANTS, BIOME_HAS_WAYPOINTS, BIOME_NO_ANIMALS, BIOME_NO_CONQUEST_FACTIONS, BIOME_NO_INVASION_FACTIONS, BIOME_NO_MINERALS, BIOME_NO_NPCS, BIOME_NO_STRUCTURES, BIOME_NO_TREES, BIOME_NO_VARIANTS, BIOME_NO_WAYPOINTS, CATEGORY, CLIMATE_COLD, CLIMATE_COLD_AZ, CLIMATE_NORMAL, CLIMATE_NORMAL_AZ, CLIMATE_NULL, CLIMATE_SUMMER, CLIMATE_SUMMER_AZ, CLIMATE_WINTER, ENTITY_CONQUEST, ENTITY_CONQUEST_INVASION, ENTITY_HAS_BIOMES, ENTITY_HAS_BUY_POOLS, ENTITY_HAS_LEGENDARY_DROP, ENTITY_HAS_OWNERS, ENTITY_HAS_SELL_UNIT_POOLS, ENTITY_HAS_STRUCTURES, ENTITY_INVASION, ENTITY_NO_BIOMES, ENTITY_NO_BUY_POOLS, ENTITY_NO_LEGENDARY_DROP, ENTITY_NO_OWNERS, ENTITY_NO_SELL_UNIT_POOLS, ENTITY_NO_STRUCTURES, FACTION_HAS_BANNERS, FACTION_HAS_CHARACTERS, FACTION_HAS_CONQUEST_BIOMES, FACTION_HAS_INVASION_BIOMES, FACTION_HAS_NPCS, FACTION_HAS_RANKS, FACTION_HAS_SPAWN_BIOMES, FACTION_HAS_WAR_CRIMES, FACTION_HAS_WAYPOINTS, FACTION_NO_ATTRIBUTES, FACTION_HAS_ATTRIBUTES, FACTION_NO_BANNERS, FACTION_NO_CHARACTERS, FACTION_NO_CONQUEST_BIOMES, FACTION_NO_INVASION_BIOMES, FACTION_NO_NPCS, FACTION_NO_RANKS, FACTION_NO_SPAWN_BIOMES, FACTION_NO_WAR_CRIMES, FACTION_NO_WAYPOINTS, MINERAL_HAS_BIOMES, MINERAL_NO_BIOMES, NEED_PLEDGE, NO_PLEDGE, PAGE_BIOME, PAGE_ENTITY, PAGE_FACTION, REPUTATION, RIDER, SEASON_AUTUMN, SEASON_SPRING, SEASON_SUMMER, SEASON_WINTER, STRUCTURE_HAS_BIOMES, STRUCTURE_HAS_ENTITIES, STRUCTURE_NO_BIOMES, STRUCTURE_NO_ENTITIES, TREE_HAS_BIOMES, TREE_NO_BIOMES, FACTION_NO_FRIENDS, FACTION_NO_ENEMIES, ENTITY_HAS_SELL_POOLS, ENTITY_NO_SELL_POOLS;
+		BIOME_HAS_ANIMALS, BIOME_HAS_CONQUEST_FACTIONS, BIOME_HAS_INVASION_FACTIONS, BIOME_HAS_MINERALS, BIOME_HAS_NPCS, BIOME_HAS_STRUCTURES, BIOME_HAS_TREES, BIOME_HAS_VARIANTS, BIOME_HAS_WAYPOINTS, BIOME_NO_ANIMALS, BIOME_NO_CONQUEST_FACTIONS, BIOME_NO_INVASION_FACTIONS, BIOME_NO_MINERALS, BIOME_NO_NPCS, BIOME_NO_STRUCTURES, BIOME_NO_TREES, BIOME_NO_VARIANTS, BIOME_NO_WAYPOINTS, CATEGORY, CLIMATE_COLD, CLIMATE_COLD_AZ, CLIMATE_NORMAL, CLIMATE_NORMAL_AZ, CLIMATE_NULL, CLIMATE_SUMMER, CLIMATE_SUMMER_AZ, CLIMATE_WINTER, ENTITY_CONQUEST, ENTITY_CONQUEST_INVASION, ENTITY_HAS_BIOMES, ENTITY_HAS_BUYS_POOL, ENTITY_HAS_LEGENDARY_DROP, ENTITY_HAS_OWNERS, ENTITY_HAS_SELLS_UNIT_POOL, ENTITY_HAS_STRUCTURES, ENTITY_INVASION, ENTITY_NO_BIOMES, ENTITY_NO_BUYS_POOL, ENTITY_NO_LEGENDARY_DROP, ENTITY_NO_OWNERS, ENTITY_NO_SELLS_UNIT_POOL, ENTITY_NO_STRUCTURES, FACTION_HAS_BANNERS, FACTION_HAS_CHARACTERS, FACTION_HAS_CONQUEST_BIOMES, FACTION_HAS_INVASION_BIOMES, FACTION_HAS_NPCS, FACTION_HAS_RANKS, FACTION_HAS_SPAWN_BIOMES, FACTION_HAS_WAR_CRIMES, FACTION_HAS_WAYPOINTS, FACTION_NO_ATTRIBUTES, FACTION_HAS_ATTRIBUTES, FACTION_NO_BANNERS, FACTION_NO_CHARACTERS, FACTION_NO_CONQUEST_BIOMES, FACTION_NO_INVASION_BIOMES, FACTION_NO_NPCS, FACTION_NO_RANKS, FACTION_NO_SPAWN_BIOMES, FACTION_NO_WAR_CRIMES, FACTION_NO_WAYPOINTS, MINERAL_HAS_BIOMES, MINERAL_NO_BIOMES, NEED_PLEDGE, NO_PLEDGE, PAGE_BIOME, PAGE_ENTITY, PAGE_FACTION, REPUTATION, RIDER, SEASON_AUTUMN, SEASON_SPRING, SEASON_SUMMER, SEASON_WINTER, STRUCTURE_HAS_BIOMES, STRUCTURE_HAS_ENTITIES, STRUCTURE_NO_BIOMES, STRUCTURE_NO_ENTITIES, TREE_HAS_BIOMES, TREE_NO_BIOMES, FACTION_NO_FRIENDS, FACTION_NO_ENEMIES, ENTITY_HAS_SELLS_POOL, ENTITY_NO_SELLS_POOL;
 
 		@Override
 		public String toString() {

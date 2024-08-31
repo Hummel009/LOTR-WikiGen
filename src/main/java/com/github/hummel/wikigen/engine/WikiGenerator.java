@@ -40,6 +40,7 @@ import java.io.PrintWriter;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.text.DecimalFormat;
+import java.text.DecimalFormatSymbols;
 import java.util.*;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
@@ -122,12 +123,10 @@ public class WikiGenerator {
 				Collection<Runnable> tableGens = new HashSet<>();
 
 				tableGens.add(WikiGenerator::genTableShields);
-				tableGens.add(WikiGenerator::genTableUnits);
 				tableGens.add(WikiGenerator::genTableArmor);
 				tableGens.add(WikiGenerator::genTableWeapons);
 				tableGens.add(WikiGenerator::genTableFood);
 				tableGens.add(() -> genTableAchievements(entityPlayer));
-				tableGens.add(() -> genTableWaypoints(entityPlayer));
 
 				tableGens.parallelStream().forEach(Runnable::run);
 
@@ -229,6 +228,7 @@ public class WikiGenerator {
 					suppliers.add(WikiGenerator::genTemplateEntityKillAlignment);
 					suppliers.add(WikiGenerator::genTemplateEntityMarriage);
 					suppliers.add(WikiGenerator::genTemplateEntityMercenary);
+					suppliers.add(WikiGenerator::genTemplateEntityNPC);
 					suppliers.add(WikiGenerator::genTemplateEntityOwners);
 					suppliers.add(WikiGenerator::genTemplateEntityRideableAnimal);
 					suppliers.add(WikiGenerator::genTemplateEntityRideableNPC);
@@ -304,14 +304,18 @@ public class WikiGenerator {
 			if (item instanceof ItemArmor) {
 				StringBuilder sb = new StringBuilder();
 
+				DecimalFormatSymbols symbols = new DecimalFormatSymbols(Locale.US);
+				symbols.setDecimalSeparator('.');
+				DecimalFormat decimalFormat = new DecimalFormat("#.#", symbols);
+
 				float damage = ((ItemArmor) item).damageReduceAmount;
 				ItemArmor.ArmorMaterial material = ((ItemArmor) item).getArmorMaterial();
 
 				sb.append(NL).append("| ");
 				sb.append(getItemName(item));
 				sb.append(" || ").append(getItemFilename(item));
-				sb.append(" || ").append(item.getMaxDamage());
-				sb.append(" || ").append(damage);
+				sb.append(" || ").append(decimalFormat.format(item.getMaxDamage()));
+				sb.append(" || ").append("{{Bar Armor|").append(decimalFormat.format(damage)).append("}}");
 
 				sb.append(" || ");
 				if (material == null || material.customCraftingMaterial == null) {
@@ -343,7 +347,9 @@ public class WikiGenerator {
 	private static void genTableFood() {
 		Collection<String> data = new TreeSet<>();
 
-		DecimalFormat decimalFormat = new DecimalFormat("#.##");
+		DecimalFormatSymbols symbols = new DecimalFormatSymbols(Locale.US);
+		symbols.setDecimalSeparator('.');
+		DecimalFormat decimalFormat = new DecimalFormat("#.#", symbols);
 
 		for (Item item : ITEMS) {
 			if (item instanceof ItemFood) {
@@ -355,9 +361,9 @@ public class WikiGenerator {
 				sb.append(NL).append("| ");
 				sb.append(getItemName(item));
 				sb.append(" || ").append(getItemFilename(item));
-				sb.append(" || ").append("{{Bar|bread|").append(decimalFormat.format(saturation * heal * 2)).append("}}");
-				sb.append(" || ").append("{{Bar|food|").append(heal).append("}}");
-				sb.append(" || ").append(item.getItemStackLimit());
+				sb.append(" || ").append("{{Bar Bread|").append(decimalFormat.format(saturation * heal * 2)).append("}}");
+				sb.append(" || ").append("{{Bar Food|").append(decimalFormat.format(heal)).append("}}");
+				sb.append(" || ").append(decimalFormat.format(item.getItemStackLimit()));
 				sb.append(NL).append("|-");
 
 				data.add(sb.toString());
@@ -406,84 +412,12 @@ public class WikiGenerator {
 		}
 	}
 
-	private static void genTableUnits() {
-		Collection<String> data = new TreeSet<>();
-
-		for (LOTRUnitTradeEntries unitTradeEntries : UNIT_TRADE_ENTRIES) {
-			for (LOTRUnitTradeEntry entry : unitTradeEntries.tradeEntries) {
-				StringBuilder sb = new StringBuilder();
-
-				sb.append(NL).append("| ");
-				sb.append(getEntityLink(entry.entityClass));
-
-				if (entry.mountClass != null) {
-					sb.append(Lang.RIDER);
-				}
-
-				int cost = getInitialCost(entry);
-				int alignment = (int) entry.alignmentRequired;
-
-				if (entry.getPledgeType() == LOTRUnitTradeEntry.PledgeType.NONE) {
-					sb.append(" || ").append("{{Coins|").append(cost * 2).append("}}");
-					sb.append(" || ").append("{{Coins|").append(cost).append("}}");
-					sb.append(" || ").append('+').append(alignment);
-					sb.append(" || ").append('-');
-				} else {
-					sb.append(" || ").append(N_A);
-					sb.append(" || ").append("{{Coins|").append(cost).append("}}");
-					sb.append(" || ").append('+').append(Math.max(alignment, 100));
-					sb.append(" || ").append('+');
-				}
-
-				sb.append(NL).append("|-");
-
-				data.add(sb.toString());
-			}
-		}
-
-		StringBuilder sb = new StringBuilder();
-
-		for (String datum : data) {
-			sb.append(datum);
-		}
-
-		try (PrintWriter printWriter = new PrintWriter("hummel/units.txt", UTF_8)) {
-			printWriter.write(sb.toString());
-		} catch (Exception e) {
-			e.printStackTrace();
-		}
-	}
-
-	@SuppressWarnings("StringBufferReplaceableByString")
-	private static void genTableWaypoints(EntityPlayer entityPlayer) {
-		Collection<String> data = new TreeSet<>();
-
-		for (LOTRWaypoint wp : WAYPOINTS) {
-			StringBuilder sb = new StringBuilder();
-
-			sb.append(NL).append("| ");
-			sb.append(wp.getDisplayName());
-			sb.append(" || ").append(wp.getLoreText(entityPlayer));
-			sb.append(NL).append("|-");
-
-			data.add(sb.toString());
-		}
-
-		StringBuilder sb = new StringBuilder();
-
-		for (String datum : data) {
-			sb.append(datum);
-		}
-
-		try (PrintWriter printWriter = new PrintWriter("hummel/waypoints.txt", UTF_8)) {
-			printWriter.write(sb.toString());
-		} catch (Exception e) {
-			e.printStackTrace();
-		}
-	}
-
 	private static void genTableWeapons() {
 		Collection<String> data = new TreeSet<>();
+
+		DecimalFormatSymbols symbols = new DecimalFormatSymbols(Locale.US);
+		symbols.setDecimalSeparator('.');
+		DecimalFormat decimalFormat = new DecimalFormat("#.#", symbols);
 
 		for (Item item : ITEMS) {
 			if (item instanceof ItemSword) {
@@ -495,8 +429,8 @@ public class WikiGenerator {
 				sb.append(NL).append("| ");
 				sb.append(getItemName(item));
 				sb.append(" || ").append(getItemFilename(item));
-				sb.append(" || ").append(item.getMaxDamage());
-				sb.append(" || ").append(damage);
+				sb.append(" || ").append(decimalFormat.format(item.getMaxDamage()));
+				sb.append(" || ").append("{{Bar Hearts|").append(decimalFormat.format(damage)).append("}}");
 
 				sb.append(" || ");
 				if (material == null || material.getRepairItemStack() == null) {
@@ -1146,7 +1080,7 @@ public class WikiGenerator {
 
 				for (LOTRTradeEntry entry : tradeable.getSellPool().tradeEntries) {
 					data.computeIfAbsent(entityEntry.getKey(), s -> new TreeSet<>());
-					data.get(entityEntry.getKey()).add(entry.createTradeItem().getDisplayName() + ": {{Coins|" + entry.getCost() + "}}");
+					data.get(entityEntry.getKey()).add(entry.createTradeItem().getDisplayName() + ": {{Bar Coins|" + entry.getCost() + "}}");
 				}
 			}
 		}
@@ -1287,9 +1221,9 @@ public class WikiGenerator {
 				int alignment = (int) entry.alignmentRequired;
 
 				if (entry.getPledgeType() == LOTRUnitTradeEntry.PledgeType.NONE) {
-					data.put(entry.entityClass, "+" + alignment);
+					data.put(entry.entityClass, String.valueOf(alignment));
 				} else {
-					data.put(entry.entityClass, "+" + Math.max(alignment, 100));
+					data.put(entry.entityClass, String.valueOf(Math.max(alignment, 100)));
 				}
 			}
 		}
@@ -1319,7 +1253,7 @@ public class WikiGenerator {
 				int cost = getInitialCost(entry);
 
 				if (entry.getPledgeType() == LOTRUnitTradeEntry.PledgeType.NONE) {
-					data.put(entry.entityClass, "{{Coins|" + cost * 2 + "}}");
+					data.put(entry.entityClass, "{{Bar Coins|" + cost * 2 + "}}");
 				} else {
 					data.put(entry.entityClass, N_A);
 				}
@@ -1350,7 +1284,7 @@ public class WikiGenerator {
 			for (LOTRUnitTradeEntry entry : entries.tradeEntries) {
 				int cost = getInitialCost(entry);
 
-				data.put(entry.entityClass, "{{Coins|" + cost + "}}");
+				data.put(entry.entityClass, "{{Bar Coins|" + cost + "}}");
 			}
 		}
 
@@ -1493,7 +1427,7 @@ public class WikiGenerator {
 		for (Map.Entry<Class<? extends Entity>, Entity> entityEntry : ENTITY_CLASS_TO_ENTITY.entrySet()) {
 			if (entityEntry.getValue() instanceof LOTREntityNPC) {
 				LOTREntityNPC npc = (LOTREntityNPC) entityEntry.getValue();
-				data.put(entityEntry.getKey(), "+" + (int) npc.getAlignmentBonus());
+				data.put(entityEntry.getKey(), String.valueOf((int) npc.getAlignmentBonus()));
 			}
 		}
 
@@ -1554,6 +1488,34 @@ public class WikiGenerator {
 		StringBuilder sb = new StringBuilder();
 
 		sb.append(TITLE).append(TEMPLATE).append("DB Entity-Mercenary");
+		sb.append(BEGIN);
+
+		appendDefault(sb, FALSE);
+
+		for (Map.Entry<Class<? extends Entity>, String> entry : data.entrySet()) {
+			sb.append(NL).append("| ");
+			sb.append(getEntityPagename(entry.getKey())).append(" = ");
+
+			appendSection(sb, entry.getValue());
+		}
+
+		sb.append(END);
+
+		return sb;
+	}
+
+	private static StringBuilder genTemplateEntityNPC() {
+		Map<Class<? extends Entity>, String> data = new HashMap<>();
+
+		for (Map.Entry<Class<? extends Entity>, Entity> entityEntry : ENTITY_CLASS_TO_ENTITY.entrySet()) {
+			if (entityEntry.getValue() instanceof LOTREntityNPC) {
+				data.put(entityEntry.getKey(), TRUE);
+			}
+		}
+
+		StringBuilder sb = new StringBuilder();
+
+		sb.append(TITLE).append(TEMPLATE).append("DB Entity-NPC");
 		sb.append(BEGIN);
 
 		appendDefault(sb, FALSE);
@@ -1668,7 +1630,7 @@ public class WikiGenerator {
 
 				for (LOTRTradeEntry entry : tradeable.getBuyPool().tradeEntries) {
 					data.computeIfAbsent(entityEntry.getKey(), s -> new TreeSet<>());
-					data.get(entityEntry.getKey()).add(entry.createTradeItem().getDisplayName() + ": {{Coins|" + entry.getCost() + "}}");
+					data.get(entityEntry.getKey()).add(entry.createTradeItem().getDisplayName() + ": {{Bar Coins|" + entry.getCost() + "}}");
 				}
 			}
 		}
@@ -1713,13 +1675,13 @@ public class WikiGenerator {
 					int alignment = (int) entry.alignmentRequired;
 
 					if (entry.getPledgeType() == LOTRUnitTradeEntry.PledgeType.NONE) {
-						sb.append("{{Coins|").append(cost * 2).append("}} ").append(Lang.NO_PLEDGE).append(", ");
-						sb.append("{{Coins|").append(cost).append("}} ").append(Lang.NEED_PLEDGE).append("; ");
-						sb.append('+').append(alignment).append(' ').append(Lang.REPUTATION);
+						sb.append("{{Bar Coins|").append(cost * 2).append("}} ").append(Lang.NO_PLEDGE).append(", ");
+						sb.append("{{Bar Coins|").append(cost).append("}} ").append(Lang.NEED_PLEDGE).append("; ");
+						sb.append(alignment).append(' ').append(Lang.REPUTATION);
 					} else {
 						sb.append("N/A ").append(Lang.NO_PLEDGE).append(", ");
-						sb.append("{{Coins|").append(cost).append("}} ").append(Lang.NEED_PLEDGE).append("; ");
-						sb.append('+').append(Math.max(alignment, 100)).append(' ').append(Lang.REPUTATION);
+						sb.append("{{Bar Coins|").append(cost).append("}} ").append(Lang.NEED_PLEDGE).append("; ");
+						sb.append(Math.max(alignment, 100)).append(' ').append(Lang.REPUTATION);
 					}
 
 					data.computeIfAbsent(entityEntry.getKey(), s -> new ArrayList<>());
@@ -1833,6 +1795,7 @@ public class WikiGenerator {
 		return sb;
 	}
 
+	@SuppressWarnings("InstanceofIncompatibleInterface")
 	private static StringBuilder genTemplateEntityTradeable() {
 		Map<Class<? extends Entity>, String> data = new HashMap<>();
 
@@ -2165,7 +2128,7 @@ public class WikiGenerator {
 					sb.append('/').append(femRank);
 				}
 
-				sb.append(" (+").append((int) faction.getPledgeAlignment()).append(')');
+				sb.append(" (").append((int) faction.getPledgeAlignment()).append(')');
 
 				data.put(faction, sb.toString());
 			}
@@ -2204,7 +2167,7 @@ public class WikiGenerator {
 					sb.append('/').append(femRank);
 				}
 
-				sb.append(" (+").append((int) rank.alignment).append(')');
+				sb.append(" (").append((int) rank.alignment).append(')');
 
 				data.computeIfAbsent(faction, s -> new ArrayList<>());
 				data.get(faction).add(sb.toString());

@@ -298,7 +298,7 @@ public class WikiGenerator {
 	}
 
 	private static void genTableArmor() {
-		Collection<String> data = new TreeSet<>();
+		Collection<String> data = new ArrayList<>();
 
 		for (Item item : ITEMS) {
 			if (item instanceof ItemArmor) {
@@ -385,7 +385,7 @@ public class WikiGenerator {
 
 	@SuppressWarnings("StringBufferReplaceableByString")
 	private static void genTableShields() {
-		Collection<String> data = new TreeSet<>();
+		Collection<String> data = new ArrayList<>();
 
 		for (LOTRShields shield : SHIELDS) {
 			StringBuilder sb = new StringBuilder();

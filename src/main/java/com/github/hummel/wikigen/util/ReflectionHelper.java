@@ -22,7 +22,9 @@ import net.minecraft.world.gen.feature.WorldGenMinable;
 
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.List;
 
 public class ReflectionHelper {
 	private ReflectionHelper() {
@@ -150,13 +152,10 @@ public class ReflectionHelper {
 		return 0;
 	}
 
-	public static <E, T> Set<T> getObjectFieldsOfType(Class<? extends E> clazz, Class<? extends T> type) {
-		Collection<Object> list = new HashSet<>();
+	public static <E, T> List<T> getObjectFieldsOfType(Class<? extends E> clazz, Class<? extends T> type) {
+		Collection<Object> list = new ArrayList<>();
 		for (Field field : clazz.getDeclaredFields()) {
-			if (field == null) {
-				continue;
-			}
-			if (field.getType() == type) {
+			if (field != null && field.getType() == type) {
 				Object fieldObj = null;
 				try {
 					fieldObj = field.get(null);
@@ -166,7 +165,7 @@ public class ReflectionHelper {
 				list.add(fieldObj);
 			}
 		}
-		return (Set<T>) list;
+		return (List<T>) list;
 	}
 
 	public static float getOreChance(Object oreGenerant) {

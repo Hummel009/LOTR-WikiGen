@@ -2653,17 +2653,17 @@ public class WikiGenerator {
 			String preName = getBiomeName(biome);
 			for (LOTRFaction faction : FACTIONS) {
 				if (preName.equals(getFactionName(faction))) {
-					BIOME_TO_PAGENAME.put(biome, "LOTR+:" + preName + " (" + Lang.PAGE_BIOME + ')');
+					BIOME_TO_PAGENAME.put(biome, preName + " (" + Lang.PAGE_BIOME + ')');
 					continue next;
 				}
 			}
 			for (Class<? extends Entity> entityClass : ENTITY_CLASSES) {
 				if (preName.equals(getEntityName(entityClass))) {
-					BIOME_TO_PAGENAME.put(biome, "LOTR+:" + preName + " (" + Lang.PAGE_BIOME + ')');
+					BIOME_TO_PAGENAME.put(biome, preName + " (" + Lang.PAGE_BIOME + ')');
 					continue next;
 				}
 			}
-			BIOME_TO_PAGENAME.put(biome, "LOTR+:" + preName);
+			BIOME_TO_PAGENAME.put(biome, preName);
 		}
 	}
 
@@ -2673,17 +2673,17 @@ public class WikiGenerator {
 			String preName = getEntityName(entityClass);
 			for (LOTRBiome biome : BIOMES) {
 				if (preName.equals(getBiomeName(biome))) {
-					ENTITY_CLASS_TO_PAGENAME.put(entityClass, "LOTR+:" + preName + " (" + Lang.PAGE_ENTITY + ')');
+					ENTITY_CLASS_TO_PAGENAME.put(entityClass, preName + " (" + Lang.PAGE_ENTITY + ')');
 					continue next;
 				}
 			}
 			for (LOTRFaction faction : FACTIONS) {
 				if (preName.equals(getFactionName(faction))) {
-					ENTITY_CLASS_TO_PAGENAME.put(entityClass, "LOTR+:" + preName + " (" + Lang.PAGE_ENTITY + ')');
+					ENTITY_CLASS_TO_PAGENAME.put(entityClass, preName + " (" + Lang.PAGE_ENTITY + ')');
 					continue next;
 				}
 			}
-			ENTITY_CLASS_TO_PAGENAME.put(entityClass, "LOTR+:" + preName);
+			ENTITY_CLASS_TO_PAGENAME.put(entityClass, preName);
 		}
 	}
 
@@ -2693,17 +2693,17 @@ public class WikiGenerator {
 			String preName = getFactionName(faction);
 			for (LOTRBiome biome : BIOMES) {
 				if (preName.equals(getBiomeName(biome))) {
-					FACTION_TO_PAGENAME.put(faction, "LOTR+:" + preName + " (" + Lang.PAGE_FACTION + ')');
+					FACTION_TO_PAGENAME.put(faction, preName + " (" + Lang.PAGE_FACTION + ')');
 					continue next;
 				}
 			}
 			for (Class<? extends Entity> entityClass : ENTITY_CLASSES) {
 				if (preName.equals(getEntityName(entityClass))) {
-					FACTION_TO_PAGENAME.put(faction, "LOTR+:" + preName + " (" + Lang.PAGE_FACTION + ')');
+					FACTION_TO_PAGENAME.put(faction, preName + " (" + Lang.PAGE_FACTION + ')');
 					continue next;
 				}
 			}
-			FACTION_TO_PAGENAME.put(faction, "LOTR+:" + preName);
+			FACTION_TO_PAGENAME.put(faction, preName);
 		}
 	}
 
@@ -2715,9 +2715,9 @@ public class WikiGenerator {
 		String biomeName = getBiomeName(biome);
 		String biomePagename = getBiomePagename(biome);
 		if (biomeName.equals(biomePagename)) {
-			return "[[" + biomeName + "]]";
+			return "[[LOTR+:" + biomeName + "]]";
 		}
-		return "[[" + biomePagename + '|' + biomeName + "]]";
+		return "[[LOTR+:" + biomePagename + '|' + biomeName + "]]";
 	}
 
 	private static String getBiomeName(LOTRBiome biome) {
@@ -2733,11 +2733,11 @@ public class WikiGenerator {
 	}
 
 	private static String getMineralLink(Block block, int meta) {
-		return "[[" + StatCollector.translateToLocal(block.getUnlocalizedName() + '.' + meta + ".name") + "]]";
+		return "[[LOTR+:" + StatCollector.translateToLocal(block.getUnlocalizedName() + '.' + meta + ".name") + "]]";
 	}
 
 	private static String getMineralLink(Block block) {
-		return "[[" + StatCollector.translateToLocal(block.getUnlocalizedName() + ".name") + "]]";
+		return "[[LOTR+:" + StatCollector.translateToLocal(block.getUnlocalizedName() + ".name") + "]]";
 	}
 
 	private static String getMineralName(Block block, int meta) {
@@ -2756,9 +2756,9 @@ public class WikiGenerator {
 
 		String entityPagename = getEntityPagename(entityClass);
 		if (entityName.equals(entityPagename)) {
-			return "[[" + entityPagename + "]]";
+			return "[[LOTR+:" + entityPagename + "]]";
 		}
-		return "[[" + entityPagename + '|' + entityName + "]]";
+		return "[[LOTR+:" + entityPagename + '|' + entityName + "]]";
 	}
 
 	private static String getEntityName(Class<? extends Entity> entityClass) {
@@ -2773,9 +2773,9 @@ public class WikiGenerator {
 		String facName = getFactionName(fac);
 		String facPagename = getFactionPagename(fac);
 		if (facName.equals(facPagename)) {
-			return "[[" + facPagename + "]]";
+			return "[[LOTR+:" + facPagename + "]]";
 		}
-		return "[[" + facPagename + '|' + facName + "]]";
+		return "[[LOTR+:" + facPagename + '|' + facName + "]]";
 	}
 
 	private static String getFactionName(LOTRFaction fac) {
@@ -2799,7 +2799,7 @@ public class WikiGenerator {
 	}
 
 	private static String getStructureLink(Class<?> structureClass) {
-		return "[[" + StatCollector.translateToLocal("lotr.structure." + Config.STRUCTURE_CLASS_TO_NAME.get(structureClass) + ".name") + "]]";
+		return "[[LOTR+:" + StatCollector.translateToLocal("lotr.structure." + Config.STRUCTURE_CLASS_TO_NAME.get(structureClass) + ".name") + "]]";
 	}
 
 	private static String getStructurePagename(Class<?> structureClass) {
@@ -2815,7 +2815,7 @@ public class WikiGenerator {
 	}
 
 	private static String getTreeLink(LOTRTreeType tree) {
-		return "[[" + StatCollector.translateToLocal("lotr.tree." + tree.name().toLowerCase(Locale.ROOT) + ".name") + "]]";
+		return "[[LOTR+:" + StatCollector.translateToLocal("lotr.tree." + tree.name().toLowerCase(Locale.ROOT) + ".name") + "]]";
 	}
 
 	private static void appendSection(StringBuilder sb, Collection<String> section) {

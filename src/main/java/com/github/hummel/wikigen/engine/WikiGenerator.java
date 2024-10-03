@@ -2715,7 +2715,7 @@ public class WikiGenerator {
 		String biomeName = getBiomeName(biome);
 		String biomePagename = getBiomePagename(biome);
 		if (biomeName.equals(biomePagename)) {
-			return "[[LOTR+:" + biomeName + "]]";
+			return "[[LOTR+:" + biomeName + '|' + biomeName + "]]";
 		}
 		return "[[LOTR+:" + biomePagename + '|' + biomeName + "]]";
 	}
@@ -2733,11 +2733,13 @@ public class WikiGenerator {
 	}
 
 	private static String getMineralLink(Block block, int meta) {
-		return "[[LOTR+:" + StatCollector.translateToLocal(block.getUnlocalizedName() + '.' + meta + ".name") + "]]";
+		String name = StatCollector.translateToLocal(block.getUnlocalizedName() + '.' + meta + ".name");
+		return "[[LOTR+:" + name + '|' + name + "]]";
 	}
 
 	private static String getMineralLink(Block block) {
-		return "[[LOTR+:" + StatCollector.translateToLocal(block.getUnlocalizedName() + ".name") + "]]";
+		String name = StatCollector.translateToLocal(block.getUnlocalizedName() + ".name");
+		return "[[LOTR+:" + name + '|' + name + "]]";
 	}
 
 	private static String getMineralName(Block block, int meta) {
@@ -2756,7 +2758,7 @@ public class WikiGenerator {
 
 		String entityPagename = getEntityPagename(entityClass);
 		if (entityName.equals(entityPagename)) {
-			return "[[LOTR+:" + entityPagename + "]]";
+			return "[[LOTR+:" + entityName + '|' + entityName + "]]";
 		}
 		return "[[LOTR+:" + entityPagename + '|' + entityName + "]]";
 	}
@@ -2773,7 +2775,7 @@ public class WikiGenerator {
 		String facName = getFactionName(fac);
 		String facPagename = getFactionPagename(fac);
 		if (facName.equals(facPagename)) {
-			return "[[LOTR+:" + facPagename + "]]";
+			return "[[LOTR+:" + facName + '|' + facName + "]]";
 		}
 		return "[[LOTR+:" + facPagename + '|' + facName + "]]";
 	}
@@ -2799,7 +2801,8 @@ public class WikiGenerator {
 	}
 
 	private static String getStructureLink(Class<?> structureClass) {
-		return "[[LOTR+:" + StatCollector.translateToLocal("lotr.structure." + Config.STRUCTURE_CLASS_TO_NAME.get(structureClass) + ".name") + "]]";
+		String name = StatCollector.translateToLocal("lotr.structure." + Config.STRUCTURE_CLASS_TO_NAME.get(structureClass) + ".name");
+		return "[[LOTR+:" + name + '|' + name + "]]";
 	}
 
 	private static String getStructurePagename(Class<?> structureClass) {

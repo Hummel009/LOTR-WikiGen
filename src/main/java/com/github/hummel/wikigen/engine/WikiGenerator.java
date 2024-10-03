@@ -2818,7 +2818,8 @@ public class WikiGenerator {
 	}
 
 	private static String getTreeLink(LOTRTreeType tree) {
-		return "[[LOTR+:" + StatCollector.translateToLocal("lotr.tree." + tree.name().toLowerCase(Locale.ROOT) + ".name") + "]]";
+		String name = StatCollector.translateToLocal("lotr.tree." + tree.name().toLowerCase(Locale.ROOT) + ".name");
+		return "[[LOTR+:" + name + '|' + name + "]]";
 	}
 
 	private static void appendSection(StringBuilder sb, Collection<String> section) {

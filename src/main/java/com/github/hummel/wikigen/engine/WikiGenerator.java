@@ -1079,8 +1079,11 @@ public class WikiGenerator {
 				LOTRTradeable tradeable = (LOTRTradeable) entityEntry.getValue();
 
 				for (LOTRTradeEntry entry : tradeable.getSellPool().tradeEntries) {
-					data.computeIfAbsent(entityEntry.getKey(), s -> new TreeSet<>());
-					data.get(entityEntry.getKey()).add(entry.createTradeItem().getDisplayName() + ": {{Bar Coins|" + entry.getCost() + "}}");
+					try {
+						data.computeIfAbsent(entityEntry.getKey(), s -> new TreeSet<>());
+						data.get(entityEntry.getKey()).add(entry.createTradeItem().getDisplayName() + ": {{Bar Coins|" + entry.getCost() + "}}");
+					} catch (Exception e) {
+					}
 				}
 			}
 		}

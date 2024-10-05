@@ -85,6 +85,9 @@ public class WikiGenerator {
 	private static final String FALSE = "False";
 	private static final String N_A = "N/A";
 
+	private static final String NAMESPACE = "LOTR+:";
+	private static final String NAMESPACE_NAME = "LOTR+";
+
 	static {
 		BIOMES.remove(LOTRBiome.beach);
 		BIOMES.remove(LOTRBiome.beachGravel);
@@ -476,7 +479,7 @@ public class WikiGenerator {
 
 		StringBuilder sb = new StringBuilder();
 
-		sb.append(TITLE).append(TEMPLATE).append("LOTR+ DB Biome-Animals");
+		sb.append(TITLE).append(TEMPLATE).append(NAMESPACE_NAME).append("DB Biome-Animals");
 		sb.append(BEGIN);
 
 		appendDefault(sb, Lang.BIOME_NO_ANIMALS.toString());
@@ -503,7 +506,7 @@ public class WikiGenerator {
 
 		StringBuilder sb = new StringBuilder();
 
-		sb.append(TITLE).append(TEMPLATE).append("LOTR+ DB Biome-Bandits");
+		sb.append(TITLE).append(TEMPLATE).append(NAMESPACE_NAME).append("DB Biome-Bandits");
 		sb.append(BEGIN);
 
 		appendDefault(sb, "UNKNOWN");
@@ -543,7 +546,7 @@ public class WikiGenerator {
 
 		StringBuilder sb = new StringBuilder();
 
-		sb.append(TITLE).append(TEMPLATE).append("LOTR+ DB Biome-ConquestFactions");
+		sb.append(TITLE).append(TEMPLATE).append(NAMESPACE_NAME).append("DB Biome-ConquestFactions");
 		sb.append(BEGIN);
 
 		appendDefault(sb, Lang.BIOME_NO_CONQUEST_FACTIONS.toString());
@@ -580,7 +583,7 @@ public class WikiGenerator {
 
 		StringBuilder sb = new StringBuilder();
 
-		sb.append(TITLE).append(TEMPLATE).append("LOTR+ DB Biome-InvasionFactions");
+		sb.append(TITLE).append(TEMPLATE).append(NAMESPACE_NAME).append("DB Biome-InvasionFactions");
 		sb.append(BEGIN);
 
 		appendDefault(sb, Lang.BIOME_NO_INVASION_FACTIONS.toString());
@@ -626,7 +629,7 @@ public class WikiGenerator {
 
 		StringBuilder sb = new StringBuilder();
 
-		sb.append(TITLE).append(TEMPLATE).append("LOTR+ DB Biome-Minerals");
+		sb.append(TITLE).append(TEMPLATE).append(NAMESPACE_NAME).append("DB Biome-Minerals");
 		sb.append(BEGIN);
 
 		appendDefault(sb, Lang.BIOME_NO_MINERALS.toString());
@@ -655,7 +658,7 @@ public class WikiGenerator {
 
 		StringBuilder sb = new StringBuilder();
 
-		sb.append(TITLE).append(TEMPLATE).append("LOTR+ DB Biome-Music");
+		sb.append(TITLE).append(TEMPLATE).append(NAMESPACE_NAME).append("DB Biome-Music");
 		sb.append(BEGIN);
 
 		appendDefault(sb, N_A);
@@ -681,7 +684,7 @@ public class WikiGenerator {
 
 		StringBuilder sb = new StringBuilder();
 
-		sb.append(TITLE).append(TEMPLATE).append("LOTR+ DB Biome-Name");
+		sb.append(TITLE).append(TEMPLATE).append(NAMESPACE_NAME).append("DB Biome-Name");
 		sb.append(BEGIN);
 
 		appendDefault(sb, "UNKNOWN");
@@ -716,7 +719,7 @@ public class WikiGenerator {
 
 		StringBuilder sb = new StringBuilder();
 
-		sb.append(TITLE).append(TEMPLATE).append("LOTR+ DB Biome-NPCs");
+		sb.append(TITLE).append(TEMPLATE).append(NAMESPACE_NAME).append("DB Biome-NPCs");
 		sb.append(BEGIN);
 
 		appendDefault(sb, Lang.BIOME_NO_NPCS.toString());
@@ -743,7 +746,7 @@ public class WikiGenerator {
 
 		StringBuilder sb = new StringBuilder();
 
-		sb.append(TITLE).append(TEMPLATE).append("LOTR+ DB Biome-Rainfall");
+		sb.append(TITLE).append(TEMPLATE).append(NAMESPACE_NAME).append("DB Biome-Rainfall");
 		sb.append(BEGIN);
 
 		for (Map.Entry<LOTRBiome, String> entry : data.entrySet()) {
@@ -777,7 +780,7 @@ public class WikiGenerator {
 
 		StringBuilder sb = new StringBuilder();
 
-		sb.append(TITLE).append(TEMPLATE).append("LOTR+ DB Biome-Structures");
+		sb.append(TITLE).append(TEMPLATE).append(NAMESPACE_NAME).append("DB Biome-Structures");
 		sb.append(BEGIN);
 
 		appendDefault(sb, Lang.BIOME_NO_STRUCTURES.toString());
@@ -804,7 +807,7 @@ public class WikiGenerator {
 
 		StringBuilder sb = new StringBuilder();
 
-		sb.append(TITLE).append(TEMPLATE).append("LOTR+ DB Biome-Temperature");
+		sb.append(TITLE).append(TEMPLATE).append(NAMESPACE_NAME).append("DB Biome-Temperature");
 		sb.append(BEGIN);
 
 		for (Map.Entry<LOTRBiome, String> entry : data.entrySet()) {
@@ -850,7 +853,7 @@ public class WikiGenerator {
 
 		StringBuilder sb = new StringBuilder();
 
-		sb.append(TITLE).append(TEMPLATE).append("LOTR+ DB Biome-Trees");
+		sb.append(TITLE).append(TEMPLATE).append(NAMESPACE_NAME).append("DB Biome-Trees");
 		sb.append(BEGIN);
 
 		appendDefault(sb, Lang.BIOME_NO_TREES.toString());
@@ -880,7 +883,7 @@ public class WikiGenerator {
 
 		StringBuilder sb = new StringBuilder();
 
-		sb.append(TITLE).append(TEMPLATE).append("LOTR+ DB Biome-Variants");
+		sb.append(TITLE).append(TEMPLATE).append(NAMESPACE_NAME).append("DB Biome-Variants");
 		sb.append(BEGIN);
 
 		appendDefault(sb, Lang.BIOME_NO_VARIANTS.toString());
@@ -911,7 +914,7 @@ public class WikiGenerator {
 
 		StringBuilder sb = new StringBuilder();
 
-		sb.append(TITLE).append(TEMPLATE).append("LOTR+ DB Biome-VisitAchievement");
+		sb.append(TITLE).append(TEMPLATE).append(NAMESPACE_NAME).append("DB Biome-VisitAchievement");
 		sb.append(BEGIN);
 
 		appendDefault(sb, N_A);
@@ -944,7 +947,7 @@ public class WikiGenerator {
 
 		StringBuilder sb = new StringBuilder();
 
-		sb.append(TITLE).append(TEMPLATE).append("LOTR+ DB Biome-Waypoints");
+		sb.append(TITLE).append(TEMPLATE).append(NAMESPACE_NAME).append("DB Biome-Waypoints");
 		sb.append(BEGIN);
 
 		appendDefault(sb, Lang.BIOME_NO_WAYPOINTS.toString());
@@ -973,7 +976,7 @@ public class WikiGenerator {
 
 		StringBuilder sb = new StringBuilder();
 
-		sb.append(TITLE).append(TEMPLATE).append("LOTR+ DB Entity-BannerBearer");
+		sb.append(TITLE).append(TEMPLATE).append(NAMESPACE_NAME).append("DB Entity-BannerBearer");
 		sb.append(BEGIN);
 
 		appendDefault(sb, FALSE);
@@ -1053,7 +1056,7 @@ public class WikiGenerator {
 
 		StringBuilder sb = new StringBuilder();
 
-		sb.append(TITLE).append(TEMPLATE).append("LOTR+ DB Entity-Biomes");
+		sb.append(TITLE).append(TEMPLATE).append(NAMESPACE_NAME).append("DB Entity-Biomes");
 		sb.append(BEGIN);
 
 		appendDefault(sb, Lang.ENTITY_NO_BIOMES.toString());
@@ -1090,7 +1093,7 @@ public class WikiGenerator {
 
 		StringBuilder sb = new StringBuilder();
 
-		sb.append(TITLE).append(TEMPLATE).append("LOTR+ DB Entity-BuysPool");
+		sb.append(TITLE).append(TEMPLATE).append(NAMESPACE_NAME).append("DB Entity-BuysPool");
 		sb.append(BEGIN);
 
 		appendDefault(sb, Lang.ENTITY_NO_BUYS_POOL.toString());
@@ -1120,7 +1123,7 @@ public class WikiGenerator {
 
 		StringBuilder sb = new StringBuilder();
 
-		sb.append(TITLE).append(TEMPLATE).append("LOTR+ DB Entity-Faction");
+		sb.append(TITLE).append(TEMPLATE).append(NAMESPACE_NAME).append("DB Entity-Faction");
 		sb.append(BEGIN);
 
 		for (Map.Entry<Class<? extends Entity>, String> entry : data.entrySet()) {
@@ -1146,7 +1149,7 @@ public class WikiGenerator {
 
 		StringBuilder sb = new StringBuilder();
 
-		sb.append(TITLE).append(TEMPLATE).append("LOTR+ DB Entity-Farmhand");
+		sb.append(TITLE).append(TEMPLATE).append(NAMESPACE_NAME).append("DB Entity-Farmhand");
 		sb.append(BEGIN);
 
 		appendDefault(sb, FALSE);
@@ -1173,7 +1176,7 @@ public class WikiGenerator {
 
 		StringBuilder sb = new StringBuilder();
 
-		sb.append(TITLE).append(TEMPLATE).append("LOTR+ DB Entity-Health");
+		sb.append(TITLE).append(TEMPLATE).append(NAMESPACE_NAME).append("DB Entity-Health");
 		sb.append(BEGIN);
 
 		for (Map.Entry<Class<? extends Entity>, String> entry : data.entrySet()) {
@@ -1199,7 +1202,7 @@ public class WikiGenerator {
 
 		StringBuilder sb = new StringBuilder();
 
-		sb.append(TITLE).append(TEMPLATE).append("LOTR+ DB Entity-Hireable");
+		sb.append(TITLE).append(TEMPLATE).append(NAMESPACE_NAME).append("DB Entity-Hireable");
 		sb.append(BEGIN);
 
 		appendDefault(sb, FALSE);
@@ -1233,7 +1236,7 @@ public class WikiGenerator {
 
 		StringBuilder sb = new StringBuilder();
 
-		sb.append(TITLE).append(TEMPLATE).append("LOTR+ DB Entity-HireAlignment");
+		sb.append(TITLE).append(TEMPLATE).append(NAMESPACE_NAME).append("DB Entity-HireAlignment");
 		sb.append(BEGIN);
 
 		for (Map.Entry<Class<? extends Entity>, String> entry : data.entrySet()) {
@@ -1265,7 +1268,7 @@ public class WikiGenerator {
 
 		StringBuilder sb = new StringBuilder();
 
-		sb.append(TITLE).append(TEMPLATE).append("LOTR+ DB Entity-HirePrice");
+		sb.append(TITLE).append(TEMPLATE).append(NAMESPACE_NAME).append("DB Entity-HirePrice");
 		sb.append(BEGIN);
 
 		for (Map.Entry<Class<? extends Entity>, String> entry : data.entrySet()) {
@@ -1293,7 +1296,7 @@ public class WikiGenerator {
 
 		StringBuilder sb = new StringBuilder();
 
-		sb.append(TITLE).append(TEMPLATE).append("LOTR+ DB Entity-HirePricePledge");
+		sb.append(TITLE).append(TEMPLATE).append(NAMESPACE_NAME).append("DB Entity-HirePricePledge");
 		sb.append(BEGIN);
 
 		for (Map.Entry<Class<? extends Entity>, String> entry : data.entrySet()) {
@@ -1319,7 +1322,7 @@ public class WikiGenerator {
 
 		StringBuilder sb = new StringBuilder();
 
-		sb.append(TITLE).append(TEMPLATE).append("LOTR+ DB Entity-ImmuneToFire");
+		sb.append(TITLE).append(TEMPLATE).append(NAMESPACE_NAME).append("DB Entity-ImmuneToFire");
 		sb.append(BEGIN);
 
 		appendDefault(sb, FALSE);
@@ -1347,7 +1350,7 @@ public class WikiGenerator {
 
 		StringBuilder sb = new StringBuilder();
 
-		sb.append(TITLE).append(TEMPLATE).append("LOTR+ DB Entity-ImmuneToFrost");
+		sb.append(TITLE).append(TEMPLATE).append(NAMESPACE_NAME).append("DB Entity-ImmuneToFrost");
 		sb.append(BEGIN);
 
 		appendDefault(sb, FALSE);
@@ -1375,7 +1378,7 @@ public class WikiGenerator {
 
 		StringBuilder sb = new StringBuilder();
 
-		sb.append(TITLE).append(TEMPLATE).append("LOTR+ DB Entity-ImmuneToHeat");
+		sb.append(TITLE).append(TEMPLATE).append(NAMESPACE_NAME).append("DB Entity-ImmuneToHeat");
 		sb.append(BEGIN);
 
 		appendDefault(sb, FALSE);
@@ -1407,7 +1410,7 @@ public class WikiGenerator {
 
 		StringBuilder sb = new StringBuilder();
 
-		sb.append(TITLE).append(TEMPLATE).append("LOTR+ DB Entity-KillAchievement");
+		sb.append(TITLE).append(TEMPLATE).append(NAMESPACE_NAME).append("DB Entity-KillAchievement");
 		sb.append(BEGIN);
 
 		appendDefault(sb, N_A);
@@ -1436,7 +1439,7 @@ public class WikiGenerator {
 
 		StringBuilder sb = new StringBuilder();
 
-		sb.append(TITLE).append(TEMPLATE).append("LOTR+ DB Entity-KillAlignment");
+		sb.append(TITLE).append(TEMPLATE).append(NAMESPACE_NAME).append("DB Entity-KillAlignment");
 		sb.append(BEGIN);
 
 		for (Map.Entry<Class<? extends Entity>, String> entry : data.entrySet()) {
@@ -1462,7 +1465,7 @@ public class WikiGenerator {
 
 		StringBuilder sb = new StringBuilder();
 
-		sb.append(TITLE).append(TEMPLATE).append("LOTR+ DB Entity-Marriage");
+		sb.append(TITLE).append(TEMPLATE).append(NAMESPACE_NAME).append("DB Entity-Marriage");
 		sb.append(BEGIN);
 
 		appendDefault(sb, FALSE);
@@ -1490,7 +1493,7 @@ public class WikiGenerator {
 
 		StringBuilder sb = new StringBuilder();
 
-		sb.append(TITLE).append(TEMPLATE).append("LOTR+ DB Entity-Mercenary");
+		sb.append(TITLE).append(TEMPLATE).append(NAMESPACE_NAME).append("DB Entity-Mercenary");
 		sb.append(BEGIN);
 
 		appendDefault(sb, FALSE);
@@ -1518,7 +1521,7 @@ public class WikiGenerator {
 
 		StringBuilder sb = new StringBuilder();
 
-		sb.append(TITLE).append(TEMPLATE).append("LOTR+ DB Entity-NPC");
+		sb.append(TITLE).append(TEMPLATE).append(NAMESPACE_NAME).append("DB Entity-NPC");
 		sb.append(BEGIN);
 
 		appendDefault(sb, FALSE);
@@ -1550,7 +1553,7 @@ public class WikiGenerator {
 
 		StringBuilder sb = new StringBuilder();
 
-		sb.append(TITLE).append("LOTR+ DB Entity-Owners");
+		sb.append(TITLE).append(NAMESPACE_NAME).append("DB Entity-Owners");
 		sb.append(BEGIN);
 
 		appendDefault(sb, Lang.ENTITY_NO_OWNERS.toString());
@@ -1579,7 +1582,7 @@ public class WikiGenerator {
 
 		StringBuilder sb = new StringBuilder();
 
-		sb.append(TITLE).append(TEMPLATE).append("LOTR+ DB Entity-RideableAnimal");
+		sb.append(TITLE).append(TEMPLATE).append(NAMESPACE_NAME).append("DB Entity-RideableAnimal");
 		sb.append(BEGIN);
 
 		appendDefault(sb, FALSE);
@@ -1607,7 +1610,7 @@ public class WikiGenerator {
 
 		StringBuilder sb = new StringBuilder();
 
-		sb.append(TITLE).append(TEMPLATE).append("LOTR+ DB Entity-RideableNPC");
+		sb.append(TITLE).append(TEMPLATE).append(NAMESPACE_NAME).append("DB Entity-RideableNPC");
 		sb.append(BEGIN);
 
 		appendDefault(sb, FALSE);
@@ -1640,7 +1643,7 @@ public class WikiGenerator {
 
 		StringBuilder sb = new StringBuilder();
 
-		sb.append(TITLE).append(TEMPLATE).append("LOTR+ DB Entity-SellsPool");
+		sb.append(TITLE).append(TEMPLATE).append(NAMESPACE_NAME).append("DB Entity-SellsPool");
 		sb.append(BEGIN);
 
 		appendDefault(sb, Lang.ENTITY_NO_SELLS_POOL.toString());
@@ -1695,7 +1698,7 @@ public class WikiGenerator {
 
 		StringBuilder sb = new StringBuilder();
 
-		sb.append(TITLE).append(TEMPLATE).append("LOTR+ DB Entity-SellsUnitPool");
+		sb.append(TITLE).append(TEMPLATE).append(NAMESPACE_NAME).append("DB Entity-SellsUnitPool");
 		sb.append(BEGIN);
 
 		appendDefault(sb, Lang.ENTITY_NO_SELLS_UNIT_POOL.toString());
@@ -1725,7 +1728,7 @@ public class WikiGenerator {
 
 		StringBuilder sb = new StringBuilder();
 
-		sb.append(TITLE).append(TEMPLATE).append("LOTR+ DB Entity-Smith");
+		sb.append(TITLE).append(TEMPLATE).append(NAMESPACE_NAME).append("DB Entity-Smith");
 		sb.append(BEGIN);
 
 		appendDefault(sb, FALSE);
@@ -1753,7 +1756,7 @@ public class WikiGenerator {
 
 		StringBuilder sb = new StringBuilder();
 
-		sb.append(TITLE).append(TEMPLATE).append("LOTR+ DB Entity-SpawnsInDarkness");
+		sb.append(TITLE).append(TEMPLATE).append(NAMESPACE_NAME).append("DB Entity-SpawnsInDarkness");
 		sb.append(BEGIN);
 
 		appendDefault(sb, FALSE);
@@ -1781,7 +1784,7 @@ public class WikiGenerator {
 
 		StringBuilder sb = new StringBuilder();
 
-		sb.append(TITLE).append(TEMPLATE).append("LOTR+ DB Entity-TargetSeeker");
+		sb.append(TITLE).append(TEMPLATE).append(NAMESPACE_NAME).append("DB Entity-TargetSeeker");
 		sb.append(BEGIN);
 
 		appendDefault(sb, FALSE);
@@ -1810,7 +1813,7 @@ public class WikiGenerator {
 
 		StringBuilder sb = new StringBuilder();
 
-		sb.append(TITLE).append(TEMPLATE).append("LOTR+ DB Entity-Tradeable");
+		sb.append(TITLE).append(TEMPLATE).append(NAMESPACE_NAME).append("DB Entity-Tradeable");
 		sb.append(BEGIN);
 
 		appendDefault(sb, FALSE);
@@ -1838,7 +1841,7 @@ public class WikiGenerator {
 
 		StringBuilder sb = new StringBuilder();
 
-		sb.append(TITLE).append(TEMPLATE).append("LOTR+ DB Entity-UnitTradeable");
+		sb.append(TITLE).append(TEMPLATE).append(NAMESPACE_NAME).append("DB Entity-UnitTradeable");
 		sb.append(BEGIN);
 
 		appendDefault(sb, FALSE);
@@ -1867,7 +1870,7 @@ public class WikiGenerator {
 
 		StringBuilder sb = new StringBuilder();
 
-		sb.append(TITLE).append(TEMPLATE).append("LOTR+ DB Faction-Banners");
+		sb.append(TITLE).append(TEMPLATE).append(NAMESPACE_NAME).append("DB Faction-Banners");
 		sb.append(BEGIN);
 
 		appendDefault(sb, Lang.FACTION_NO_BANNERS.toString());
@@ -1894,7 +1897,7 @@ public class WikiGenerator {
 
 		StringBuilder sb = new StringBuilder();
 
-		sb.append(TITLE).append(TEMPLATE).append("LOTR+ DB Faction-Codename");
+		sb.append(TITLE).append(TEMPLATE).append(NAMESPACE_NAME).append("DB Faction-Codename");
 		sb.append(BEGIN);
 
 		for (Map.Entry<LOTRFaction, String> entry : data.entrySet()) {
@@ -1932,7 +1935,7 @@ public class WikiGenerator {
 
 		StringBuilder sb = new StringBuilder();
 
-		sb.append(TITLE).append(TEMPLATE).append("LOTR+ DB Faction-ConquestBiomes");
+		sb.append(TITLE).append(TEMPLATE).append(NAMESPACE_NAME).append("DB Faction-ConquestBiomes");
 		sb.append(BEGIN);
 
 		appendDefault(sb, Lang.FACTION_NO_CONQUEST_BIOMES.toString());
@@ -1969,7 +1972,7 @@ public class WikiGenerator {
 
 		StringBuilder sb = new StringBuilder();
 
-		sb.append(TITLE).append(TEMPLATE).append("LOTR+ DB Faction-Enemies");
+		sb.append(TITLE).append(TEMPLATE).append(NAMESPACE_NAME).append("DB Faction-Enemies");
 		sb.append(BEGIN);
 
 		appendDefault(sb, Lang.FACTION_NO_ENEMIES.toString());
@@ -2004,7 +2007,7 @@ public class WikiGenerator {
 
 		StringBuilder sb = new StringBuilder();
 
-		sb.append(TITLE).append(TEMPLATE).append("LOTR+ DB Faction-Friends");
+		sb.append(TITLE).append(TEMPLATE).append(NAMESPACE_NAME).append("DB Faction-Friends");
 		sb.append(BEGIN);
 
 		appendDefault(sb, Lang.FACTION_NO_FRIENDS.toString());
@@ -2039,7 +2042,7 @@ public class WikiGenerator {
 
 		StringBuilder sb = new StringBuilder();
 
-		sb.append(TITLE).append(TEMPLATE).append("LOTR+ DB Faction-InvasionBiomes");
+		sb.append(TITLE).append(TEMPLATE).append(NAMESPACE_NAME).append("DB Faction-InvasionBiomes");
 		sb.append(BEGIN);
 
 		appendDefault(sb, Lang.FACTION_NO_INVASION_BIOMES.toString());
@@ -2066,7 +2069,7 @@ public class WikiGenerator {
 
 		StringBuilder sb = new StringBuilder();
 
-		sb.append(TITLE).append(TEMPLATE).append("LOTR+ DB Faction-Name");
+		sb.append(TITLE).append(TEMPLATE).append(NAMESPACE_NAME).append("DB Faction-Name");
 		sb.append(BEGIN);
 
 		appendDefault(sb, "UNKNOWN");
@@ -2097,7 +2100,7 @@ public class WikiGenerator {
 
 		StringBuilder sb = new StringBuilder();
 
-		sb.append(TITLE).append(TEMPLATE).append("LOTR+ DB Faction-NPCs");
+		sb.append(TITLE).append(TEMPLATE).append(NAMESPACE_NAME).append("DB Faction-NPCs");
 		sb.append(BEGIN);
 
 		appendDefault(sb, Lang.FACTION_NO_NPCS.toString());
@@ -2139,7 +2142,7 @@ public class WikiGenerator {
 
 		StringBuilder sb = new StringBuilder();
 
-		sb.append(TITLE).append(TEMPLATE).append("LOTR+ DB Faction-PledgeRank");
+		sb.append(TITLE).append(TEMPLATE).append(NAMESPACE_NAME).append("DB Faction-PledgeRank");
 		sb.append(BEGIN);
 
 		appendDefault(sb, N_A);
@@ -2179,7 +2182,7 @@ public class WikiGenerator {
 
 		StringBuilder sb = new StringBuilder();
 
-		sb.append(TITLE).append(TEMPLATE).append("LOTR+ DB Faction-Ranks");
+		sb.append(TITLE).append(TEMPLATE).append(NAMESPACE_NAME).append("DB Faction-Ranks");
 		sb.append(BEGIN);
 
 		appendDefault(sb, Lang.FACTION_NO_RANKS.toString());
@@ -2208,7 +2211,7 @@ public class WikiGenerator {
 
 		StringBuilder sb = new StringBuilder();
 
-		sb.append(TITLE).append(TEMPLATE).append("LOTR+ DB Faction-Region");
+		sb.append(TITLE).append(TEMPLATE).append(NAMESPACE_NAME).append("DB Faction-Region");
 		sb.append(BEGIN);
 
 		appendDefault(sb, N_A);
@@ -2251,7 +2254,7 @@ public class WikiGenerator {
 
 		StringBuilder sb = new StringBuilder();
 
-		sb.append(TITLE).append(TEMPLATE).append("LOTR+ DB Faction-ShieldsCapes");
+		sb.append(TITLE).append(TEMPLATE).append(NAMESPACE_NAME).append("DB Faction-ShieldsCapes");
 		sb.append(BEGIN);
 
 		appendDefault(sb, Lang.FACTION_NO_ATTRIBUTES.toString());
@@ -2292,7 +2295,7 @@ public class WikiGenerator {
 
 		StringBuilder sb = new StringBuilder();
 
-		sb.append(TITLE).append(TEMPLATE).append("LOTR+ DB Faction-SpawnBiomes");
+		sb.append(TITLE).append(TEMPLATE).append(NAMESPACE_NAME).append("DB Faction-SpawnBiomes");
 		sb.append(BEGIN);
 
 		appendDefault(sb, Lang.FACTION_NO_SPAWN_BIOMES.toString());
@@ -2321,7 +2324,7 @@ public class WikiGenerator {
 
 		StringBuilder sb = new StringBuilder();
 
-		sb.append(TITLE).append(TEMPLATE).append("LOTR+ DB Faction-WarCrimes");
+		sb.append(TITLE).append(TEMPLATE).append(NAMESPACE_NAME).append("DB Faction-WarCrimes");
 		sb.append(BEGIN);
 
 		appendDefault(sb, Lang.FACTION_HAS_WAR_CRIMES.toString());
@@ -2348,7 +2351,7 @@ public class WikiGenerator {
 
 		StringBuilder sb = new StringBuilder();
 
-		sb.append(TITLE).append(TEMPLATE).append("LOTR+ DB Faction-Waypoints");
+		sb.append(TITLE).append(TEMPLATE).append(NAMESPACE_NAME).append("DB Faction-Waypoints");
 		sb.append(BEGIN);
 
 		appendDefault(sb, Lang.FACTION_NO_WAYPOINTS.toString());
@@ -2394,7 +2397,7 @@ public class WikiGenerator {
 
 		StringBuilder sb = new StringBuilder();
 
-		sb.append(TITLE).append(TEMPLATE).append("LOTR+ DB Mineral-Biomes");
+		sb.append(TITLE).append(TEMPLATE).append(NAMESPACE_NAME).append("DB Mineral-Biomes");
 		sb.append(BEGIN);
 
 		appendDefault(sb, Lang.MINERAL_NO_BIOMES.toString());
@@ -2424,7 +2427,7 @@ public class WikiGenerator {
 
 		StringBuilder sb = new StringBuilder();
 
-		sb.append(TITLE).append(TEMPLATE).append("LOTR+ DB Structure-Biomes");
+		sb.append(TITLE).append(TEMPLATE).append(NAMESPACE_NAME).append("DB Structure-Biomes");
 		sb.append(BEGIN);
 
 		appendDefault(sb, Lang.STRUCTURE_NO_BIOMES.toString());
@@ -2473,7 +2476,7 @@ public class WikiGenerator {
 
 		StringBuilder sb = new StringBuilder();
 
-		sb.append(TITLE).append(TEMPLATE).append("LOTR+ DB Tree-Biomes");
+		sb.append(TITLE).append(TEMPLATE).append(NAMESPACE_NAME).append("DB Tree-Biomes");
 		sb.append(BEGIN);
 
 		appendDefault(sb, Lang.TREE_NO_BIOMES.toString());
@@ -2496,10 +2499,10 @@ public class WikiGenerator {
 
 		for (LOTRBiome biome : BIOMES) {
 			String pageName = getBiomePagename(biome);
-			neededPages.add("LOTR+:" + pageName);
-			if (!existingPages.contains("LOTR+:" + pageName)) {
-				sb.append(TITLE_SINGLE).append("LOTR+:").append(pageName);
-				sb.append(PAGE_LEFT).append("{{LOTR+ Статья Биом}}").append(PAGE_RIGHT);
+			neededPages.add(NAMESPACE + pageName);
+			if (!existingPages.contains(NAMESPACE + pageName)) {
+				sb.append(TITLE_SINGLE).append(NAMESPACE).append(pageName);
+				sb.append(PAGE_LEFT).append("{{").append(NAMESPACE_NAME).append(" Статья Биом}}").append(PAGE_RIGHT);
 			}
 		}
 
@@ -2511,10 +2514,10 @@ public class WikiGenerator {
 
 		for (Class<? extends Entity> entityClass : ENTITY_CLASSES) {
 			String pageName = getEntityPagename(entityClass);
-			neededPages.add("LOTR+:" + pageName);
-			if (!existingPages.contains("LOTR+:" + pageName)) {
-				sb.append(TITLE_SINGLE).append("LOTR+:").append(pageName);
-				sb.append(PAGE_LEFT).append("{{LOTR+ Статья Моб}}").append(PAGE_RIGHT);
+			neededPages.add(NAMESPACE + pageName);
+			if (!existingPages.contains(NAMESPACE + pageName)) {
+				sb.append(TITLE_SINGLE).append(NAMESPACE).append(pageName);
+				sb.append(PAGE_LEFT).append("{{").append(NAMESPACE_NAME).append(" Статья Моб}}").append(PAGE_RIGHT);
 			}
 		}
 
@@ -2526,10 +2529,10 @@ public class WikiGenerator {
 
 		for (LOTRFaction faction : FACTIONS) {
 			String pageName = getFactionPagename(faction);
-			neededPages.add("LOTR+:" + pageName);
-			if (!existingPages.contains("LOTR+:" + pageName)) {
-				sb.append(TITLE_SINGLE).append("LOTR+:").append(pageName);
-				sb.append(PAGE_LEFT).append("{{LOTR+ Статья Фракция}}").append(PAGE_RIGHT);
+			neededPages.add(NAMESPACE + pageName);
+			if (!existingPages.contains(NAMESPACE + pageName)) {
+				sb.append(TITLE_SINGLE).append(NAMESPACE).append(pageName);
+				sb.append(PAGE_LEFT).append("{{").append(NAMESPACE_NAME).append(" Статья Фракция}}").append(PAGE_RIGHT);
 			}
 		}
 
@@ -2540,10 +2543,10 @@ public class WikiGenerator {
 		StringBuilder sb = new StringBuilder();
 
 		for (String pageName : MINERALS) {
-			neededPages.add("LOTR+:" + pageName);
-			if (!existingPages.contains("LOTR+:" + pageName)) {
-				sb.append(TITLE_SINGLE).append("LOTR+:").append(pageName);
-				sb.append(PAGE_LEFT).append("{{LOTR+ Статья Ископаемое}}").append(PAGE_RIGHT);
+			neededPages.add(NAMESPACE + pageName);
+			if (!existingPages.contains(NAMESPACE + pageName)) {
+				sb.append(TITLE_SINGLE).append(NAMESPACE).append(pageName);
+				sb.append(PAGE_LEFT).append("{{").append(NAMESPACE_NAME).append(" Статья Ископаемое}}").append(PAGE_RIGHT);
 			}
 		}
 
@@ -2555,10 +2558,10 @@ public class WikiGenerator {
 
 		for (Class<? extends WorldGenerator> strClass : STRUCTURE_CLASSES) {
 			String pageName = getStructurePagename(strClass);
-			neededPages.add("LOTR+:" + pageName);
-			if (!existingPages.contains("LOTR+:" + pageName)) {
-				sb.append(TITLE_SINGLE).append("LOTR+:").append(pageName);
-				sb.append(PAGE_LEFT).append("{{LOTR+ Статья Структура}}").append(PAGE_RIGHT);
+			neededPages.add(NAMESPACE + pageName);
+			if (!existingPages.contains(NAMESPACE + pageName)) {
+				sb.append(TITLE_SINGLE).append(NAMESPACE).append(pageName);
+				sb.append(PAGE_LEFT).append("{{").append(NAMESPACE_NAME).append(" Статья Структура}}").append(PAGE_RIGHT);
 			}
 		}
 
@@ -2570,10 +2573,10 @@ public class WikiGenerator {
 
 		for (LOTRTreeType tree : TREES) {
 			String pageName = getTreePagename(tree);
-			neededPages.add("LOTR+:" + pageName);
-			if (!existingPages.contains("LOTR+:" + pageName)) {
-				sb.append(TITLE_SINGLE).append("LOTR+:").append(pageName);
-				sb.append(PAGE_LEFT).append("{{LOTR+ Статья Дерево}}").append(PAGE_RIGHT);
+			neededPages.add(NAMESPACE + pageName);
+			if (!existingPages.contains(NAMESPACE + pageName)) {
+				sb.append(TITLE_SINGLE).append(NAMESPACE).append(pageName);
+				sb.append(PAGE_LEFT).append("{{").append(NAMESPACE_NAME).append(" Статья Дерево}}").append(PAGE_RIGHT);
 			}
 		}
 
@@ -2715,9 +2718,9 @@ public class WikiGenerator {
 		String biomeName = getBiomeName(biome);
 		String biomePagename = getBiomePagename(biome);
 		if (biomeName.equals(biomePagename)) {
-			return "[[LOTR+:" + biomeName + '|' + biomeName + "]]";
+			return "[[" + NAMESPACE + biomeName + '|' + biomeName + "]]";
 		}
-		return "[[LOTR+:" + biomePagename + '|' + biomeName + "]]";
+		return "[[" + NAMESPACE + biomePagename + '|' + biomeName + "]]";
 	}
 
 	private static String getBiomeName(LOTRBiome biome) {
@@ -2734,12 +2737,12 @@ public class WikiGenerator {
 
 	private static String getMineralLink(Block block, int meta) {
 		String name = StatCollector.translateToLocal(block.getUnlocalizedName() + '.' + meta + ".name");
-		return "[[LOTR+:" + name + '|' + name + "]]";
+		return "[[" + NAMESPACE + name + '|' + name + "]]";
 	}
 
 	private static String getMineralLink(Block block) {
 		String name = StatCollector.translateToLocal(block.getUnlocalizedName() + ".name");
-		return "[[LOTR+:" + name + '|' + name + "]]";
+		return "[[" + NAMESPACE + name + '|' + name + "]]";
 	}
 
 	private static String getMineralName(Block block, int meta) {
@@ -2758,9 +2761,9 @@ public class WikiGenerator {
 
 		String entityPagename = getEntityPagename(entityClass);
 		if (entityName.equals(entityPagename)) {
-			return "[[LOTR+:" + entityName + '|' + entityName + "]]";
+			return "[[" + NAMESPACE + entityName + '|' + entityName + "]]";
 		}
-		return "[[LOTR+:" + entityPagename + '|' + entityName + "]]";
+		return "[[" + NAMESPACE + entityPagename + '|' + entityName + "]]";
 	}
 
 	private static String getEntityName(Class<? extends Entity> entityClass) {
@@ -2775,9 +2778,9 @@ public class WikiGenerator {
 		String facName = getFactionName(fac);
 		String facPagename = getFactionPagename(fac);
 		if (facName.equals(facPagename)) {
-			return "[[LOTR+:" + facName + '|' + facName + "]]";
+			return "[[" + NAMESPACE + facName + '|' + facName + "]]";
 		}
-		return "[[LOTR+:" + facPagename + '|' + facName + "]]";
+		return "[[" + NAMESPACE + facPagename + '|' + facName + "]]";
 	}
 
 	private static String getFactionName(LOTRFaction fac) {
@@ -2802,7 +2805,7 @@ public class WikiGenerator {
 
 	private static String getStructureLink(Class<?> structureClass) {
 		String name = StatCollector.translateToLocal("lotr.structure." + Config.STRUCTURE_CLASS_TO_NAME.get(structureClass) + ".name");
-		return "[[LOTR+:" + name + '|' + name + "]]";
+		return "[[" + NAMESPACE + name + '|' + name + "]]";
 	}
 
 	private static String getStructurePagename(Class<?> structureClass) {
@@ -2819,7 +2822,7 @@ public class WikiGenerator {
 
 	private static String getTreeLink(LOTRTreeType tree) {
 		String name = StatCollector.translateToLocal("lotr.tree." + tree.name().toLowerCase(Locale.ROOT) + ".name");
-		return "[[LOTR+:" + name + '|' + name + "]]";
+		return "[[" + NAMESPACE + name + '|' + name + "]]";
 	}
 
 	private static void appendSection(StringBuilder sb, Collection<String> section) {

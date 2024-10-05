@@ -48,6 +48,7 @@ import java.util.stream.Stream;
 
 import static com.github.hummel.wikigen.util.ReflectionHelper.*;
 
+@SuppressWarnings("ConstantValue")
 public class WikiGenerator {
 	public static final Map<Class<? extends Entity>, Entity> ENTITY_CLASS_TO_ENTITY = new HashMap<>();
 
@@ -2715,12 +2716,15 @@ public class WikiGenerator {
 	}
 
 	private static String getBiomeLink(LOTRBiome biome) {
-		String biomeName = getBiomeName(biome);
-		String biomePagename = getBiomePagename(biome);
-		if (biomeName.equals(biomePagename)) {
-			return "[[" + NAMESPACE + biomeName + '|' + biomeName + "]]";
+		String name = getBiomeName(biome);
+		String pagename = getBiomePagename(biome);
+		if (name.equals(pagename)) {
+			if (NAMESPACE.isEmpty()) {
+				return "[[" + name + "]]";
+			}
+			return "[[" + NAMESPACE + name + '|' + name + "]]";
 		}
-		return "[[" + NAMESPACE + biomePagename + '|' + biomeName + "]]";
+		return "[[" + NAMESPACE + pagename + '|' + name + "]]";
 	}
 
 	private static String getBiomeName(LOTRBiome biome) {
@@ -2737,11 +2741,17 @@ public class WikiGenerator {
 
 	private static String getMineralLink(Block block, int meta) {
 		String name = StatCollector.translateToLocal(block.getUnlocalizedName() + '.' + meta + ".name");
+		if (NAMESPACE.isEmpty()) {
+			return "[[" + name + "]]";
+		}
 		return "[[" + NAMESPACE + name + '|' + name + "]]";
 	}
 
 	private static String getMineralLink(Block block) {
 		String name = StatCollector.translateToLocal(block.getUnlocalizedName() + ".name");
+		if (NAMESPACE.isEmpty()) {
+			return "[[" + name + "]]";
+		}
 		return "[[" + NAMESPACE + name + '|' + name + "]]";
 	}
 
@@ -2754,16 +2764,19 @@ public class WikiGenerator {
 	}
 
 	private static String getEntityLink(Class<? extends Entity> entityClass) {
-		String entityName = getEntityName(entityClass);
-		if (entityName.contains("null")) {
+		String name = getEntityName(entityClass);
+		if (name.contains("null")) {
 			return StatCollector.translateToLocal("entity." + EntityList.classToStringMapping.get(entityClass) + ".name");
 		}
 
-		String entityPagename = getEntityPagename(entityClass);
-		if (entityName.equals(entityPagename)) {
-			return "[[" + NAMESPACE + entityName + '|' + entityName + "]]";
+		String pagename = getEntityPagename(entityClass);
+		if (name.equals(pagename)) {
+			if (NAMESPACE.isEmpty()) {
+				return "[[" + name + "]]";
+			}
+			return "[[" + NAMESPACE + name + '|' + name + "]]";
 		}
-		return "[[" + NAMESPACE + entityPagename + '|' + entityName + "]]";
+		return "[[" + NAMESPACE + pagename + '|' + name + "]]";
 	}
 
 	private static String getEntityName(Class<? extends Entity> entityClass) {
@@ -2775,12 +2788,15 @@ public class WikiGenerator {
 	}
 
 	private static String getFactionLink(LOTRFaction fac) {
-		String facName = getFactionName(fac);
-		String facPagename = getFactionPagename(fac);
-		if (facName.equals(facPagename)) {
-			return "[[" + NAMESPACE + facName + '|' + facName + "]]";
+		String name = getFactionName(fac);
+		String pagename = getFactionPagename(fac);
+		if (name.equals(pagename)) {
+			if (NAMESPACE.isEmpty()) {
+				return "[[" + name + "]]";
+			}
+			return "[[" + NAMESPACE + name + '|' + name + "]]";
 		}
-		return "[[" + NAMESPACE + facPagename + '|' + facName + "]]";
+		return "[[" + NAMESPACE + pagename + '|' + name + "]]";
 	}
 
 	private static String getFactionName(LOTRFaction fac) {
@@ -2805,6 +2821,9 @@ public class WikiGenerator {
 
 	private static String getStructureLink(Class<?> structureClass) {
 		String name = StatCollector.translateToLocal("lotr.structure." + Config.STRUCTURE_CLASS_TO_NAME.get(structureClass) + ".name");
+		if (NAMESPACE.isEmpty()) {
+			return "[[" + name + "]]";
+		}
 		return "[[" + NAMESPACE + name + '|' + name + "]]";
 	}
 
@@ -2822,6 +2841,9 @@ public class WikiGenerator {
 
 	private static String getTreeLink(LOTRTreeType tree) {
 		String name = StatCollector.translateToLocal("lotr.tree." + tree.name().toLowerCase(Locale.ROOT) + ".name");
+		if (NAMESPACE.isEmpty()) {
+			return "[[" + name + "]]";
+		}
 		return "[[" + NAMESPACE + name + '|' + name + "]]";
 	}
 

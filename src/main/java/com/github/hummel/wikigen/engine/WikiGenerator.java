@@ -42,6 +42,7 @@ import java.nio.file.Paths;
 import java.text.DecimalFormat;
 import java.text.DecimalFormatSymbols;
 import java.util.*;
+import java.util.concurrent.ConcurrentSkipListSet;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -154,7 +155,7 @@ public class WikiGenerator {
 					List<StringBuilder> results;
 
 					Set<String> existingPages = getExistingPages();
-					Collection<String> neededPages = new HashSet<>();
+					Collection<String> neededPages = new ConcurrentSkipListSet<>();
 
 					suppliers.add(() -> addPagesMinerals(neededPages, existingPages));
 					suppliers.add(() -> addPagesEntities(neededPages, existingPages));
@@ -2590,13 +2591,13 @@ public class WikiGenerator {
 				}
 			}
 			try (Stream<String> lines = Files.lines(Paths.get("hummel/sitemap.txt"))) {
-				return lines.collect(Collectors.toSet());
+				return lines.collect(Collectors.toCollection(ConcurrentSkipListSet::new));
 			}
 		} catch (Exception e) {
 			e.printStackTrace();
 		}
 
-		return Collections.emptySet();
+		return new ConcurrentSkipListSet<>();
 	}
 
 	private static void markPagesForRemoval(Collection<String> neededPages, Iterable<String> existingPages) {

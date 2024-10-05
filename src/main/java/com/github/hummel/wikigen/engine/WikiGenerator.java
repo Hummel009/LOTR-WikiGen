@@ -42,6 +42,7 @@ import java.nio.file.Paths;
 import java.text.DecimalFormat;
 import java.text.DecimalFormatSymbols;
 import java.util.*;
+import java.util.concurrent.ConcurrentSkipListSet;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -154,7 +155,7 @@ public class WikiGenerator {
 					List<StringBuilder> results;
 
 					Set<String> existingPages = getExistingPages();
-					Collection<String> neededPages = new HashSet<>();
+					Collection<String> neededPages = new ConcurrentSkipListSet<>();
 
 					suppliers.add(() -> addPagesMinerals(neededPages, existingPages));
 					suppliers.add(() -> addPagesEntities(neededPages, existingPages));
@@ -2587,13 +2588,13 @@ public class WikiGenerator {
 				}
 			}
 			try (Stream<String> lines = Files.lines(Paths.get("hummel/sitemap.txt"))) {
-				return lines.collect(Collectors.toSet());
+				return lines.collect(Collectors.toCollection(ConcurrentSkipListSet::new));
 			}
 		} catch (Exception e) {
 			e.printStackTrace();
 		}
 
-		return Collections.emptySet();
+		return new ConcurrentSkipListSet<>();
 	}
 
 	private static void markPagesForRemoval(Collection<String> neededPages, Iterable<String> existingPages) {
@@ -2730,11 +2731,13 @@ public class WikiGenerator {
 	}
 
 	private static String getMineralLink(Block block, int meta) {
-		return "[[" + StatCollector.translateToLocal(block.getUnlocalizedName() + '.' + meta + ".name") + "]]";
+		String name = StatCollector.translateToLocal(block.getUnlocalizedName() + '.' + meta + ".name");
+		return "[[" + name + "]]";
 	}
 
 	private static String getMineralLink(Block block) {
-		return "[[" + StatCollector.translateToLocal(block.getUnlocalizedName() + ".name") + "]]";
+		String name = StatCollector.translateToLocal(block.getUnlocalizedName() + ".name");
+		return "[[" + name + "]]";
 	}
 
 	private static String getMineralName(Block block, int meta) {
@@ -2753,7 +2756,7 @@ public class WikiGenerator {
 
 		String entityPagename = getEntityPagename(entityClass);
 		if (entityName.equals(entityPagename)) {
-			return "[[" + entityPagename + "]]";
+			return "[[" + entityName + "]]";
 		}
 		return "[[" + entityPagename + '|' + entityName + "]]";
 	}
@@ -2770,7 +2773,7 @@ public class WikiGenerator {
 		String facName = getFactionName(fac);
 		String facPagename = getFactionPagename(fac);
 		if (facName.equals(facPagename)) {
-			return "[[" + facPagename + "]]";
+			return "[[" + facName + "]]";
 		}
 		return "[[" + facPagename + '|' + facName + "]]";
 	}
@@ -2796,7 +2799,8 @@ public class WikiGenerator {
 	}
 
 	private static String getStructureLink(Class<?> structureClass) {
-		return "[[" + StatCollector.translateToLocal("lotr.structure." + Config.STRUCTURE_CLASS_TO_NAME.get(structureClass) + ".name") + "]]";
+		String name = StatCollector.translateToLocal("lotr.structure." + Config.STRUCTURE_CLASS_TO_NAME.get(structureClass) + ".name");
+		return "[[" + name + "]]";
 	}
 
 	private static String getStructurePagename(Class<?> structureClass) {
@@ -2812,7 +2816,8 @@ public class WikiGenerator {
 	}
 
 	private static String getTreeLink(LOTRTreeType tree) {
-		return "[[" + StatCollector.translateToLocal("lotr.tree." + tree.name().toLowerCase(Locale.ROOT) + ".name") + "]]";
+		String name = StatCollector.translateToLocal("lotr.tree." + tree.name().toLowerCase(Locale.ROOT) + ".name");
+		return "[[" + name + "]]";
 	}
 
 	private static void appendSection(StringBuilder sb, Collection<String> section) {

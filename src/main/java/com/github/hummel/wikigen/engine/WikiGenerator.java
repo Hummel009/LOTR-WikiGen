@@ -42,7 +42,6 @@ import java.nio.file.Paths;
 import java.text.DecimalFormat;
 import java.text.DecimalFormatSymbols;
 import java.util.*;
-import java.util.concurrent.ConcurrentSkipListSet;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -105,7 +104,7 @@ public class WikiGenerator {
 	private WikiGenerator() {
 	}
 
-	@SuppressWarnings("JoinDeclarationAndAssignmentJava")
+	@SuppressWarnings({"JoinDeclarationAndAssignmentJava", "StreamToLoop"})
 	public static void generate(Type type, World world, EntityPlayer entityPlayer) {
 		long time = System.nanoTime();
 
@@ -155,7 +154,7 @@ public class WikiGenerator {
 					List<StringBuilder> results;
 
 					Set<String> existingPages = getExistingPages();
-					Collection<String> neededPages = new ConcurrentSkipListSet<>();
+					Collection<String> neededPages = new HashSet<>();
 
 					suppliers.add(() -> addPagesMinerals(neededPages, existingPages));
 					suppliers.add(() -> addPagesEntities(neededPages, existingPages));
@@ -164,7 +163,7 @@ public class WikiGenerator {
 					suppliers.add(() -> addPagesTrees(neededPages, existingPages));
 					suppliers.add(() -> addPagesStructures(neededPages, existingPages));
 
-					results = suppliers.parallelStream().map(Supplier::get).collect(Collectors.toList());
+					results = suppliers.stream().map(Supplier::get).collect(Collectors.toList());
 					suppliers.clear();
 
 					for (StringBuilder stringBuilder : results) {
@@ -2497,7 +2496,7 @@ public class WikiGenerator {
 
 		for (LOTRBiome biome : BIOMES) {
 			String pageName = getBiomePagename(biome);
-			neededPages.add(pageName);
+			neededPages.add("LOTR+:" + pageName);
 			if (!existingPages.contains("LOTR+:" + pageName)) {
 				sb.append(TITLE_SINGLE).append("LOTR+:").append(pageName);
 				sb.append(PAGE_LEFT).append("{{LOTR+ Статья Биом}}").append(PAGE_RIGHT);
@@ -2512,7 +2511,7 @@ public class WikiGenerator {
 
 		for (Class<? extends Entity> entityClass : ENTITY_CLASSES) {
 			String pageName = getEntityPagename(entityClass);
-			neededPages.add(pageName);
+			neededPages.add("LOTR+:" + pageName);
 			if (!existingPages.contains("LOTR+:" + pageName)) {
 				sb.append(TITLE_SINGLE).append("LOTR+:").append(pageName);
 				sb.append(PAGE_LEFT).append("{{LOTR+ Статья Моб}}").append(PAGE_RIGHT);
@@ -2527,7 +2526,7 @@ public class WikiGenerator {
 
 		for (LOTRFaction faction : FACTIONS) {
 			String pageName = getFactionPagename(faction);
-			neededPages.add(pageName);
+			neededPages.add("LOTR+:" + pageName);
 			if (!existingPages.contains("LOTR+:" + pageName)) {
 				sb.append(TITLE_SINGLE).append("LOTR+:").append(pageName);
 				sb.append(PAGE_LEFT).append("{{LOTR+ Статья Фракция}}").append(PAGE_RIGHT);
@@ -2541,7 +2540,7 @@ public class WikiGenerator {
 		StringBuilder sb = new StringBuilder();
 
 		for (String pageName : MINERALS) {
-			neededPages.add(pageName);
+			neededPages.add("LOTR+:" + pageName);
 			if (!existingPages.contains("LOTR+:" + pageName)) {
 				sb.append(TITLE_SINGLE).append("LOTR+:").append(pageName);
 				sb.append(PAGE_LEFT).append("{{LOTR+ Статья Ископаемое}}").append(PAGE_RIGHT);
@@ -2556,7 +2555,7 @@ public class WikiGenerator {
 
 		for (Class<? extends WorldGenerator> strClass : STRUCTURE_CLASSES) {
 			String pageName = getStructurePagename(strClass);
-			neededPages.add(pageName);
+			neededPages.add("LOTR+:" + pageName);
 			if (!existingPages.contains("LOTR+:" + pageName)) {
 				sb.append(TITLE_SINGLE).append("LOTR+:").append(pageName);
 				sb.append(PAGE_LEFT).append("{{LOTR+ Статья Структура}}").append(PAGE_RIGHT);
@@ -2571,7 +2570,7 @@ public class WikiGenerator {
 
 		for (LOTRTreeType tree : TREES) {
 			String pageName = getTreePagename(tree);
-			neededPages.add(pageName);
+			neededPages.add("LOTR+:" + pageName);
 			if (!existingPages.contains("LOTR+:" + pageName)) {
 				sb.append(TITLE_SINGLE).append("LOTR+:").append(pageName);
 				sb.append(PAGE_LEFT).append("{{LOTR+ Статья Дерево}}").append(PAGE_RIGHT);
@@ -2591,13 +2590,13 @@ public class WikiGenerator {
 				}
 			}
 			try (Stream<String> lines = Files.lines(Paths.get("hummel/sitemap.txt"))) {
-				return lines.collect(Collectors.toCollection(ConcurrentSkipListSet::new));
+				return lines.collect(Collectors.toSet());
 			}
 		} catch (Exception e) {
 			e.printStackTrace();
 		}
 
-		return new ConcurrentSkipListSet<>();
+		return Collections.emptySet();
 	}
 
 	private static void markPagesForRemoval(Collection<String> neededPages, Iterable<String> existingPages) {

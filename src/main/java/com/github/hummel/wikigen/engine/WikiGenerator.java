@@ -2498,7 +2498,7 @@ public class WikiGenerator {
 		for (LOTRBiome biome : BIOMES) {
 			String pageName = getBiomePagename(biome);
 			neededPages.add(pageName);
-			if (!existingPages.contains(pageName)) {
+			if (!existingPages.contains("LOTR+:" + pageName)) {
 				sb.append(TITLE_SINGLE).append("LOTR+:").append(pageName);
 				sb.append(PAGE_LEFT).append("{{LOTR+ Статья Биом}}").append(PAGE_RIGHT);
 			}
@@ -2513,7 +2513,7 @@ public class WikiGenerator {
 		for (Class<? extends Entity> entityClass : ENTITY_CLASSES) {
 			String pageName = getEntityPagename(entityClass);
 			neededPages.add(pageName);
-			if (!existingPages.contains(pageName)) {
+			if (!existingPages.contains("LOTR+:" + pageName)) {
 				sb.append(TITLE_SINGLE).append("LOTR+:").append(pageName);
 				sb.append(PAGE_LEFT).append("{{LOTR+ Статья Моб}}").append(PAGE_RIGHT);
 			}
@@ -2528,7 +2528,7 @@ public class WikiGenerator {
 		for (LOTRFaction faction : FACTIONS) {
 			String pageName = getFactionPagename(faction);
 			neededPages.add(pageName);
-			if (!existingPages.contains(pageName)) {
+			if (!existingPages.contains("LOTR+:" + pageName)) {
 				sb.append(TITLE_SINGLE).append("LOTR+:").append(pageName);
 				sb.append(PAGE_LEFT).append("{{LOTR+ Статья Фракция}}").append(PAGE_RIGHT);
 			}
@@ -2542,7 +2542,7 @@ public class WikiGenerator {
 
 		for (String pageName : MINERALS) {
 			neededPages.add(pageName);
-			if (!existingPages.contains(pageName)) {
+			if (!existingPages.contains("LOTR+:" + pageName)) {
 				sb.append(TITLE_SINGLE).append("LOTR+:").append(pageName);
 				sb.append(PAGE_LEFT).append("{{LOTR+ Статья Ископаемое}}").append(PAGE_RIGHT);
 			}
@@ -2557,7 +2557,7 @@ public class WikiGenerator {
 		for (Class<? extends WorldGenerator> strClass : STRUCTURE_CLASSES) {
 			String pageName = getStructurePagename(strClass);
 			neededPages.add(pageName);
-			if (!existingPages.contains(pageName)) {
+			if (!existingPages.contains("LOTR+:" + pageName)) {
 				sb.append(TITLE_SINGLE).append("LOTR+:").append(pageName);
 				sb.append(PAGE_LEFT).append("{{LOTR+ Статья Структура}}").append(PAGE_RIGHT);
 			}
@@ -2572,7 +2572,7 @@ public class WikiGenerator {
 		for (LOTRTreeType tree : TREES) {
 			String pageName = getTreePagename(tree);
 			neededPages.add(pageName);
-			if (!existingPages.contains(pageName)) {
+			if (!existingPages.contains("LOTR+:" + pageName)) {
 				sb.append(TITLE_SINGLE).append("LOTR+:").append(pageName);
 				sb.append(PAGE_LEFT).append("{{LOTR+ Статья Дерево}}").append(PAGE_RIGHT);
 			}

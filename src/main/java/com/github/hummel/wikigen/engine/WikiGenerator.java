@@ -1225,12 +1225,14 @@ public class WikiGenerator {
 
 		for (LOTRUnitTradeEntries entries : UNIT_TRADE_ENTRIES) {
 			for (LOTRUnitTradeEntry entry : entries.tradeEntries) {
-				int alignment = (int) entry.alignmentRequired;
+				if (entry.mountClass == null) {
+					int alignment = (int) entry.alignmentRequired;
 
-				if (entry.getPledgeType() == LOTRUnitTradeEntry.PledgeType.NONE) {
-					data.put(entry.entityClass, String.valueOf(alignment));
-				} else {
-					data.put(entry.entityClass, String.valueOf(Math.max(alignment, 100)));
+					if (entry.getPledgeType() == LOTRUnitTradeEntry.PledgeType.NONE) {
+						data.put(entry.entityClass, String.valueOf(alignment));
+					} else {
+						data.put(entry.entityClass, String.valueOf(Math.max(alignment, 100)));
+					}
 				}
 			}
 		}
@@ -1257,12 +1259,13 @@ public class WikiGenerator {
 
 		for (LOTRUnitTradeEntries entries : UNIT_TRADE_ENTRIES) {
 			for (LOTRUnitTradeEntry entry : entries.tradeEntries) {
-				int cost = getInitialCost(entry);
-
-				if (entry.getPledgeType() == LOTRUnitTradeEntry.PledgeType.NONE) {
-					data.put(entry.entityClass, "{{Bar Coins|" + cost * 2 + "}}");
-				} else {
-					data.put(entry.entityClass, N_A);
+				if (entry.mountClass == null) {
+					int cost = getInitialCost(entry);
+					if (entry.getPledgeType() == LOTRUnitTradeEntry.PledgeType.NONE) {
+						data.put(entry.entityClass, "{{Bar Coins|" + cost * 2 + "}}");
+					} else {
+						data.put(entry.entityClass, N_A);
+					}
 				}
 			}
 		}
@@ -1289,9 +1292,11 @@ public class WikiGenerator {
 
 		for (LOTRUnitTradeEntries entries : UNIT_TRADE_ENTRIES) {
 			for (LOTRUnitTradeEntry entry : entries.tradeEntries) {
-				int cost = getInitialCost(entry);
+				if (entry.mountClass == null) {
+					int cost = getInitialCost(entry);
 
-				data.put(entry.entityClass, "{{Bar Coins|" + cost + "}}");
+					data.put(entry.entityClass, "{{Bar Coins|" + cost + "}}");
+				}
 			}
 		}
 

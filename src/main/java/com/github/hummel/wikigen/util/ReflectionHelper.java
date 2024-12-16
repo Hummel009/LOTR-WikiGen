@@ -155,7 +155,7 @@ public class ReflectionHelper {
 	public static <E, T> List<T> getObjectFieldsOfType(Class<? extends E> clazz, Class<? extends T> type) {
 		Collection<Object> list = new ArrayList<>();
 		for (Field field : clazz.getDeclaredFields()) {
-			if (field != null && field.getType() == type) {
+			if (field.getType() == type) {
 				Object fieldObj = null;
 				try {
 					fieldObj = field.get(null);
